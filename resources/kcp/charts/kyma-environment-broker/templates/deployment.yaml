@@ -302,6 +302,10 @@ spec:
               value: "{{ .Values.avs.gardenerSeedNameTagClassId }}"
             - name: APP_AVS_REGION_TAG_CLASS_ID
               value: "{{ .Values.avs.regionTagClassId }}"
+            - name: APP_AVS_MAINTENANCE_MODE_DURING_UPGRADE_DISABLED
+              value: "{{ .Values.avs.maintenanceModeDuringUpgrade.disabled }}"
+            - name: APP_AVS_MAINTENANCE_MODE_DURING_UPGRADE_ALWAYS_DISABLED_GLOBAL_ACCOUNTS_FILE_PATH
+              value: /config/avsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountIDs.yaml
             - name: APP_KYMA_VERSION
               value: "{{ .Values.kymaVersion }}"
             - name: APP_ENABLE_ON_DEMAND_VERSION

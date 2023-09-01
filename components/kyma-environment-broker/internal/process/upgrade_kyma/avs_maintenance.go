@@ -16,7 +16,9 @@ func SetAvsStatusMaintenance(evaluationManager *avs.EvaluationManager, operation
 	var err error = nil
 	var delay time.Duration = 0
 
-	if hasMonitors && !inMaintenance {
+	if hasMonitors &&
+		!inMaintenance &&
+		evaluationManager.IsMaintenanceModeApplicableForGAID(operation.ProvisioningParameters.ErsContext.GlobalAccountID) {
 		log.Infof("setting AVS evaluations statuses to maintenance")
 		err = evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
 		operation, delay, _ = operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {

@@ -204,6 +204,9 @@ avs:
   trialInternalTesterAccessId: "0"
   trialGroupId: "0"
   trialParentId: "0"
+  maintenanceModeDuringUpgrade:
+    disabled: false # disable AvS maintenance mode during upgrade, false until SKR ZDM is done
+    alwaysDisabledGlobalAccountIDs: [] # list of GA IDs where maintenance mode is always disabled during upgrade
 
 ias:
   secretName: "ias-creds"
