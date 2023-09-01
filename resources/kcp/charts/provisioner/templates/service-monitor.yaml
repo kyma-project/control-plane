@@ -1,3 +1,4 @@
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -16,3 +17,28 @@ spec:
     matchLabels:
       app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
+
+{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - attach_metadata: {}
+    port: http-metrics
+    interval: {{ .Values.vmscrapes.interval }}
+    scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+{{- end }}

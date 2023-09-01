@@ -289,8 +289,13 @@ deprovisionRetrigger:
   #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
-  scrapeTimeout: 10s
-  interval: 30s
+  scrapeTimeout: &scrapeTimeout 10s
+  interval: &scrapeInterval 30s
+
+vmscrapes:
+  enabled: false
+  scrapeTimeout: *scrapeTimeout
+  interval: *scrapeInterval
 
 dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
