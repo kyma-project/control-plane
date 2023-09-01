@@ -166,6 +166,3 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
-
-# these components will NEVER be reconciled
-skippedComponents: []
