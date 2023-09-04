@@ -1,21 +1,21 @@
 global:
   images:
-    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     kyma_environment_broker:
       dir:
-      version: "v20230525-1410c281"
+      version: "v20230831-b6bbca2b"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230525-1410c281"
+      version: "v20230831-b6bbca2b"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230525-1410c281"
+      version: "v20230831-b6bbca2b"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230525-1410c281"
+      version: "v20230831-b6bbca2b"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20230525-1410c281"
+      version: "v20230831-b6bbca2b"
 
 deployment:
   replicaCount: 1
@@ -63,6 +63,9 @@ resources:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
+serviceAccount:
+  annotations: {}
 
 reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
@@ -201,6 +204,9 @@ avs:
   trialInternalTesterAccessId: "0"
   trialGroupId: "0"
   trialParentId: "0"
+  maintenanceModeDuringUpgrade:
+    disabled: false # disable AvS maintenance mode during upgrade, false until SKR ZDM is done
+    alwaysDisabledGlobalAccountIDs: [] # list of GA IDs where maintenance mode is always disabled during upgrade
 
 ias:
   secretName: "ias-creds"
@@ -270,7 +276,7 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
-  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched
   #   to the generic job
   # name: "deprovision-retrigger-job"
   # schedule: "0 2 * * *"
@@ -283,8 +289,13 @@ deprovisionRetrigger:
   #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
-  scrapeTimeout: 10s
-  interval: 30s
+  scrapeTimeout: &scrapeTimeout 10s
+  interval: &scrapeInterval 30s
+
+vmscrapes:
+  enabled: false
+  scrapeTimeout: *scrapeTimeout
+  interval: *scrapeInterval
 
 dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"

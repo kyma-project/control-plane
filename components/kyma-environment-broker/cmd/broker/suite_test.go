@@ -105,8 +105,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		ProvisioningTimeout: time.Second,
 	}
 	cfg.Notification = notification.Config{
-		Url:      "",
-		Disabled: true,
+		Url: "",
 	}
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -543,7 +542,7 @@ kyma-template: |-
       modules: []
 
 additional-components:
-  - name: "additional-component1"
+  - name: "btp-operator"
     namespace: "kyma-system"`,
 		},
 	}
@@ -1006,8 +1005,7 @@ func fixConfig() *Config {
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
 		Notification: notification.Config{
-			Url:      "http://host:8080/",
-			Disabled: true,
+			Url: "http://host:8080/",
 		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,

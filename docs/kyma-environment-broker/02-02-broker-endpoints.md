@@ -9,6 +9,6 @@ Kyma Environment Broker (KEB) implements the [Open Service Broker API](https://g
 
 > **NOTE:** KEB does not implement the OSB API update operation.
 
-> **NOTE:** When the value of `{region}` is one of EU Access BTP regions, the EU Access restrictions apply. For more information, see [EU Access](../eu_access.md)).
+> **NOTE:** When the value of `{region}` is one of EU Access BTP regions, the EU Access restrictions apply. For more information, see [EU Access](./03-18-eu-access.md).
 
 Besides OSB API endpoints, KEB exposes the REST `/info/runtimes` endpoint that provides information about all created Runtimes, both succeeded and failed. This endpoint is secured with the OAuth2 authorization.

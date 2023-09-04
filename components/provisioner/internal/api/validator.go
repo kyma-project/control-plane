@@ -14,7 +14,6 @@ const RuntimeAgent = "compass-runtime-agent"
 //go:generate mockery --name=Validator
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError
-	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError
 	ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError
 }
 
@@ -38,15 +37,6 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 
 	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
 		return err.Append("Cluster config validation error while starting Runtime provisioning")
-	}
-
-	return nil
-}
-
-func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError {
-	err := v.validateKymaConfigForUpgrade(input.KymaConfig)
-	if err != nil {
-		return err.Append("validation error while starting Runtime upgrade")
 	}
 
 	return nil
@@ -89,13 +79,6 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 	}
 
 	return nil
-}
-
-func (v *validator) validateKymaConfigForUpgrade(kymaConfig *gqlschema.KymaConfigInput) apperrors.AppError {
-	if kymaConfig == nil {
-		return apperrors.BadRequest("error: Kyma config not provided")
-	}
-	return v.validateKymaConfig(kymaConfig)
 }
 
 func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (apperrors.AppError, bool) {

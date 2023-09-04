@@ -65,3 +65,23 @@ func TestCheckKymaKubeconfigDeleted(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
 }
+
+func TestCheckKymaKubeconfigDeleteSkipped(t *testing.T) {
+	// Given
+	operation := fixture.FixDeprovisioningOperationAsOperation("op", "instance")
+
+	k8sClient := fake.NewClientBuilder().Build()
+
+	memoryStorage := storage.NewMemoryStorage()
+	err := memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	step := DeleteKubeconfig(memoryStorage.Operations(), k8sClient)
+
+	// When
+	_, backoff, err := step.Run(operation, logger.NewLogSpy().Logger)
+
+	// Then
+	assert.Zero(t, backoff)
+	assert.NoError(t, err)
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"gotest.tools/assert"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,16 +43,6 @@ func GardenerErrCodesToErrReason(lastErrors ...gardencorev1beta1.LastError) appe
 	}
 
 	return apperrors.ErrReason(strings.Join(vals, ", "))
-}
-
-func KymaInstallationErrorToErrReason(errEntries ...installationSDK.ErrorEntry) apperrors.ErrReason {
-	var components []string
-
-	for _, err := range errEntries {
-		components = append(components, err.Component)
-	}
-
-	return apperrors.ErrReason(strings.Join(components, ", "))
 }
 
 func CheckErrorType(t *testing.T, err error, errCode apperrors.ErrCode) {

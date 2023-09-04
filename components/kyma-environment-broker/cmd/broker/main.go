@@ -118,17 +118,18 @@ type Config struct {
 	Gardener    gardener.Config
 	Kubeconfig  kubeconfig.Config
 
-	KymaVersion                                string
-	EnableOnDemandVersion                      bool `envconfig:"default=false"`
-	ManagedRuntimeComponentsYAMLFilePath       string
-	NewAdditionalRuntimeComponentsYAMLFilePath string
-	SkrOidcDefaultValuesYAMLFilePath           string
-	SkrDnsProvidersValuesYAMLFilePath          string
-	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
-	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
-	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
-	LifecycleManagerIntegrationDisabled        bool   `envconfig:"default=true"`
-	ReconcilerIntegrationDisabled              bool   `envconfig:"default=false"`
+	KymaVersion                                                         string
+	EnableOnDemandVersion                                               bool `envconfig:"default=false"`
+	ManagedRuntimeComponentsYAMLFilePath                                string
+	NewAdditionalRuntimeComponentsYAMLFilePath                          string
+	SkrOidcDefaultValuesYAMLFilePath                                    string
+	SkrDnsProvidersValuesYAMLFilePath                                   string
+	DefaultRequestRegion                                                string `envconfig:"default=cf-eu10"`
+	UpdateProcessingEnabled                                             bool   `envconfig:"default=false"`
+	UpdateSubAccountMovementEnabled                                     bool   `envconfig:"default=false"`
+	LifecycleManagerIntegrationDisabled                                 bool   `envconfig:"default=true"`
+	ReconcilerIntegrationDisabled                                       bool   `envconfig:"default=false"`
+	AvsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountsFilePath string
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -310,6 +311,8 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
+	panicOnError(cfg.Avs.ReadMaintenanceModeDuringUpgradeAlwaysDisabledGAIDsFromYaml(
+		cfg.AvsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountsFilePath))
 	avsClient, err := avs.NewClient(ctx, cfg.Avs, logs)
 	fatalOnError(err)
 	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
@@ -354,7 +357,7 @@ func main() {
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
 		avsDel, internalEvalAssistant, externalEvalAssistant, bundleBuilder, edpClient, accountProvider, reconcilerClient,
-		k8sClientProvider, cli, logs)
+		k8sClientProvider, cli, configProvider, logs)
 
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("update", "manager"))
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 20, db, inputFactory, provisionerClient, eventBroker,
@@ -833,7 +836,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client,
-	k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, logs logrus.FieldLogger) *process.Queue {
+	k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, configProvider input.ConfigurationProvider, logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningSteps := []struct {
 		disabled bool
@@ -858,7 +861,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli),
+			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli, configProvider, cfg.KymaVersion),
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,
@@ -958,9 +961,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight:   8,
-			step:     upgrade_kyma.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled: cfg.Notification.Disabled,
+			weight: 8,
+			step:   upgrade_kyma.NewSendNotificationStep(db.Operations(), notificationBuilder),
 		},
 		{
 			weight:   10,
@@ -1008,7 +1010,6 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 		{
 			weight:    10,
 			step:      upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled:  cfg.Notification.Disabled,
 			condition: provisioning.SkipForOwnClusterPlan,
 		},
 		{

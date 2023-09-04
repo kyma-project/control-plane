@@ -22,9 +22,9 @@ global:
 replicaCount: 1
 
 image:
-  repository: europe-docker.pkg.dev/kyma-project/dev/control-plane/kubeconfig-service
-  tag: "PR-2666"
-  pullPolicy: Always
+  repository: europe-docker.pkg.dev/kyma-project/prod/control-plane/kubeconfig-service
+  tag: "v20230825-ee8c3e31"
+  pullPolicy: IfNotPresent
 
 config:
   servicePort: 9090
@@ -35,7 +35,7 @@ config:
       issuer: https://kymatest.accounts400.ondemand.com
       client: 1234-5678-qwer
     client: compass-ui
-    issuer: https://dex.{{ .Values.global.ingress.domainName }}
+    issuer: ~
     # caFile: /etc/dex-tls-cert/tls.crt
 
 

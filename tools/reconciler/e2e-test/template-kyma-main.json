@@ -19,7 +19,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -29,7 +29,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -39,7 +39,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -49,17 +49,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
-          }
-        ]
-      },
-      {
-        "component": "logging",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -69,7 +59,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -79,7 +69,7 @@
         "configuration": [
           {
               "key": "global.domainName",
-              "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+              "value": "example.com"
           }
         ]
       },
@@ -89,7 +79,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       },
@@ -99,7 +89,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       },
@@ -109,7 +99,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       },
@@ -119,7 +109,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       },
@@ -129,7 +119,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       },
@@ -139,7 +129,7 @@
         "configuration": [
           {
             "key": "global.domainName",
-            "value": "ck-rec-test.kymatunas.shoot.canary.k8s-hana.ondemand.com"
+            "value": "example.com"
           }
         ]
       }

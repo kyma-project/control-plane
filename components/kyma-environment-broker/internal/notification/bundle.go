@@ -6,8 +6,7 @@ import (
 
 type (
 	Config struct {
-		Url      string `envconfig:"default="`
-		Disabled bool   `envconfig:"default=true"`
+		Url string `envconfig:"default="`
 	}
 
 	NotificationClient interface {

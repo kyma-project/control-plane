@@ -137,6 +137,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .EuAccess }}
 		euAccess: {{ .EuAccess }},
 		{{- end }}
+		{{- if .ShootNetworkingFilterDisabled }}
+		shootNetworkingFilterDisabled: {{ .ShootNetworkingFilterDisabled }},
+		{{- end }}
 	}`)
 }
 
@@ -309,6 +312,9 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
 			usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
 			usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
 		},
+		{{- end }}
+        {{- if .ShootNetworkingFilterDisabled }}
+        shootNetworkingFilterDisabled: {{ .ShootNetworkingFilterDisabled }},
 		{{- end }}
 	}`)
 }

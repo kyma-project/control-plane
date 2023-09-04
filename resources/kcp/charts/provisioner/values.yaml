@@ -3,8 +3,13 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-2759"
+      version: "PR-2979"
       dir: "dev"
+
+vmscrapes:
+  enabled: false
+  scrapeTimeout: 10s
+  interval: 30s
 
 deployment:
   replicaCount: 1
@@ -16,8 +21,10 @@ deployment:
     allowPrivilegeEscalation: false
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
-  runAwsConfigMigration: false
   databaseEncryptionSecret: "kcp-provisioner-database-encryption"
+
+serviceAccount:
+  annotations: {}
 
 security:
   skipTLSCertificateVeryfication: false
@@ -30,6 +37,7 @@ gardener:
   kubeconfigResourceHook: Sync
   auditLogTenantConfigPath: "" # "/gardener/tenant/config"
   auditLogTenantConfigMapName: ""
+  auditLogExtensionConfigMapName: ""
   maintenanceWindowConfigPath: "" # "/gardener/maintenance/config"
   maintenanceWindowConfigMapName: ""
   secretName: "gardener-credentials"

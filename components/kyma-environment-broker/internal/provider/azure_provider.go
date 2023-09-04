@@ -60,7 +60,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/16",
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
-			MaxSurge:       1,
+			MaxSurge:       zonesCount,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{

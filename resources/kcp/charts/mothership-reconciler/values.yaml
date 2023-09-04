@@ -1,7 +1,7 @@
 global:
   images:
-    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a"
-    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230515-fdab76f5"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
+    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230828-94a0c8a3"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
@@ -125,6 +125,9 @@ deployment:
     successThreshold: 1
     timeoutSeconds: 1
 
+serviceAccount:
+  annotations: {}
+
 service:
   type: ClusterIP
   scheme: http
@@ -138,8 +141,13 @@ fluentbit:
 # disable here to bypass deploy AuthorizationPolicy and ServiceMonitor in Pipeline Cluster
 serviceMonitor:
   enabled: false
-  scrapeTimeout: 30s
-  interval: 60s
+  scrapeTimeout: &scrapeTimeout 30s
+  interval: &scrapeInterval 60s
+
+vmscrapes:
+  enabled: false
+  scrapeTimeout: *scrapeTimeout
+  interval: *scrapeInterval
 
 # needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
 # by default purgeOlderThan (old cleaner script) is activated
@@ -159,3 +167,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: telemetries
+  serverless:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: serverlesses

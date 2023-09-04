@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
@@ -23,8 +22,10 @@ import (
 )
 
 const (
-	runtimeID = "runtimeID"
-	tenant    = "tenant"
+	runtimeID                          = "runtimeID"
+	tenant                             = "tenant"
+	clusterName                        = "my cluster"
+	nextStageName model.OperationStage = "NextStage"
 )
 
 func TestDeprovisionCluster_Run(t *testing.T) {
@@ -102,7 +103,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			installationSvc := &installationMocks.Service{}
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSessionFactory := &dbMocks.Factory{}
 			directorClient := &directorMocks.DirectorClient{}
@@ -122,7 +122,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			assert.Equal(t, testCase.errComponent, appErr.Component())
 			assert.Equal(t, testCase.errReason, appErr.Reason())
 			assert.Error(t, err, testCase.errMsg)
-			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 			dbSessionFactory.AssertExpectations(t)
 			directorClient.AssertExpectations(t)

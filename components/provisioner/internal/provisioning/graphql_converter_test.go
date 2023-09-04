@@ -81,7 +81,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := "partner"
 		seed := "gcp-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -122,7 +124,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                seed,
 					TargetSecret:                        secret,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            &podsCIDR,
+					ServicesCIDR:                        &servicesCIDR,
 					AutoScalerMax:                       autoScMax,
 					AutoScalerMin:                       autoScMin,
 					MaxSurge:                            surge,
@@ -140,18 +144,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
 			},
-			HibernationStatus: model.HibernationStatus{
-				HibernationPossible: true,
-				Hibernated:          true,
-			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		hibernationPossible := true
-		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -180,7 +177,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            &podsCIDR,
+					ServicesCidr:                        &servicesCIDR,
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,
@@ -217,10 +216,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
 			},
-			HibernationStatus: &gqlschema.HibernationStatus{
-				HibernationPossible: &hibernationPossible,
-				Hibernated:          &hibernated,
-			},
 		}
 
 		//when
@@ -248,7 +243,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := "partner"
 		seed := "gcp-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -289,7 +286,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                seed,
 					TargetSecret:                        secret,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            &podsCIDR,
+					ServicesCIDR:                        &servicesCIDR,
 					AutoScalerMax:                       autoScMax,
 					AutoScalerMin:                       autoScMin,
 					MaxSurge:                            surge,
@@ -305,18 +304,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				},
 				Kubeconfig: &kubeconfig,
 			},
-			HibernationStatus: model.HibernationStatus{
-				HibernationPossible: true,
-				Hibernated:          true,
-			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		hibernationPossible := true
-		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -345,7 +337,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            util.StringPtr(podsCIDR),
+					ServicesCidr:                        util.StringPtr(servicesCIDR),
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,
@@ -369,10 +363,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EuAccess:                      &euAccess,
 				},
 				Kubeconfig: &kubeconfig,
-			},
-			HibernationStatus: &gqlschema.HibernationStatus{
-				HibernationPossible: &hibernationPossible,
-				Hibernated:          &hibernated,
 			},
 		}
 
@@ -400,7 +390,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := ""
 		seed := "az-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -443,7 +435,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Seed:                                seed,
 					TargetSecret:                        secret,
 					Region:                              region,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            util.StringPtr(podsCIDR),
+					ServicesCIDR:                        util.StringPtr(servicesCIDR),
 					AutoScalerMin:                       autoScMin,
 					AutoScalerMax:                       autoScMax,
 					MaxSurge:                            surge,
@@ -458,17 +452,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(&modelProductionProfile),
 			},
-			HibernationStatus: model.HibernationStatus{
-				HibernationPossible: true,
-				Hibernated:          true,
-			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-		hibernationPossible := true
-		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -497,7 +485,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            util.StringPtr(podsCIDR),
+					ServicesCidr:                        util.StringPtr(servicesCIDR),
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,
@@ -514,10 +504,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				},
 				KymaConfig: fixKymaGraphQLConfig(&gqlProductionProfile),
 				Kubeconfig: &kubeconfig,
-			},
-			HibernationStatus: &gqlschema.HibernationStatus{
-				HibernationPossible: &hibernationPossible,
-				Hibernated:          &hibernated,
 			},
 		}
 

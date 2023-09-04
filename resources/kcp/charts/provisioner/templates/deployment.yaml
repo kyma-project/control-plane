@@ -60,8 +60,6 @@ spec:
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
-            - name: APP_OAUTH_CREDENTIALS_NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
@@ -100,10 +98,10 @@ spec:
                   name: {{ .Values.deployment.databaseEncryptionSecret | quote }}
                   key: secretKey
                   optional: false
+            - name: APP_DIRECTOR_OAUTH_PATH
+              value: /director-secret/director.yaml
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
-              value: {{ .Values.global.provisioner.secrets.integrationSystemCredentials.name | quote }}
             - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
               value: {{ or .Values.global.isLocalEnv .Values.security.skipTLSCertificateVeryfication | quote }}
             - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
@@ -112,13 +110,9 @@ spec:
               value: {{ .Values.installation.timeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
               value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_AGENT_CONFIGURATION
-              value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
               value: {{ .Values.runtimeAgent.connectionTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION
-              value: {{ .Values.gardener.clusterCreationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_CREATION
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
               value: {{ .Values.upgrade.triggeringTimeout | quote }}
@@ -126,17 +120,11 @@ spec:
               value: {{ .Values.gardener.clusterUpgradeTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_DELETION
               value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
-            - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_DELETION
-              value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
-              value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
-            - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
               value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
-              value: {{ .Values.support.bindingsCreationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_BINDINGS_CREATION
               value: {{ .Values.support.bindingsCreationTimeout | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
               value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
@@ -168,10 +156,11 @@ spec:
               value: {{ .Values.logs.level | quote }}
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
-            - name: APP_RUN_AWS_CONFIG_MIGRATION
-              value: {{ .Values.deployment.runAwsConfigMigration | quote }}
           volumeMounts:
-        {{if .Values.gardener.auditLogTenantConfigMapName }}
+            - name: director-oauth
+              mountPath: /director-secret/
+              readOnly: true
+        {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
               name: gardener-audit-log-tenant-config
               readOnly: true
@@ -211,20 +200,25 @@ spec:
         {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
         - name: cloudsql-proxy
           image: {{ .Values.global.images.cloudsql_proxy_image }}
+          {{- if .Values.global.database.cloudsqlproxy.workloadIdentity.enabled }}
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"]
+          {{- else }}
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-                {{- with .Values.deployment.securityContext }}
-          securityContext:
-{{ toYaml . | indent 12 }}
-                {{- end }}
           volumeMounts:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
+          {{- end }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
         {{- end}}
       volumes:
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
@@ -241,10 +235,10 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      {{if .Values.gardener.auditLogTenantConfigMapName }}
+      {{if .Values.gardener.auditLogExtensionConfigMapName }}
       - name: gardener-audit-log-tenant-config
         configMap:
-          name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+          name: {{ .Values.gardener.auditLogExtensionConfigMapName }}
       {{end}}
       {{if .Values.gardener.maintenanceWindowConfigMapName }}
       - name: gardener-maintenance-config
@@ -252,4 +246,7 @@ spec:
           name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
           optional: true
       {{end}}
-
+      - name: director-oauth
+        secret:
+          secretName: {{ .Values.directorFileSecret }}
+          optional: false

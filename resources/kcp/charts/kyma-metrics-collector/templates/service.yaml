@@ -6,6 +6,7 @@ metadata:
     app: {{ .Chart.Name }}
 {{ include "kyma-metrics-collector.labels" . | indent 4 }}
   name: {{ template "kyma-metrics-collector.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   ports:
   - name: {{ .Values.service.name }}

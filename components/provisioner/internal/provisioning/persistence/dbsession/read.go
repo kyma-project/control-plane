@@ -19,52 +19,6 @@ type readSession struct {
 	decrypt decryptFunc
 }
 
-// TODO: Remove after schema migration
-type ProviderData struct {
-	Id                     string
-	ClusterId              string
-	WorkerCidr             string
-	ProviderSpecificConfig string
-}
-
-// TODO: Remove after schema migration
-func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error) {
-	providerConfigs := make([]ProviderData, 0)
-
-	m, err := r.session.
-		Select("id", "cluster_id", "worker_cidr", "provider_specific_config").
-		From("gardener_config").
-		Where(dbr.Eq("provider", provider)).
-		Load(&providerConfigs)
-
-	if err != nil {
-		return nil, dberrors.Internal("Failed to get configs for provider: %s", provider)
-	}
-
-	if m == 0 {
-		return nil, dberrors.NotFound("Clusters with provider: %s, not found", provider)
-	}
-
-	return providerConfigs, nil
-}
-
-// TODO: Remove after schema migration
-func (r readSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
-	var configJson string
-
-	err := r.session.
-		Select("provider_specific_config").
-		From("gardener_config").
-		Where(dbr.Eq("id", id)).
-		LoadOne(&configJson)
-
-	if err != nil {
-		return configJson, dberrors.Internal("Failed to get config for id: %s", id)
-	}
-
-	return configJson, nil
-}
-
 func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	var tenant string
 
@@ -181,7 +135,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
-			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min",
+			"provider", "purpose", "seed", "target_secret", "worker_cidr", "pods_cidr", "services_cidr", "region", "auto_scaler_min",
 			"auto_scaler_max", "max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
 			"enable_machine_image_version_auto_update", "provider_specific_config",
 			"shoot_networking_filter_disabled", "control_plane_failure_tolerance").
@@ -359,7 +313,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name",
 			"kubernetes_version", "volume_size_gb", "disk_type", "machine_type", "machine_image",
-			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "region",
+			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "pods_cidr", "services_cidr", "region",
 			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
 			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
 			"exposure_class_name", "provider_specific_config",

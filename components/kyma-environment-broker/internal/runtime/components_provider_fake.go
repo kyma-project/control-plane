@@ -15,7 +15,7 @@ type fakeHTTPDoer struct{}
 
 func (f *fakeHTTPDoer) Do(req *http.Request) (*http.Response, error) {
 	urlPathSplit := strings.Split(req.URL.Path, "/")
-	if !isSupportedVersion(urlPathSplit[2]) {
+	if !isSupportedVersion(urlPathSplit[5]) {
 		return &http.Response{
 			Status:     "404 Not Found",
 			StatusCode: 404,

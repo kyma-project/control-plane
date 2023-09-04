@@ -147,9 +147,10 @@ func (cmd *UpgradeKymaCommand) promtUserWithOrchestration() error {
 
 func (cmd *UpgradeKymaCommand) prepareUpgradeCommandDetails() orchestration.StatusResponse {
 	orchestrationParameters := orchestration.Parameters{
-		Targets:  cmd.orchestrationParams.Targets,
-		Strategy: cmd.orchestrationParams.Strategy,
-		Kyma:     cmd.orchestrationParams.Kyma,
+		Targets:      cmd.orchestrationParams.Targets,
+		Strategy:     cmd.orchestrationParams.Strategy,
+		Kyma:         cmd.orchestrationParams.Kyma,
+		Notification: cmd.orchestrationParams.Notification,
 	}
 	orchestration := orchestration.StatusResponse{
 		Type:       "Kyma Upgrade Preview",

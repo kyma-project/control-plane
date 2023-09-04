@@ -69,7 +69,9 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	//  - restore when reconciler status is ready or unknown/failure (operation terminal)
 	switch state.Status {
 	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending, reconcilerApi.StatusReconcileErrorRetryable:
-		operation, err = SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+		if !s.evaluationManager.IsMaintenanceModeDisabled() {
+			operation, err = SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+		}
 	default:
 		operation, err = RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
 	}

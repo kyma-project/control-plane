@@ -197,7 +197,7 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		if !s.bundleBuilder.DisabledCheck() {
+		if operation.RuntimeOperation.Notification {
 			err := s.sendNotificationComplete(operation, log)
 			//currently notification error can only be temporary error
 			if err != nil && kebError.IsTemporaryError(err) {
@@ -207,13 +207,16 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
+	var err error
 	// Ensure AVS evaluations are set to maintenance
-	operation, err := SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
-	if err != nil {
-		if kebError.IsTemporaryError(err) {
-			return s.operationManager.RetryOperation(operation, "error while setting avs to maintenance", err, 10*time.Second, 10*time.Minute, log)
+	if !s.evaluationManager.IsMaintenanceModeDisabled() {
+		operation, err = SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+		if err != nil {
+			if kebError.IsTemporaryError(err) {
+				return s.operationManager.RetryOperation(operation, "error while setting avs to maintenance", err, 10*time.Second, 10*time.Minute, log)
+			}
+			return s.operationManager.OperationFailed(operation, "error while setting avs to maintenance", err, log)
 		}
-		return s.operationManager.OperationFailed(operation, "error while setting avs to maintenance", err, log)
 	}
 
 	if operation.ClusterConfigurationVersion != 0 {
@@ -240,7 +243,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
-		if !s.bundleBuilder.DisabledCheck() {
+		if operation.RuntimeOperation.Notification {
 			err := s.sendNotificationComplete(operation, log)
 			//currently notification error can only be temporary error
 			if err != nil && kebError.IsTemporaryError(err) {

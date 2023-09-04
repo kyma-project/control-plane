@@ -62,6 +62,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Strategy: orchestration.StrategySpec{
 					ScheduleTime: time.Time{},
 				},
+				Notification: true,
 			},
 		})
 		require.NoError(t, err)
@@ -74,7 +75,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", mock.Anything, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -108,6 +108,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					Schedule:     time.Now().Format(time.RFC3339),
 					ScheduleTime: time.Time{},
 				},
+				Notification: true,
 			},
 		})
 		require.NoError(t, err)
@@ -120,7 +121,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -158,6 +158,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Strategy: orchestration.StrategySpec{
 					ScheduleTime: time.Time{},
 				},
+				Notification: true,
 			}})
 		require.NoError(t, err)
 
@@ -169,7 +170,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -230,7 +230,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					Type:         orchestration.ParallelStrategy,
 					Schedule:     time.Now().Format(time.RFC3339),
 					ScheduleTime: time.Time{},
-				}},
+				},
+				Notification: true,
+			},
 		}
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
@@ -243,7 +245,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -275,7 +276,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Type:         orchestration.ParallelStrategy,
 				Schedule:     time.Now().Format(time.RFC3339),
 				ScheduleTime: time.Time{},
-			}},
+			},
+				Notification: true,
+			},
 		})
 
 		require.NoError(t, err)
@@ -300,7 +303,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false)
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CancelNotificationEvent").Return(nil).Once()
 
@@ -349,7 +351,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				},
 				RetryOperation: orchestration.RetryOperationParameters{
 					RetryOperations: []string{"op-id"},
-				}},
+				},
+				Notification: true,
+			},
 		})
 		require.NoError(t, err)
 
@@ -380,7 +384,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -424,7 +427,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Schedule:     time.Now().Format(time.RFC3339),
 				Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
 				ScheduleTime: time.Time{},
-			}},
+			},
+				Notification: true,
+			},
 		})
 		require.NoError(t, err)
 
@@ -456,7 +461,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
@@ -532,6 +536,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 						RetryOperations: []string{"op-id"},
 						Immediate:       true,
 					},
+					Notification: false,
 				},
 			})
 		require.NoError(t, err)
@@ -555,7 +560,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
-		notificationBuilder.On("DisabledCheck").Return(true).Once()
 
 		executor := retryTestExecutor{
 			store:       store,
@@ -645,6 +649,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 						RetryOperations: []string{"op-id"},
 						Immediate:       true,
 					},
+					Notification: false,
 				},
 			})
 		require.NoError(t, err)
@@ -668,7 +673,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
-		notificationBuilder.On("DisabledCheck").Return(true).Once()
 
 		executor := retryTestExecutor{
 			store:       store,
@@ -757,6 +761,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 						RetryOperations: []string{"op-id"},
 						Immediate:       false,
 					},
+					Notification: false,
 				},
 			})
 		require.NoError(t, err)
@@ -780,7 +785,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
-		notificationBuilder.On("DisabledCheck").Return(true).Once()
 
 		executor := retryTestExecutor{
 			store:       store,

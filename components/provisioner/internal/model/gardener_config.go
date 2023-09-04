@@ -1,7 +1,6 @@
 package model
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -26,6 +25,8 @@ const (
 	ShootNetworkingFilterExtensionType   = "shoot-networking-filter"
 	ShootNetworkingFilterDisabledDefault = true
 )
+
+var networkingType = "calico"
 
 type OIDCConfig struct {
 	ClientID       string   `json:"clientID"`
@@ -66,6 +67,8 @@ type GardenerConfig struct {
 	TargetSecret                        string
 	Region                              string
 	WorkerCidr                          string
+	PodsCIDR                            *string
+	ServicesCIDR                        *string
 	AutoScalerMin                       int
 	AutoScalerMax                       int
 	MaxSurge                            int
@@ -166,7 +169,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			},
 		}
 	}
-
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -178,7 +180,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Annotations: annotations,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: c.TargetSecret,
+			SecretBindingName: &c.TargetSecret,
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
@@ -186,17 +188,20 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
+				EnableStaticTokenKubeconfig: util.BoolPtr(true),
 			},
-			Networking: gardener_types.Networking{
-				Type:  "calico", // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+			Networking: &gardener_types.Networking{
+				Type:     &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes:    util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Pods:     c.PodsCIDR,
+				Services: c.ServicesCIDR,
 			},
 			Purpose:           purpose,
 			ExposureClassName: exposureClassName,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
-					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
+					MachineImageVersion: &c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
 			DNS: gardenerDnsConfig(dnsInputConfig),
@@ -286,30 +291,6 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
 	}
 
-	// needed for backward compatibility - originally, AWS clusters were created only with single AZ based on SingleZoneAWSProviderConfigInput schema
-	// TODO: Remove after data migration
-	var singleZoneAwsProviderConfig SingleZoneAWSProviderConfigInput
-	err = util.DecodeJson(jsonData, &singleZoneAwsProviderConfig)
-	if err == nil {
-		awsProviderConfig := gqlschema.AWSProviderConfigInput{
-			VpcCidr: singleZoneAwsProviderConfig.VpcCidr,
-			AwsZones: []*gqlschema.AWSZoneInput{
-				{
-					Name:         singleZoneAwsProviderConfig.Zone,
-					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
-					InternalCidr: singleZoneAwsProviderConfig.InternalCidr,
-					WorkerCidr:   singleZoneAwsProviderConfig.VpcCidr,
-				},
-			},
-		}
-
-		var jsonData bytes.Buffer
-		err = util.Encode(awsProviderConfig, &jsonData)
-		if err == nil {
-			return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData.String())}, nil
-		}
-	}
-
 	var awsProviderConfig gqlschema.AWSProviderConfigInput
 	err = util.DecodeJson(jsonData, &awsProviderConfig)
 	if err == nil {
@@ -354,7 +335,7 @@ func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 	return updateShootConfig(gardenerConfig, shoot)
 }
 
-func (c GCPGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+func (c GCPGardenerConfig) ValidateShootConfigChange(*gardener_types.Shoot) apperrors.AppError {
 	return nil
 }
 
@@ -403,7 +384,7 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 	}, nil
 }
 
-func (c AzureGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+func (c AzureGardenerConfig) NodeCIDR(GardenerConfig) string {
 	return c.input.VnetCidr
 }
 
@@ -473,9 +454,13 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		if err != nil {
 			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
 		}
+
 		if len(c.input.AzureZones) == 0 {
 			if *c.input.EnableNatGateway {
-				infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+				if infra.Networks.NatGateway == nil {
+					infra.Networks.NatGateway = &azure.NatGateway{}
+				}
+				infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
 				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 			} else {
 				infra.Networks.NatGateway = nil
@@ -484,7 +469,10 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 			for i := range infra.Networks.Zones {
 				zone := infra.Networks.Zones[i]
 				if *c.input.EnableNatGateway {
-					zone.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+					if zone.NatGateway == nil {
+						zone.NatGateway = &azure.NatGateway{}
+					}
+					zone.NatGateway.Enabled = *c.input.EnableNatGateway
 					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {
 					zone.NatGateway = nil
@@ -545,7 +533,7 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 	}, nil
 }
 
-func (c AWSGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+func (c AWSGardenerConfig) NodeCIDR(GardenerConfig) string {
 	return c.input.VpcCidr
 }
 
@@ -662,7 +650,7 @@ func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSp
 	}
 }
 
-func (c OpenStackGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+func (c OpenStackGardenerConfig) ValidateShootConfigChange(*gardener_types.Shoot) apperrors.AppError {
 	return nil
 }
 
@@ -730,7 +718,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = &upgradeConfig.EnableMachineImageVersionAutoUpdate
 
 	if len(shoot.Spec.Provider.Workers) == 0 {
 		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)
@@ -833,13 +821,4 @@ func getAzureZonesNames(zones []*gqlschema.AzureZoneInput) []string {
 		zoneNames = append(zoneNames, fmt.Sprint(zone.Name))
 	}
 	return zoneNames
-}
-
-// SingleZoneAWSProviderConfigInput describes old schema with only single AZ available for AWS clusters
-// TODO: remove after data migration
-type SingleZoneAWSProviderConfigInput struct {
-	Zone         string `json:"zone"`
-	VpcCidr      string `json:"vpcCidr"`
-	PublicCidr   string `json:"publicCidr"`
-	InternalCidr string `json:"internalCidr"`
 }

@@ -243,14 +243,15 @@ func (s *MockAvsServer) removeReferenceFromParentEval(w http.ResponseWriter, r *
 
 	_, exists := s.Evaluations.ParentIDrefs[parentID]
 	if !exists {
-		resp := avsNonSuccessResp{
-			Status:  http.StatusBadRequest,
-			Message: fmt.Sprintf("Evaluation %d does not contain subevaluation %d", parentID, evalID),
+		resp := avsApiErrorResp{
+			StatusCode: http.StatusBadRequest,
+			Status:     "BAD_REQUEST",
+			Message:    fmt.Sprintf("Evaluation %d does not contain subevaluation %d", parentID, evalID),
 		}
+		w.WriteHeader(http.StatusBadRequest)
 		bytes, _ := json.Marshal(resp)
 		_, err := w.Write(bytes)
 		assert.NoError(s.T, err)
-		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	s.Evaluations.removeParentRef(parentID, evalID)

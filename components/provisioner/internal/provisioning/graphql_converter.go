@@ -21,10 +21,6 @@ func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatu
 		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
 		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
-		HibernationStatus: &gqlschema.HibernationStatus{
-			HibernationPossible: &status.HibernationStatus.HibernationPossible,
-			Hibernated:          &status.HibernationStatus.Hibernated,
-		},
 	}
 }
 
@@ -92,6 +88,8 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		Seed:                                &config.Seed,
 		TargetSecret:                        &config.TargetSecret,
 		WorkerCidr:                          &config.WorkerCidr,
+		PodsCidr:                            config.PodsCIDR,
+		ServicesCidr:                        config.ServicesCIDR,
 		Region:                              &config.Region,
 		AutoScalerMin:                       &config.AutoScalerMin,
 		AutoScalerMax:                       &config.AutoScalerMax,
@@ -165,7 +163,7 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 	case model.Provision:
 		return gqlschema.OperationTypeProvision
 	case model.ProvisionNoInstall:
-		return gqlschema.OperationTypeProvisionNoInstall
+		return gqlschema.OperationTypeProvision
 	case model.Deprovision:
 		return gqlschema.OperationTypeDeprovision
 	case model.DeprovisionNoInstall:

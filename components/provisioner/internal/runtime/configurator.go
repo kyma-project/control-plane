@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	AgentConfigurationSecretName         = "compass-agent-configuration"
-	runtimeAgentComponentNameSpace       = "kyma-system"
-	legacyRuntimeAgentComponentNameSpace = "compass-system"
+	AgentConfigurationSecretName   = "compass-agent-configuration"
+	runtimeAgentComponentNameSpace = "kyma-system"
 )
 
 //go:generate mockery --name=Configurator
@@ -52,18 +51,9 @@ func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw str
 		return err.Append("error getting one time token from Director")
 	}
 
-	// In order to meet Kyma modularisation requirements compass-system namespace will be removed at some point.
-	// Please see the following issue for details: https://github.com/kyma-project/kyma/issues/15915
-	// Provisioner must be able to configure Compass Runtime Agent no matter if it will be installed in compass-system or kyma-system namespace.
-	// This solution creates redundant secret, however,it will work in both cases, and doesn't require Provisioner's API change.
 	err = c.configureAgent(cluster, token, runtimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent")
-	}
-
-	err = c.configureAgent(cluster, token, legacyRuntimeAgentComponentNameSpace, kubeconfigRaw)
-	if err != nil {
-		return err.Append("error configuring Runtime Agent in legacy namespace")
 	}
 
 	return nil

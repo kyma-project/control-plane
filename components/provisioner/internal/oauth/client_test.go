@@ -59,7 +59,7 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 
 		createFakeCredentialsSecret(t, secrets, credentials)
 
-		oauthClient := NewOauthClient(client, secrets, secretName)
+		oauthClient := NewOauthClient(client, credentials.clientID, credentials.clientSecret, credentials.tokensEndpoint)
 
 		//when
 		responseToken, err := oauthClient.GetAuthorizationToken()

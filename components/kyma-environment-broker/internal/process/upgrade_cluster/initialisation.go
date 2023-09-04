@@ -155,7 +155,12 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 
 	switch step {
 	case UpgradeInitSteps:
-		if hasMonitors && !inMaintenance {
+		if s.evaluationManager.IsMaintenanceModeDisabled() {
+			break
+		}
+		if hasMonitors &&
+			!inMaintenance &&
+			s.evaluationManager.IsMaintenanceModeApplicableForGAID(operation.ProvisioningParameters.ErsContext.GlobalAccountID) {
 			log.Infof("executing init upgrade steps")
 			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
 			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
@@ -185,7 +190,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		//send cunstomer notification
-		if !s.bundleBuilder.DisabledCheck() {
+		if operation.RuntimeOperation.Notification {
 			err := s.sendNotificationComplete(operation, log)
 			//currently notification error can only be temporary error
 			if err != nil && kebError.IsTemporaryError(err) {
@@ -218,7 +223,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
 		//send cunstomer notification
-		if !s.bundleBuilder.DisabledCheck() {
+		if operation.RuntimeOperation.Notification {
 			err := s.sendNotificationComplete(operation, log)
 			//currently notification error can only be temporary error
 			if err != nil && kebError.IsTemporaryError(err) {

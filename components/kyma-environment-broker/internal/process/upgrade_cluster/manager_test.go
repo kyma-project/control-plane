@@ -25,6 +25,7 @@ const (
 	operationIDSuccess = "5b954fa8-fc34-4164-96e9-49e3b6741278"
 	operationIDFailed  = "69b8ee2b-5c21-4997-9070-4fd356b24c46"
 	operationIDRepeat  = "ca317a1e-ddab-44d2-b2ba-7bbd9df9066f"
+	operationIDPanic   = "8ffadf20-5fe6-410b-93ce-9d00088e1e17"
 )
 
 func TestManager_Execute(t *testing.T) {
@@ -46,6 +47,11 @@ func TestManager_Execute(t *testing.T) {
 			operationID:            operationIDFailed,
 			expectedError:          true,
 			expectedNumberOfEvents: 1,
+		},
+		"operation panicked": {
+			operationID:            operationIDPanic,
+			expectedError:          true,
+			expectedNumberOfEvents: 0,
 		},
 		"operation repeated": {
 			operationID:            operationIDRepeat,
@@ -138,6 +144,8 @@ func (ts *testStep) Run(operation internal.UpgradeClusterOperation, logger logru
 		return *updated, 0, fmt.Errorf("operation %s failed", operation.Operation.ID)
 	case operationIDRepeat:
 		return *updated, time.Duration(10), nil
+	case operationIDPanic:
+		panic("panic during operation")
 	default:
 		return *updated, 0, nil
 	}
