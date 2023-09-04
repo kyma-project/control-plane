@@ -46,13 +46,14 @@ var _ = Describe("Cluster Inventory controller", func() {
 		})
 	})
 
+	type AnnotationsPredicate func(secret corev1.Secret) bool
+
 	Context("Secret with kubeconfig exists", func() {
 		kymaName := "kymaname2"
 		namespace := "default"
 
-		It("Rotate static kubeconfig", func() {
+		DescribeTable("Rotate kubeconfig", func(shootName string, secret corev1.Secret, predicate AnnotationsPredicate) {
 			By("Create kubeconfig secret")
-			secret := fixSecretWithForceRotation(kymaName, kymaName, "shootName2", namespace)
 			Expect(k8sClient.Create(context.Background(), &secret)).To(Succeed())
 
 			By("Create Cluster CR")
@@ -69,9 +70,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 					return false
 				}
 
-				_, found := kubeconfigSecret.Annotations[forceRotationAnnotation]
-
-				return !found
+				return predicate(kubeconfigSecret)
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
@@ -80,11 +79,10 @@ var _ = Describe("Cluster Inventory controller", func() {
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
-		})
-
-		Describe("Rotate dynamic kubeconfig", func() {
-
-		})
+		},
+			Entry("Rotate static kubeconfig", "shootName2", forceRotationAnnotation),
+			Entry("Rotate dynamic kubeconfig", "shootName3", forceRotationAnnotation),
+		)
 
 		Describe("Skip rotation", func() {
 
@@ -95,6 +93,46 @@ var _ = Describe("Cluster Inventory controller", func() {
 		})
 	})
 })
+
+type SecretBuilder struct {
+	name        string
+	namespace   string
+	labels      map[string]string
+	annotations map[string]string
+	data        string
+}
+
+func NewSecretBuilder(name, namespace, data string) *SecretBuilder {
+	return &SecretBuilder{
+		name:      name,
+		namespace: namespace,
+		data:      data,
+	}
+}
+
+func (sb *SecretBuilder) WithLabels(labels map[string]string) *SecretBuilder {
+	sb.labels = labels
+
+	return sb
+}
+
+func (sb *SecretBuilder) WithAnnotations(annotations map[string]string) *SecretBuilder {
+	sb.annotations = annotations
+
+	return sb
+}
+
+func (sb SecretBuilder) Build() corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: v12.ObjectMeta{
+			Name:        sb.name,
+			Namespace:   sb.namespace,
+			Labels:      sb.labels,
+			Annotations: sb.annotations,
+		},
+	}
+
+}
 
 func fixClusterInventoryCR(name, kymaName, shootName, namespace string) v1beta1.Cluster {
 
@@ -117,6 +155,23 @@ func fixClusterInventoryCR(name, kymaName, shootName, namespace string) v1beta1.
 			Labels:    labels,
 		},
 	}
+}
+
+func fixSecretLabels(name, kymaName, shootName, namespace string) map[string]string {
+	labels := map[string]string{}
+
+	labels["kyma-project.io/instance-id"] = "instanceID"
+	labels["kyma-project.io/runtime-id"] = "runtimeID"
+	labels["kyma-project.io/broker-plan-id"] = "planID"
+	labels["kyma-project.io/broker-plan-name"] = "planName"
+	labels["kyma-project.io/global-account-id"] = "globalAccountID"
+	labels["kyma-project.io/subaccount-id"] = "subAccountID"
+	labels["kyma-project.io/shoot-name"] = shootName
+	labels["kyma-project.io/region"] = "region"
+	labels["operator.kyma-project.io/kyma-name"] = kymaName
+	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+
+	return labels
 }
 
 func fixSecret(name, kymaName, shootName, namespace string) corev1.Secret {
@@ -143,7 +198,7 @@ func fixSecret(name, kymaName, shootName, namespace string) corev1.Secret {
 	}
 }
 
-func fixSecretWithForceRotation(name, kymaName, shootName, namespace string) corev1.Secret {
+func fixSecretWithForceRotation(name, kymaName, shootName, namespace string, dynamic bool) corev1.Secret {
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"
@@ -158,7 +213,12 @@ func fixSecretWithForceRotation(name, kymaName, shootName, namespace string) cor
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 
 	annotations := map[string]string{}
-	annotations[forceRotationAnnotation] = "true"
+
+	if dynamic {
+		annotations[lastKubeconfigSyncAnnotation] = "2013-05-01 23:00:00 +0000 UTC"
+	} else {
+		annotations[forceRotationAnnotation] = "true"
+	}
 
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
