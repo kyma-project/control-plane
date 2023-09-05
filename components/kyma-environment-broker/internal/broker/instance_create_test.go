@@ -1263,6 +1263,10 @@ func TestNetworkingValidation(t *testing.T) {
 			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.250.2.0/24"}`,
 			expectedError:   true,
 		},
+		"Suffix too big": {
+			givenNetworking: `{"nodes": "10.250.0.0/27", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			expectedError:   true,
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// given

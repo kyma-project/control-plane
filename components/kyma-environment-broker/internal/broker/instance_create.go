@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -455,14 +456,24 @@ func validateCidr(cidr string) (*net.IPNet, error) {
 }
 
 func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningParametersDTO) error {
+	var err, e error
+	if len(parameters.Zones) > 4 {
+		// the algorithm of creating AWS zone CIDRs does not work for more than 4 zones
+		err = multierror.Append(err, fmt.Errorf("number of zones must not be greater than 4"))
+	}
 	if parameters.Networking == nil {
 		return nil
 	}
-	var err, e error
 	var nodes, services, pods *net.IPNet
 	if nodes, e = validateCidr(parameters.Networking.NodesCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing nodes CIDR: %w", e))
 	}
+	// error is handled before, in the validate CIDR
+	cidr, _ := netip.ParsePrefix(parameters.Networking.NodesCidr)
+	if cidr.Bits() > 26 {
+		err = multierror.Append(err, fmt.Errorf("the suffix of the node CIDR must not be greater than 26"))
+	}
+
 	if pods, e = validateCidr(parameters.Networking.PodsCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing pods CIDR: %w", e))
 	}
