@@ -116,7 +116,7 @@ func (r *ClusterReconciler) deleteSecret(clusterCRName string) error {
 	})
 
 	var secretList corev1.SecretList
-	err := r.Client.List(context.Background(), &secretList, selector)
+	err := r.Client.List(context.TODO(), &secretList, selector)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (r *ClusterReconciler) getSecret(shootName string) (*corev1.Secret, error) 
 		"kyma-project.io/shoot-name": shootName,
 	})
 
-	err := r.Client.List(context.Background(), &secretList, selector)
+	err := r.Client.List(context.TODO(), &secretList, selector)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster
 		return err
 	}
 
-	return r.Client.Create(context.Background(), &secret)
+	return r.Client.Create(context.TODO(), &secret)
 }
 
 func (r *ClusterReconciler) newSecret(cluster clusterinventoryv1beta1.Cluster) (corev1.Secret, error) {
@@ -230,7 +230,7 @@ func (r *ClusterReconciler) updateKubeconfigSecret(name, clusterCRName, kubeconf
 	var secret corev1.Secret
 	key := types.NamespacedName{Name: name, Namespace: r.SecretNamespace}
 
-	err := r.Client.Get(context.Background(), key, &secret)
+	err := r.Client.Get(context.TODO(), key, &secret)
 	if err != nil {
 		r.log.Error(err, "failed to get secret")
 		return err
@@ -244,7 +244,7 @@ func (r *ClusterReconciler) updateKubeconfigSecret(name, clusterCRName, kubeconf
 	secret.StringData = map[string]string{"config": kubeconfig}
 
 	r.log.Info(fmt.Sprintf("%v", secret.Name))
-	err = r.Client.Update(context.Background(), &secret)
+	err = r.Client.Update(context.TODO(), &secret)
 	if err != nil {
 		r.log.Error(err, "failed to update secret")
 	}
