@@ -14,7 +14,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.comkyma-projectkyma-environment-broker/common/runtime"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"k8s.io/client-go/util/retry"
 )

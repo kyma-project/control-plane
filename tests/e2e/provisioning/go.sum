@@ -637,8 +637,8 @@ github.com/kyma-incubator/compass/tests/director v0.0.0-20210323111309-0e91422c2
 github.com/kyma-incubator/compass/tests/director v0.0.0-20210323111309-0e91422c2c76/go.mod h1:fMfUndXMU6Agb/IrII/b9IO505YOsEPHUZRCWrKD3TY=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
 github.com/kyma-incubator/reconciler v0.0.0-20230203092534-fd85106be3cd h1:BycDCodhNQG1248zSobgE6I/T6nGN8qlHVgcBSVb91k=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab h1:jWgVThDbF4dGGR6Ui15ZoTvmpZw9aiLLCapp4xGu4N4=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:G7Ga5SaDkT9p+8fxgvCWcQprtkLHmxehqZ0gD8SBNus=
+github.comkyma-projectkyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab h1:jWgVThDbF4dGGR6Ui15ZoTvmpZw9aiLLCapp4xGu4N4=
+github.comkyma-projectkyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:G7Ga5SaDkT9p+8fxgvCWcQprtkLHmxehqZ0gD8SBNus=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab h1:JYsOfthXC8hCOuPbz8ZFV6gN2keyufvbcfPDyDEANUo=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:Qi9Ot6rXuI2HWoXg0iAUNSP+NiLbC/7s+AYmw6JqTA0=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=

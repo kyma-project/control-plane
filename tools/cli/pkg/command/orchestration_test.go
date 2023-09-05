@@ -6,7 +6,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
 	"github.com/stretchr/testify/require"
 )

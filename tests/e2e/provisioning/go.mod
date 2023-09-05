@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/tests/director v0.0.0-20210323111309-0e91422c2c76
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab
+	github.comkyma-projectkyma-environment-broker v0.0.0-20230418152422-ee68639cb3ab
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/ory/hydra-maester v0.0.27

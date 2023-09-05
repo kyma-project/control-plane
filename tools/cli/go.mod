@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.27.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230614160542-a4a34cb37016
+	github.com/kyma-project/kyma-environment-broker v0.0.0-20230614160542-a4a34cb37016
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1

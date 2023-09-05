@@ -44,7 +44,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 	"k8s.io/client-go/util/workqueue"
 
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.comkyma-projectkyma-environment-broker/common/runtime"
 )
 
 const (

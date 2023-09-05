@@ -28,7 +28,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.comkyma-projectkyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	"github.com/patrickmn/go-cache"
 )

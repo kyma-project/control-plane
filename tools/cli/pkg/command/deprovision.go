@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/deprovision"
+	"github.com/kyma-project/kyma-environment-broker/common/deprovision"
 )
 
 type DeprovisionCommand struct {
