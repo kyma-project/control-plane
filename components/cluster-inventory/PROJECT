@@ -10,7 +10,7 @@ repo: github.com/kyma-project/control-plane/components/cluster-inventory
 resources:
 - api:
     crdVersion: v1
-    namespaced: true
+    namespaced: false
   controller: true
   domain: kyma-project.io
   group: clusterinventory

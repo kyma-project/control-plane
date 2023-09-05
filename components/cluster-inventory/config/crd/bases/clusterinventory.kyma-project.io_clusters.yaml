@@ -12,7 +12,7 @@ spec:
     listKind: ClusterList
     plural: clusters
     singular: cluster
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1beta1
     schema:
