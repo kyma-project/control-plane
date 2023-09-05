@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -85,7 +86,7 @@ var _ = BeforeSuite(func() {
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
-	controller := NewClusterInventoryController(mgr, kubeconfigProviderMock, "default", log)
+	controller := NewClusterInventoryController(mgr, kubeconfigProviderMock, "default", time.Hour*24*60, log)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)

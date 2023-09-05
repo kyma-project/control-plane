@@ -20,22 +20,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Cluster. Edit cluster_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Core            Core            `json:"core,omitempty"`
+	AdminKubeconfig AdminKubeconfig `json:"adminKubeconfig,omitempty"`
+	Status          ClusterStatus   `json:"status,omitempty"`
 }
+
+type Core struct {
+	ShootName string `json:"shootName,omitempty"`
+}
+
+type AdminKubeconfig struct {
+	SecretName string `json:"secretName,omitempty"`
+}
+
+type State string
+
+const StateKubeconfigError State = "Kubeconfig creation error"
 
 // ClusterStatus defines the observed state of Cluster
 type ClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	State      State              `json:"state,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

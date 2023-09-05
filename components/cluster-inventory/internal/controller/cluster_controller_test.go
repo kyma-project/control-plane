@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"time"
@@ -15,17 +16,19 @@ import (
 var _ = Describe("Cluster Inventory controller", func() {
 	Context("Secret with kubeconfig doesn't exist", func() {
 		kymaName := "kymaname1"
+		secretName := "secret-name1"
+		shootName := "shootName1"
 		namespace := "default"
 
-		It("Create secret", func() {
+		It("Create, and remove secret", func() {
 			By("Create Cluster CR")
 			// TODO: Cluster Inventory CR should have Cluster scope
-			clusterCR := fixClusterInventoryCR(kymaName, namespace, kymaName, "shootName1")
+			clusterCR := fixClusterInventoryCR(kymaName, namespace, kymaName, shootName, secretName)
 			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
 
 			By("Wait for secret creation")
 			var kubeconfigSecret corev1.Secret
-			key := types.NamespacedName{Name: kymaName, Namespace: namespace}
+			key := types.NamespacedName{Name: secretName, Namespace: namespace}
 
 			Eventually(func() bool {
 				return k8sClient.Get(context.Background(), key, &kubeconfigSecret) == nil
@@ -33,10 +36,21 @@ var _ = Describe("Cluster Inventory controller", func() {
 
 			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
 			Expect(err).To(BeNil())
-			expectedSecret := fixNewSecret(kymaName, namespace, kymaName, "shootName1", "kubeconfig1")
+			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1")
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
+
+			By("Delete Cluster CR")
+			Expect(k8sClient.Delete(context.Background(), &clusterCR)).To(Succeed())
+
+			By("Wait for secret deletion")
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
+
+				return err != nil && k8serrors.IsNotFound(err)
+
+			}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
 
@@ -71,22 +85,18 @@ var _ = Describe("Cluster Inventory controller", func() {
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
 		},
 			Entry("Rotate static kubeconfig",
-				fixClusterInventoryCR("cluster2", "default", "kymaName2", "shootName2"),
+				fixClusterInventoryCR("cluster2", "default", "kymaName2", "shootName2", "static-kubeconfig-secret"),
 				fixSecretWithForceRotation("static-kubeconfig-secret", namespace, "kymaName2", "shootName2", "kubeconfig2"),
 				"",
 				"kubeconfig2"),
-			//Entry("Rotate dynamic kubeconfig",
-			//	fixClusterInventoryCR("cluster3", "default", "kymaName3", "shootName3"),
-			//	fixNewSecret("dynamic-kubeconfig-secret", namespace, "kymaName3", "shootName3", "kubeconfig3"),
-			//	"oooo",
-			//	"dynamic kubeconfig 2"),
+			Entry("Rotate dynamic kubeconfig",
+				fixClusterInventoryCR("cluster3", "default", "kymaName3", "shootName3", "dynamic-kubeconfig-secret"),
+				fixSecretWithDynamicKubeconfig("dynamic-kubeconfig-secret", namespace, "kymaName3", "shootName3", "kubeconfig3", "2006-01-02T15:04:05Z07:00"),
+				"2022-11-10 23:00:00 +0000",
+				"kubeconfig3"),
 		)
 
 		Describe("Skip rotation", func() {
-
-		})
-
-		Describe("Remove secret", func() {
 
 		})
 	})
@@ -133,12 +143,20 @@ type TestClusterInventoryCR struct {
 	cluster v1beta1.Cluster
 }
 
-func newTestClusterInventoryCR(name, namespace string) *TestClusterInventoryCR {
+func newTestClusterInventoryCR(name, namespace, shootName, secretName string) *TestClusterInventoryCR {
 	return &TestClusterInventoryCR{
 		cluster: v1beta1.Cluster{
 			ObjectMeta: v12.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
+			},
+			Spec: v1beta1.ClusterSpec{
+				Core: v1beta1.Core{
+					ShootName: shootName,
+				},
+				AdminKubeconfig: v1beta1.AdminKubeconfig{
+					SecretName: secretName,
+				},
 			},
 		},
 	}
@@ -154,8 +172,8 @@ func (sb *TestClusterInventoryCR) ToCluster() v1beta1.Cluster {
 	return sb.cluster
 }
 
-func fixClusterInventoryCR(name, namespace, kymaName, shootName string) v1beta1.Cluster {
-	return newTestClusterInventoryCR(name, namespace).
+func fixClusterInventoryCR(name, namespace, kymaName, shootName, secretName string) v1beta1.Cluster {
+	return newTestClusterInventoryCR(name, namespace, shootName, secretName).
 		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).ToCluster()
 }
 
@@ -177,19 +195,9 @@ func fixClusterInventoryLabels(kymaName, shootName string) map[string]string {
 }
 
 func fixSecretLabels(kymaName, shootName string) map[string]string {
-	labels := map[string]string{}
-
-	labels["kyma-project.io/instance-id"] = "instanceID"
-	labels["kyma-project.io/runtime-id"] = "runtimeID"
-	labels["kyma-project.io/broker-plan-id"] = "planID"
-	labels["kyma-project.io/broker-plan-name"] = "planName"
-	labels["kyma-project.io/global-account-id"] = "globalAccountID"
-	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = shootName
-	labels["kyma-project.io/region"] = "region"
-	labels["operator.kyma-project.io/kyma-name"] = kymaName
+	labels := fixClusterInventoryLabels(kymaName, shootName)
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
-
+	labels["operator.kyma-project.io/cluster-name"] = kymaName
 	return labels
 }
 
@@ -215,12 +223,12 @@ func fixSecretWithForceRotation(name, namespace, kymaName, shootName, data strin
 	return newTestSecret(name, namespace).WithAnnotations(annotations).WithLabels(labels).WithData(data).ToSecret()
 }
 
-func fixSecretWithDynamicKubeconfig(name, namespace, kymaName, shootName string) corev1.Secret {
+func fixSecretWithDynamicKubeconfig(name, namespace, kymaName, shootName, data, timestamp string) corev1.Secret {
 	labels := fixSecretLabels(kymaName, shootName)
-	annotations := fixDynamicKubeconfigAnnotations("2022-11-10 23:00:00 +0000")
+	annotations := fixDynamicKubeconfigAnnotations(timestamp)
 
 	builder := newTestSecret(name, namespace)
-	return builder.WithAnnotations(annotations).WithLabels(labels).WithData("dynamic kubeconfig").ToSecret()
+	return builder.WithAnnotations(annotations).WithLabels(labels).WithData(data).ToSecret()
 }
 
 func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {

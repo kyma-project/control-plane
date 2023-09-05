@@ -6,6 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,6 +21,8 @@ import (
 const (
 	forceRotationAnnotation      = "operator.kyma-project.io/force-kubeconfig-rotation"
 	lastKubeconfigSyncAnnotation = "operator.kyma-project.io/last-sync"
+	clusterCRNameLabel           = "operator.kyma-project.io/cluster-name"
+	validRatio                   = 0.2
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -28,13 +31,8 @@ type ClusterReconciler struct {
 	Scheme             *runtime.Scheme
 	KubeconfigProvider KubeconfigProvider
 	SecretNamespace    string
+	KubeconfigValidFor time.Duration
 	log                logr.Logger
-}
-
-type Client interface {
-	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
-	Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
-	List(ctx context.Context, obj client.ObjectList, opts ...client.ListOption) error
 }
 
 //go:generate mockery --name=KubeconfigProvider
@@ -42,12 +40,13 @@ type KubeconfigProvider interface {
 	Fetch(shootName string) (string, error)
 }
 
-func NewClusterInventoryController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, secretNamespace string, log logr.Logger) *ClusterReconciler {
+func NewClusterInventoryController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, secretNamespace string, kubeconfigValidFor time.Duration, log logr.Logger) *ClusterReconciler {
 	return &ClusterReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
 		SecretNamespace:    secretNamespace,
+		KubeconfigValidFor: kubeconfigValidFor,
 		log:                log,
 	}
 }
@@ -73,10 +72,16 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	err := r.Client.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
-		r.log.Error(err, "failed to get Cluster CR")
+		if k8serrors.IsNotFound(err) {
+			err = r.deleteSecret(req.NamespacedName.Name)
+			if err != nil {
+				r.log.Error(err, "failed to delete secret")
+			}
+		}
+
 		return ctrl.Result{
 			Requeue: true,
-		}, nil
+		}, err
 	}
 
 	err = r.rotateOrCreateSecret(cluster)
@@ -84,15 +89,14 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.log.Error(err, "failed to rotate or create secret")
 		return ctrl.Result{
 			Requeue: true,
-		}, nil
+		}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
 func (r *ClusterReconciler) rotateOrCreateSecret(cluster clusterinventoryv1beta1.Cluster) error {
-	r.log.Info("Looking for secret")
-	secret, err := r.getSecret(cluster.Labels["kyma-project.io/shoot-name"])
+	secret, err := r.getSecret(cluster.Spec.Core.ShootName)
 	if err != nil {
 		return err
 	}
@@ -103,7 +107,25 @@ func (r *ClusterReconciler) rotateOrCreateSecret(cluster clusterinventoryv1beta1
 	}
 
 	r.log.Info("Secret found, and will be rotated if needed")
-	return r.rotateSecret(secret.Name, secret.Annotations)
+	return r.rotateSecret(secret.Name, cluster.Spec.Core.ShootName, cluster.Name, secret.Labels, secret.Annotations)
+}
+
+func (r *ClusterReconciler) deleteSecret(clusterCRName string) error {
+	selector := client.MatchingLabels(map[string]string{
+		clusterCRNameLabel: clusterCRName,
+	})
+
+	var secretList corev1.SecretList
+	err := r.Client.List(context.Background(), &secretList, selector)
+	if err != nil {
+		return err
+	}
+
+	if len(secretList.Items) != 1 {
+		return errors.New(fmt.Sprintf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName))
+	}
+
+	return r.Client.Delete(context.TODO(), &secretList.Items[0])
 }
 
 func (r *ClusterReconciler) getSecret(shootName string) (*corev1.Secret, error) {
@@ -132,15 +154,7 @@ func (r *ClusterReconciler) getSecret(shootName string) (*corev1.Secret, error) 
 }
 
 const (
-	instanceIDLabel      = "kyma-project.io/instance-id"
-	runtimeIDLabel       = "kyma-project.io/runtime-id"
-	planIDLabel          = "kyma-project.io/broker-plan-id"
-	planNameLabel        = "kyma-project.io/broker-plan-name"
-	globalAccountIDLabel = "kyma-project.io/global-account-id"
-	subaccountIDLabel    = "kyma-project.io/subaccount-id"
-	shootNameLabel       = "kyma-project.io/shoot-name"
-	regionLabel          = "kyma-project.io/region"
-	kymaNameLabel        = "operator.kyma-project.io/kyma-name"
+	shootNameLabel = "kyma-project.io/shoot-name"
 )
 
 func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster) error {
@@ -159,6 +173,7 @@ func (r *ClusterReconciler) newSecret(cluster clusterinventoryv1beta1.Cluster) (
 		labels[key] = val
 	}
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	labels[clusterCRNameLabel] = cluster.Name
 
 	kubeconfig, err := r.KubeconfigProvider.Fetch(labels[shootNameLabel])
 	if err != nil {
@@ -167,7 +182,7 @@ func (r *ClusterReconciler) newSecret(cluster clusterinventoryv1beta1.Cluster) (
 
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
-			Name:        cluster.Name,
+			Name:        cluster.Spec.AdminKubeconfig.SecretName,
 			Namespace:   r.SecretNamespace,
 			Labels:      labels,
 			Annotations: map[string]string{lastKubeconfigSyncAnnotation: time.Now().UTC().String()},
@@ -176,43 +191,65 @@ func (r *ClusterReconciler) newSecret(cluster clusterinventoryv1beta1.Cluster) (
 	}, nil
 }
 
-func (r *ClusterReconciler) rotateSecret(secretName string, annotations map[string]string) error {
-	_, forceKubeconfigRotation := annotations[forceRotationAnnotation]
-
-	if forceKubeconfigRotation {
-		r.log.Info("Secret has operator.kyma-project.io/force-kubeconfig-rotation annotation and will be rotated")
-		var secret corev1.Secret
-		key := types.NamespacedName{Name: secretName, Namespace: r.SecretNamespace}
-
-		err := r.Client.Get(context.Background(), key, &secret)
-		if err != nil {
-			r.log.Error(err, "failed to get secret")
-			return err
-		}
-
-		r.log.Info("Fetching dynamic kubeconfig")
-		kubeconfig, err := r.KubeconfigProvider.Fetch(secret.Labels[shootNameLabel])
-		if err != nil {
-			r.log.Error(err, "failed to fetch dynamic kubeconfig")
-			return err
-		}
-
-		r.log.Info("Updating secret with new data")
-		delete(secret.Annotations, forceRotationAnnotation)
-		secret.Annotations[lastKubeconfigSyncAnnotation] = time.Now().UTC().String()
-
-		secret.StringData = map[string]string{"config": kubeconfig}
-
-		r.log.Info(fmt.Sprintf("%v", secret.Name))
-		err = r.Client.Update(context.Background(), &secret)
-		if err != nil {
-			r.log.Error(err, "failed to update secret")
-		}
-
+func (r *ClusterReconciler) rotateSecret(secretName, shootName, clusterCRName string, labels, annotations map[string]string) error {
+	secretMustBeRotated, err := r.secretMustBeRotated(labels, annotations)
+	if err != nil {
 		return err
 	}
 
+	if secretMustBeRotated {
+		kubeconfig, err := r.KubeconfigProvider.Fetch(shootName)
+		if err != nil {
+			return err
+		}
+		return r.updateKubeconfigSecret(secretName, clusterCRName, kubeconfig)
+	}
+
 	return nil
+}
+
+func (r *ClusterReconciler) secretMustBeRotated(labels, annotations map[string]string) (bool, error) {
+	_, forceKubeconfigRotation := annotations[forceRotationAnnotation]
+	if forceKubeconfigRotation {
+		r.log.Info("Secret has operator.kyma-project.io/force-kubeconfig-rotation annotation and will be rotated")
+		return true, nil
+	}
+
+	lastSyncTimeString := labels[lastKubeconfigSyncAnnotation]
+	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
+	if err != nil {
+		return false, err
+	}
+	now := time.Now()
+	willBeValidFor := now.Sub(lastSyncTime)
+
+	return willBeValidFor.Hours() < r.KubeconfigValidFor.Hours()*validRatio, nil
+}
+
+func (r *ClusterReconciler) updateKubeconfigSecret(name, clusterCRName, kubeconfig string) error {
+	var secret corev1.Secret
+	key := types.NamespacedName{Name: name, Namespace: r.SecretNamespace}
+
+	err := r.Client.Get(context.Background(), key, &secret)
+	if err != nil {
+		r.log.Error(err, "failed to get secret")
+		return err
+	}
+
+	r.log.Info("Updating secret with new data")
+	delete(secret.Annotations, forceRotationAnnotation)
+	secret.Annotations[lastKubeconfigSyncAnnotation] = time.Now().UTC().Format(time.RFC3339)
+	secret.Labels[clusterCRNameLabel] = clusterCRName
+
+	secret.StringData = map[string]string{"config": kubeconfig}
+
+	r.log.Info(fmt.Sprintf("%v", secret.Name))
+	err = r.Client.Update(context.Background(), &secret)
+	if err != nil {
+		r.log.Error(err, "failed to update secret")
+	}
+
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
