@@ -2,11 +2,18 @@ apiVersion: clusterinventory.kyma-project.io/v1beta1
 kind: Cluster
 metadata:
   labels:
-    app.kubernetes.io/name: cluster
-    app.kubernetes.io/instance: cluster-sample
-    app.kubernetes.io/part-of: cluster-inventory
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: cluster-inventory
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id:  plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    "kyma-project.io/region": region
+    operator.kyma-project.io/kyma-name: kymaName
   name: cluster-sample
 spec:
-  # TODO(user): Add fields here
+  core:
+    shootName: "shoot-name"
+  adminKubeconfig:
+    secretName: "secret-name"
