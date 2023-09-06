@@ -1,8 +1,9 @@
 package provider
 
 import (
-	"fmt"
+	"math/big"
 	"math/rand"
+	"net/netip"
 	"strconv"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -57,15 +58,15 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/16",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr:         "10.250.0.0/16",
-					AzureZones:       generateMultipleAzureZones(generateRandomAzureZones(zonesCount)),
+					VnetCidr:         DefaultNodesCIDR,
+					AzureZones:       generateAzureZones(DefaultNodesCIDR, generateRandomAzureZones(zonesCount)),
 					EnableNatGateway: ptr.Bool(true),
 				},
 			},
@@ -79,10 +80,20 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
 		return
 	}
+	workerCidr := DefaultNodesCIDR
+	if pp.Parameters.Networking != nil {
+		workerCidr = pp.Parameters.Networking.NodesCidr
+	}
+	input.GardenerConfig.WorkerCidr = workerCidr
+	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.VnetCidr = workerCidr
+	zonesCount := 1
+	if p.MultiZone {
+		zonesCount = DefaultAzureMultiZoneCount
+	}
 
 	// explicit zones list is provided
 	if len(pp.Parameters.Zones) > 0 {
-		zones := []int{}
+		var zones []int
 		for _, inputZone := range pp.Parameters.Zones {
 			zone, err := strconv.Atoi(inputZone)
 			if err != nil || zone < 1 || zone > 3 {
@@ -90,7 +101,9 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 			}
 			zones = append(zones, zone)
 		}
-		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateMultipleAzureZones(zones)
+		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateAzureZones(workerCidr, zones)
+	} else {
+		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateAzureZones(workerCidr, generateRandomAzureZones(zonesCount))
 	}
 }
 
@@ -110,18 +123,18 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/19",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  2,
 			AutoScalerMax:  10,
 			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
+					VnetCidr: DefaultNodesCIDR,
 					AzureZones: []*gqlschema.AzureZoneInput{
 						{
 							Name: generateRandomAzureZone(),
-							Cidr: "10.250.0.0/19",
+							Cidr: DefaultNodesCIDR,
 						},
 					},
 					EnableNatGateway: ptr.Bool(true),
@@ -135,6 +148,18 @@ func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp
 	if internal.IsEuAccess(pp.PlatformRegion) {
 		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
 	}
+
+	updateAzureSingleNodeWorkerCidr(input, pp)
+}
+
+func updateAzureSingleNodeWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	workerCIDR := DefaultNodesCIDR
+	if pp.Parameters.Networking != nil {
+		workerCIDR = pp.Parameters.Networking.NodesCidr
+	}
+	input.GardenerConfig.WorkerCidr = workerCIDR
+	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.VnetCidr = workerCIDR
+	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones[0].Cidr = workerCIDR
 }
 
 func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
@@ -157,7 +182,7 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/19",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
@@ -165,11 +190,11 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
+					VnetCidr: DefaultNodesCIDR,
 					AzureZones: []*gqlschema.AzureZoneInput{
 						{
 							Name: generateRandomAzureZone(),
-							Cidr: "10.250.0.0/19",
+							Cidr: DefaultNodesCIDR,
 						},
 					},
 					EnableNatGateway: ptr.Bool(false),
@@ -199,6 +224,8 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 	if params.Region != nil && *params.Region != "" {
 		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
 	}
+
+	updateAzureSingleNodeWorkerCidr(input, pp)
 }
 
 func (p *AzureTrialInput) Provider() internal.CloudProvider {
@@ -249,15 +276,29 @@ func generateRandomAzureZones(zonesCount int) []int {
 	return zones[:zonesCount]
 }
 
-func generateMultipleAzureZones(zoneNames []int) []*gqlschema.AzureZoneInput {
-	subnetFmt := "10.250.%d.0/19"
-	zones := []*gqlschema.AzureZoneInput{}
-	for i, zone := range zoneNames {
+func generateAzureZones(workerCidr string, zoneNames []int) []*gqlschema.AzureZoneInput {
+	var zones []*gqlschema.AzureZoneInput
+
+	cidr, _ := netip.ParsePrefix(workerCidr)
+	workerPrefixLength := cidr.Bits() + 3
+	workerPrefix, _ := cidr.Addr().Prefix(workerPrefixLength)
+	// delta - it is the difference between CIDRs of two zones:
+	//    zone1:   "10.250.0.0/19",
+	//    zone2:   "10.250.32.0/19",
+	delta := big.NewInt(1)
+	delta.Lsh(delta, uint(32-workerPrefixLength))
+
+	// zoneIPValue - it is an integer, which is based on IP bytes
+	zoneIPValue := new(big.Int).SetBytes(workerPrefix.Addr().AsSlice())
+
+	for _, name := range zoneNames {
+		zoneWorkerIP, _ := netip.AddrFromSlice(zoneIPValue.Bytes())
+		zoneWorkerCidr := netip.PrefixFrom(zoneWorkerIP, workerPrefixLength)
+		zoneIPValue.Add(zoneIPValue, delta)
 		zones = append(zones, &gqlschema.AzureZoneInput{
-			Name: zone,
-			Cidr: fmt.Sprintf(subnetFmt, i*32),
+			Name: name,
+			Cidr: zoneWorkerCidr.String(),
 		})
 	}
-
 	return zones
 }

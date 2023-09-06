@@ -3,6 +3,8 @@ package provider
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -17,6 +19,102 @@ func TestAWSZones(t *testing.T) {
 	}
 	_, exists := awsZones[DefaultAWSRegion]
 	assert.True(t, exists)
+}
+
+func TestAWSZonesWithCustomNodeIPRange(t *testing.T) {
+	svc := AWSInput{
+		MultiZone: true,
+	}
+
+	clusterConfigInput := svc.Defaults()
+	svc.ApplyParameters(clusterConfigInput, internal.ProvisioningParameters{
+		Parameters: internal.ProvisioningParametersDTO{
+			Networking: &internal.NetworkingDTO{
+				NodesCidr: "10.180.0.0/16",
+			},
+		},
+	})
+
+	assert.Equal(t, "10.180.0.0/16", clusterConfigInput.GardenerConfig.WorkerCidr)
+	assert.Equal(t, "10.180.0.0/16", clusterConfigInput.GardenerConfig.ProviderSpecificConfig.AwsConfig.VpcCidr)
+
+	for tname, tcase := range map[string]struct {
+		givenNodesCidr   string
+		expectedAwsZones []gqlschema.AWSZoneInput
+	}{
+		"Regular 10.250.0.0/16": {
+			givenNodesCidr: "10.250.0.0/16",
+			expectedAwsZones: []gqlschema.AWSZoneInput{
+				{
+					WorkerCidr:   "10.250.0.0/18",
+					PublicCidr:   "10.250.32.0/20",
+					InternalCidr: "10.250.48.0/20",
+				},
+				{
+					WorkerCidr:   "10.250.64.0/18",
+					PublicCidr:   "10.250.96.0/20",
+					InternalCidr: "10.250.112.0/20",
+				},
+				{
+					WorkerCidr:   "10.250.128.0/18",
+					PublicCidr:   "10.250.160.0/20",
+					InternalCidr: "10.250.176.0/20",
+				},
+			},
+		},
+		"Regular 10.180.0.0/23": {
+			givenNodesCidr: "10.180.0.0/23",
+			expectedAwsZones: []gqlschema.AWSZoneInput{
+				{
+					WorkerCidr:   "10.180.0.0/25",
+					PublicCidr:   "10.180.0.64/27",
+					InternalCidr: "10.180.0.96/27",
+				},
+				{
+					WorkerCidr:   "10.180.0.128/25",
+					PublicCidr:   "10.180.0.192/27",
+					InternalCidr: "10.180.0.224/27",
+				},
+				{
+					WorkerCidr:   "10.180.1.0/25",
+					PublicCidr:   "10.180.1.64/27",
+					InternalCidr: "10.180.1.96/27",
+				},
+			},
+		},
+	} {
+		t.Run(tname, func(t *testing.T) {
+			// given
+			svc := AWSInput{
+				MultiZone: true,
+			}
+
+			// when
+			clusterConfigInput := svc.Defaults()
+			svc.ApplyParameters(clusterConfigInput, internal.ProvisioningParameters{
+				Parameters: internal.ProvisioningParametersDTO{
+					Networking: &internal.NetworkingDTO{
+						NodesCidr: tcase.givenNodesCidr,
+					},
+				},
+			})
+
+			// then
+			assert.Equal(t, tcase.givenNodesCidr, clusterConfigInput.GardenerConfig.WorkerCidr)
+			assert.Equal(t, tcase.givenNodesCidr, clusterConfigInput.GardenerConfig.ProviderSpecificConfig.AwsConfig.VpcCidr)
+
+			for i, expectedZone := range tcase.expectedAwsZones {
+				assertAWSIpRanges(t, expectedZone, clusterConfigInput.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[i])
+			}
+		})
+	}
+
+}
+
+func assertAWSIpRanges(t *testing.T, zone gqlschema.AWSZoneInput, input *gqlschema.AWSZoneInput) {
+	assert.Equal(t, zone.InternalCidr, input.InternalCidr)
+	assert.Equal(t, zone.WorkerCidr, input.WorkerCidr)
+	assert.Equal(t, zone.PublicCidr, input.PublicCidr)
 }
 
 func TestAWSZonesForEuAccess(t *testing.T) {
@@ -45,7 +143,7 @@ func TestMultipleZonesForAWSRegion(t *testing.T) {
 		assert.Equal(t, 3, len(generatedZones))
 		// check if all zones are unique
 		assert.Condition(t, func() (success bool) {
-			zones := []string{}
+			var zones []string
 			for _, zone := range generatedZones {
 				for _, z := range zones {
 					if zone == z {

@@ -2,7 +2,9 @@ package provider
 
 import (
 	"fmt"
+	"math/big"
 	"math/rand"
+	"net/netip"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -17,6 +19,7 @@ const (
 	DefaultAWSTrialRegion    = "eu-west-1"
 	DefaultEuAccessAWSRegion = "eu-central-1"
 	DefaultAWSMultiZoneCount = 3
+	DefaultNodesCIDR         = "10.250.0.0/22"
 )
 
 var europeAWS = "eu-west-1"
@@ -56,15 +59,15 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "m5.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
-			WorkerCidr:     "10.250.0.0/16",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr:  "10.250.0.0/16",
-					AwsZones: generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
+					VpcCidr:  DefaultNodesCIDR,
+					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
 				},
 			},
 			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
@@ -121,54 +124,105 @@ func MultipleZonesForAWSRegion(region string, zonesCount int) []string {
 	return generatedZones
 }
 
-func generateMultipleAWSZones(zoneNames []string) []*gqlschema.AWSZoneInput {
+/*
+*
+generateAWSZones - creates a list of AWSZoneInput objects which contains a proper IP ranges.
+It generates subnets - the subnets in AZ must be inside of the cidr block and non overlapping. example values:
+cidr: 10.250.0.0/16
+  - name: eu-central-1a
+    workers: 10.250.0.0/18
+    public: 10.250.32.0/20
+    internal: 10.250.48.0/20
+  - name: eu-central-1b
+    workers: 10.250.64.0/18
+    public: 10.250.96.0/20
+    internal: 10.250.112.0/20
+  - name: eu-central-1c
+    workers: 10.250.128.0/19
+    public: 10.250.160.0/20
+    internal: 10.250.176.0/20
+*/
+func generateAWSZones(workerCidr string, zoneNames []string) []*gqlschema.AWSZoneInput {
 	var zones []*gqlschema.AWSZoneInput
 
-	// generate subnets - the subnets in AZ must be inside of the cidr block and non overlapping. example values:
-	//vpc:
-	//cidr: 10.250.0.0/16
-	//zones:
-	//	- name: eu-central-1a
-	//workers: 10.250.0.0/19
-	//public: 10.250.32.0/20
-	//internal: 10.250.48.0/20
-	//	- name: eu-central-1b
-	//workers: 10.250.64.0/19
-	//public: 10.250.96.0/20
-	//internal: 10.250.112.0/20
-	//	- name: eu-central-1c
-	//workers: 10.250.128.0/19
-	//public: 10.250.160.0/20
-	//internal: 10.250.176.0/20
-	workerSubnetFmt := "10.250.%d.0/19"
-	lbSubnetFmt := "10.250.%d.0/20"
-	for i, name := range zoneNames {
+	cidr, _ := netip.ParsePrefix(workerCidr)
+	workerPrefixLength := cidr.Bits() + 2
+	workerPrefix, _ := cidr.Addr().Prefix(workerPrefixLength)
+
+	// delta - it is the difference between "public" and "internal" CIDRs, for example:
+	//    WorkerCidr:   "10.250.0.0/18",
+	//    PublicCidr:   "10.250.32.0/20",
+	//    InternalCidr: "10.250.48.0/20",
+	// 4 * delta  - difference between two worker (zone) CIDRs
+	delta := big.NewInt(1)
+	delta.Lsh(delta, uint(30-workerPrefixLength))
+
+	// base - it is an integer, which is based on IP bytes
+	base := new(big.Int).SetBytes(workerPrefix.Addr().AsSlice())
+
+	for _, name := range zoneNames {
+		zoneWorkerIP, _ := netip.AddrFromSlice(base.Bytes())
+		zoneWorkerCidr := netip.PrefixFrom(zoneWorkerIP, workerPrefixLength)
+
+		base.Add(base, delta)
+		base.Add(base, delta)
+		publicIP, _ := netip.AddrFromSlice(base.Bytes())
+		public := netip.PrefixFrom(publicIP, workerPrefixLength+2)
+
+		base.Add(base, delta)
+		internalIP, _ := netip.AddrFromSlice(base.Bytes())
+		internalPrefix := netip.PrefixFrom(internalIP, workerPrefixLength+2)
+
 		zones = append(zones, &gqlschema.AWSZoneInput{
 			Name:         name,
-			WorkerCidr:   fmt.Sprintf(workerSubnetFmt, 64*i),
-			PublicCidr:   fmt.Sprintf(lbSubnetFmt, 64*i+32),
-			InternalCidr: fmt.Sprintf(lbSubnetFmt, 64*i+48),
+			WorkerCidr:   zoneWorkerCidr.String(),
+			PublicCidr:   public.String(),
+			InternalCidr: internalPrefix.String(),
 		})
+
+		base.Add(base, delta)
 	}
 
 	return zones
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	switch {
-	// explicit zones list is provided
-	case len(pp.Parameters.Zones) > 0:
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(pp.Parameters.Zones)
-	// region is provided, with or without zonesCount
-	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
-		zonesCount := 1
-		if p.MultiZone {
-			zonesCount = DefaultAWSMultiZoneCount
-		}
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, zonesCount))
-	case internal.IsEuAccess(pp.PlatformRegion):
-		updateRegionWithZones(input, DefaultEuAccessAWSRegion)
+	workerCidr := updateAWSWithWorkerCidr(input, pp)
+	zonesCount := 1
+	if p.MultiZone {
+		zonesCount = DefaultAWSMultiZoneCount
 	}
+	if len(pp.Parameters.Zones) > 0 {
+		zonesCount = len(pp.Parameters.Zones)
+	}
+
+	// if the region is provided, override the default one
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" {
+		input.GardenerConfig.Region = *pp.Parameters.Region
+	}
+
+	// if the platformRegion is "EU Access" - switch the region to the eu-access
+	if internal.IsEuAccess(pp.PlatformRegion) {
+		input.GardenerConfig.Region = DefaultEuAccessAWSRegion
+	}
+
+	zones := pp.Parameters.Zones
+	// if zones are not provided (in the request) - generate it
+	if len(zones) == 0 {
+		zones = MultipleZonesForAWSRegion(input.GardenerConfig.Region, zonesCount)
+	}
+	// fill the input with proper zones having Worker CIDR
+	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateAWSZones(workerCidr, zones)
+}
+
+func updateAWSWithWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) string {
+	workerCidr := DefaultNodesCIDR
+	if pp.Parameters.Networking != nil {
+		workerCidr = pp.Parameters.Networking.NodesCidr
+	}
+	input.GardenerConfig.WorkerCidr = workerCidr
+	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.VpcCidr = workerCidr
+	return workerCidr
 }
 
 func (p *AWSInput) Profile() gqlschema.KymaProfile {
@@ -191,7 +245,7 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 			MachineType:    "m5.xlarge",
 			Region:         region,
 			Provider:       "aws",
-			WorkerCidr:     "10.250.0.0/19",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
@@ -199,15 +253,8 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr: "10.250.0.0/16",
-					AwsZones: []*gqlschema.AWSZoneInput{
-						{
-							Name:         ZoneForAWSRegion(region),
-							PublicCidr:   "10.250.32.0/20",
-							InternalCidr: "10.250.48.0/20",
-							WorkerCidr:   "10.250.0.0/19",
-						},
-					},
+					VpcCidr:  DefaultNodesCIDR,
+					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(region, 1)),
 				},
 			},
 		},

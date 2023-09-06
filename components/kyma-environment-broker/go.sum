@@ -427,7 +427,7 @@ github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
-github.com/gardener/gardener v1.65.2 h1:XpiP0cWzfBLSFiFc1Vh4X1AAjN3yITPacEVDoe5IGd8=
+github.com/gardener/gardener v1.74.1 h1:K4b/vSmFxVd3QgICJtuQu3e+FJn/bMqQepdBtXKRbpk=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
@@ -759,8 +759,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20230809132955-b02e
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
 github.com/kyma-incubator/reconciler v0.0.0-20230804125401-cbf3faa2a51f h1:GLfQ36jk4UgVN6yLonlwVysU2QU65LDPBbp4RgAZ5Xk=
 github.com/kyma-incubator/reconciler v0.0.0-20230804125401-cbf3faa2a51f/go.mod h1:hJnoGbxdqK4urAPkU8J1OxFXVqPc9pA7MlIL321xK3E=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab h1:JYsOfthXC8hCOuPbz8ZFV6gN2keyufvbcfPDyDEANUo=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:Qi9Ot6rXuI2HWoXg0iAUNSP+NiLbC/7s+AYmw6JqTA0=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d h1:4CXt3urEn22GxBRNSY6kxlGAIJwKHp6XDjwD2AJhf8Y=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d/go.mod h1:dskjODHoePep31rb2cpQnSsHXgM8/ES8v55BHmFjgwo=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230810075630-49303a9997f0 h1:6LFPl7QMugBwwZq6k8Uz7KUfurRvJb6rSi1QDzXkXM0=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230810075630-49303a9997f0/go.mod h1:vABrhytVuZpchbdlIVdUDlhB/Q/3GIZld2JmdS2rZ6I=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
@@ -1867,8 +1867,8 @@ k8s.io/component-base v0.20.1/go.mod h1:guxkoJnNoh8LNrbtiQOlyp2Y2XFCZQmrcg2n/DeY
 k8s.io/component-base v0.20.4/go.mod h1:t4p9EdiagbVCJKrQ1RsA5/V4rFQNDfRlevJajlGwgjI=
 k8s.io/component-base v0.20.6/go.mod h1:6f1MPBAeI+mvuts3sIdtpjljHWBQ2cIy38oBIWMYnrM=
 k8s.io/component-base v0.22.1/go.mod h1:0D+Bl8rrnsPN9v0dyYvkqFfBeAd4u7n77ze+p8CMiPo=
-k8s.io/component-base v0.26.1 h1:4ahudpeQXHZL5kko+iDHqLj/FSGAEUnSVO0EBbgDd+4=
 k8s.io/component-base v0.26.1/go.mod h1:VHrLR0b58oC035w6YQiBSbtsf0ThuSwXP+p5dD/kAWU=
+k8s.io/component-base v0.26.3 h1:oC0WMK/ggcbGDTkdcqefI4wIZRYdK3JySx9/HADpV0g=
 k8s.io/component-helpers v0.26.1/go.mod h1:jxNTnHb1axLe93MyVuvKj9T/+f4nxBVrj/xf01/UNFk=
 k8s.io/cri-api v0.17.3/go.mod h1:X1sbHmuXhwaHs9xxYffLqJogVsnI+f6cPRcgPel7ywM=
 k8s.io/cri-api v0.20.1/go.mod h1:2JRbKt+BFLTjtrILYVqQK5jqhI+XNdF6UiGMgczeBCI=

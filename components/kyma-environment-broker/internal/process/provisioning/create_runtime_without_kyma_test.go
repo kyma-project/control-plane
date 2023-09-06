@@ -131,7 +131,7 @@ func fixProvisionerInput(disabled bool, euAccess bool) gqlschema.ProvisionRuntim
 				Provider:                            "gcp",
 				Purpose:                             &shootPurpose,
 				LicenceType:                         nil,
-				WorkerCidr:                          "10.250.0.0/19",
+				WorkerCidr:                          "10.250.0.0/22",
 				AutoScalerMin:                       3,
 				AutoScalerMax:                       20,
 				MaxSurge:                            3,

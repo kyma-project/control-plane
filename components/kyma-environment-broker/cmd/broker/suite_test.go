@@ -998,7 +998,8 @@ func fixConfig() *Config {
 		EnableOnDemandVersion:   true,
 		UpdateProcessingEnabled: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial", "aws", "own_cluster", "preview"},
+			EnablePlans:               []string{"azure", "trial", "aws", "own_cluster", "preview"},
+			AllowNetworkingParameters: true,
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{

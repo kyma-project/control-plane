@@ -156,6 +156,12 @@ func (p AutoScalerParameters) Validate(planMin, planMax int) error {
 	return nil
 }
 
+type NetworkingDTO struct {
+	NodesCidr    string `json:"nodes,omitempty"`
+	PodsCidr     string `json:"pods,omitempty"`
+	ServicesCidr string `json:"services,omitempty"`
+}
+
 type ProvisioningParametersDTO struct {
 	AutoScalerParameters `json:",inline"`
 
@@ -181,7 +187,8 @@ type ProvisioningParametersDTO struct {
 	ShootName   string `json:"shootName,omitempty"`
 	ShootDomain string `json:"shootDomain,omitempty"`
 
-	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
+	OIDC       *OIDCConfigDTO `json:"oidc,omitempty"`
+	Networking *NetworkingDTO `json:"networking,omitempty""`
 }
 
 type UpdatingParametersDTO struct {

@@ -17,10 +17,11 @@ type RootSchema struct {
 type ProvisioningProperties struct {
 	UpdateProperties
 
-	Name        NameType `json:"name"`
-	ShootName   *Type    `json:"shootName,omitempty"`
-	ShootDomain *Type    `json:"shootDomain,omitempty"`
-	Region      *Type    `json:"region,omitempty"`
+	Name        NameType        `json:"name"`
+	ShootName   *Type           `json:"shootName,omitempty"`
+	ShootDomain *Type           `json:"shootDomain,omitempty"`
+	Region      *Type           `json:"region,omitempty"`
+	Networking  *NetworkingType `json:"networking,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -35,6 +36,18 @@ type UpdateProperties struct {
 func (up *UpdateProperties) IncludeAdditional() {
 	up.OIDC = NewOIDCSchema()
 	up.Administrators = AdministratorsProperty()
+}
+
+type NetworkingProperties struct {
+	Nodes    Type `json:"nodes"`
+	Pods     Type `json:"pods"`
+	Services Type `json:"services"`
+}
+
+type NetworkingType struct {
+	Type
+	Properties NetworkingProperties `json:"properties"`
+	Required   []string             `json:"required"`
 }
 
 type OIDCProperties struct {
@@ -163,6 +176,18 @@ func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTyp
 	return properties
 }
 
+func NewNetworkingSchema() *NetworkingType {
+	return &NetworkingType{
+		Type: Type{Type: "object", Description: "Networking configuration"},
+		Properties: NetworkingProperties{
+			Nodes:    Type{Type: "string", Description: "Nodes CIDR"},
+			Pods:     Type{Type: "string", Description: "Pods CIDR"},
+			Services: Type{Type: "string", Description: "Services CIDR"},
+		},
+		Required: []string{},
+	}
+}
+
 func NewOIDCSchema() *OIDCType {
 	return &OIDCType{
 		Type: Type{Type: "object", Description: "OIDC configuration"},
@@ -218,7 +243,7 @@ func unmarshalOrPanic(from, to interface{}) interface{} {
 }
 
 func DefaultControlsOrder() []string {
-	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
+	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators", "networking"}
 }
 
 func ToInterfaceSlice(input []string) []interface{} {

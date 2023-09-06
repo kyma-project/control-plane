@@ -54,7 +54,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    DefaultGCPMachineType,
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
-			WorkerCidr:     "10.250.0.0/19",
+			WorkerCidr:     DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,
@@ -70,6 +70,9 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if pp.Parameters.Networking != nil {
+		input.GardenerConfig.WorkerCidr = pp.Parameters.Networking.NodesCidr
+	}
 	switch {
 	// explicit zones list is provided
 	case len(pp.Parameters.Zones) > 0:
