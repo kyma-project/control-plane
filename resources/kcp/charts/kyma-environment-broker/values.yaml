@@ -3,7 +3,7 @@ global:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     kyma_environment_broker:
       dir:
-      version: "v20230901-053636e6"
+      version: "v20230906-dbf8a7c4"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230901-053636e6"
