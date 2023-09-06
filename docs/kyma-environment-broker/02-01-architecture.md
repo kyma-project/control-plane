@@ -4,7 +4,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 ![KEB diagram](./assets/keb-arch.svg)
 
-1. The user sends a request to create a new cluster with [Kyma Runtime](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#kyma-runtime).
+1. The user sends a request to create a new cluster with Kyma Runtime.
 
 2. Kyma Environment Broker proxies the request to create a new cluster to the Runtime Provisioner component.
 
