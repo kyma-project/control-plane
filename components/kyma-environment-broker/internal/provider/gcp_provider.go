@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -54,7 +56,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    DefaultGCPMachineType,
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,

@@ -157,9 +157,9 @@ func (p AutoScalerParameters) Validate(planMin, planMax int) error {
 }
 
 type NetworkingDTO struct {
-	NodesCidr    string `json:"nodes,omitempty"`
-	PodsCidr     string `json:"pods,omitempty"`
-	ServicesCidr string `json:"services,omitempty"`
+	NodesCidr    string  `json:"nodes,omitempty"`
+	PodsCidr     *string `json:"pods,omitempty"`
+	ServicesCidr *string `json:"services,omitempty"`
 }
 
 type ProvisioningParametersDTO struct {

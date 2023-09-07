@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -26,7 +28,7 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:       "g_c4_m16",
 			Region:            DefaultOpenStackRegion,
 			Provider:          "openstack",
-			WorkerCidr:        "10.250.0.0/19",
+			WorkerCidr:        networking.DefaultNodesCIDR,
 			AutoScalerMin:     4,
 			AutoScalerMax:     8,
 			MaxSurge:          1,
