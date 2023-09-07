@@ -7,6 +7,8 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -19,7 +21,6 @@ const (
 	DefaultAWSTrialRegion    = "eu-west-1"
 	DefaultEuAccessAWSRegion = "eu-central-1"
 	DefaultAWSMultiZoneCount = 3
-	DefaultNodesCIDR         = "10.250.0.0/22"
 )
 
 var europeAWS = "eu-west-1"
@@ -59,15 +60,15 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "m5.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr:  DefaultNodesCIDR,
-					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
+					VpcCidr:  networking.DefaultNodesCIDR,
+					AwsZones: generateAWSZones(networking.DefaultNodesCIDR, MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
 				},
 			},
 			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
@@ -216,7 +217,7 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 }
 
 func updateAWSWithWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) string {
-	workerCidr := DefaultNodesCIDR
+	workerCidr := networking.DefaultNodesCIDR
 	if pp.Parameters.Networking != nil {
 		workerCidr = pp.Parameters.Networking.NodesCidr
 	}
@@ -245,7 +246,7 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 			MachineType:    "m5.xlarge",
 			Region:         region,
 			Provider:       "aws",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
@@ -253,8 +254,8 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr:  DefaultNodesCIDR,
-					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(region, 1)),
+					VpcCidr:  networking.DefaultNodesCIDR,
+					AwsZones: generateAWSZones(networking.DefaultNodesCIDR, MultipleZonesForAWSRegion(region, 1)),
 				},
 			},
 		},

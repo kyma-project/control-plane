@@ -6,6 +6,8 @@ import (
 	"net/netip"
 	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -58,15 +60,15 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  3,
 			AutoScalerMax:  20,
 			MaxSurge:       zonesCount,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr:         DefaultNodesCIDR,
-					AzureZones:       generateAzureZones(DefaultNodesCIDR, generateRandomAzureZones(zonesCount)),
+					VnetCidr:         networking.DefaultNodesCIDR,
+					AzureZones:       generateAzureZones(networking.DefaultNodesCIDR, generateRandomAzureZones(zonesCount)),
 					EnableNatGateway: ptr.Bool(true),
 				},
 			},
@@ -80,7 +82,7 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
 		return
 	}
-	workerCidr := DefaultNodesCIDR
+	workerCidr := networking.DefaultNodesCIDR
 	if pp.Parameters.Networking != nil {
 		workerCidr = pp.Parameters.Networking.NodesCidr
 	}
@@ -123,18 +125,18 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  2,
 			AutoScalerMax:  10,
 			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: DefaultNodesCIDR,
+					VnetCidr: networking.DefaultNodesCIDR,
 					AzureZones: []*gqlschema.AzureZoneInput{
 						{
 							Name: generateRandomAzureZone(),
-							Cidr: DefaultNodesCIDR,
+							Cidr: networking.DefaultNodesCIDR,
 						},
 					},
 					EnableNatGateway: ptr.Bool(true),
@@ -153,7 +155,7 @@ func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp
 }
 
 func updateAzureSingleNodeWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	workerCIDR := DefaultNodesCIDR
+	workerCIDR := networking.DefaultNodesCIDR
 	if pp.Parameters.Networking != nil {
 		workerCIDR = pp.Parameters.Networking.NodesCidr
 	}
@@ -182,7 +184,7 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     DefaultNodesCIDR,
+			WorkerCidr:     networking.DefaultNodesCIDR,
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
@@ -190,11 +192,11 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: DefaultNodesCIDR,
+					VnetCidr: networking.DefaultNodesCIDR,
 					AzureZones: []*gqlschema.AzureZoneInput{
 						{
 							Name: generateRandomAzureZone(),
-							Cidr: DefaultNodesCIDR,
+							Cidr: networking.DefaultNodesCIDR,
 						},
 					},
 					EnableNatGateway: ptr.Bool(false),

@@ -1224,47 +1224,51 @@ func TestNetworkingValidation(t *testing.T) {
 		expectedError bool
 	}{
 		"Invalid nodes CIDR": {
-			givenNetworking: `{"nodes": 1abcd", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			givenNetworking: `{"nodes": 1abcd"}`,
 			expectedError:   true,
 		},
 		"Invalid nodes CIDR - wrong IP range": {
-			givenNetworking: `{"nodes": "10.250.0.1/19": 1abcd", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			givenNetworking: `{"nodes": "10.250.0.1/22"}`,
 			expectedError:   true,
 		},
 		"Valid CIDRs": {
-			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/20"}`,
 			expectedError:   false,
 		},
-		"Invalid pods CIDR": {
-			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10abcd/16", "services": "100.104.0.0/13"}`,
+		"Overlaps with seed cidr": {
+			givenNetworking: `{"nodes": "10.243.128.0/18"}`,
 			expectedError:   true,
 		},
-		"Invalid pods CIDR - wrong IP range": {
-			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "100.104.0.0/13"}`,
-			expectedError:   true,
-		},
-		"Invalid services CIDR": {
-			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "abcd"}`,
-			expectedError:   true,
-		},
-		"Invalid services CIDR - wrong IP range": {
-			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "10.250.0.1/19"}`,
-			expectedError:   true,
-		},
-		"Pods and Services overlaps": {
-			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.64.0.0/16"}`,
-			expectedError:   true,
-		},
+		/*"Invalid pods CIDR": {
+		  	givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10abcd/16", "services": "100.104.0.0/13"}`,
+		  	expectedError:   true,
+		  },
+		  "Invalid pods CIDR - wrong IP range": {
+		  	givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "100.104.0.0/13"}`,
+		  	expectedError:   true,
+		  },
+		  "Invalid services CIDR": {
+		  	givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "abcd"}`,
+		  	expectedError:   true,
+		  },
+		  "Invalid services CIDR - wrong IP range": {
+		  	givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "10.250.0.1/19"}`,
+		  	expectedError:   true,
+		  },
+		  "Pods and Services overlaps": {
+		  	givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.64.0.0/16"}`,
+		  	expectedError:   true,
+		  },*/
 		"Pods and Nodes overlaps": {
-			givenNetworking: `{"nodes": "10.250.2.0/22", "pods": "10.250.0.0/19", "services": "10.64.0.0/16"}`,
+			givenNetworking: `{"nodes": "10.96.0.0/16"}`,
 			expectedError:   true,
 		},
 		"Services and Nodes overlaps": {
-			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.250.2.0/24"}`,
+			givenNetworking: `{"nodes": "10.104.0.0/13"}`,
 			expectedError:   true,
 		},
 		"Suffix too big": {
-			givenNetworking: `{"nodes": "10.250.0.0/25", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/25"}`,
 			expectedError:   true,
 		},
 	} {

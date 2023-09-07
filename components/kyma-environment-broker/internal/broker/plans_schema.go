@@ -1,6 +1,12 @@
 package broker
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+)
 
 type RootSchema struct {
 	Schema string `json:"$schema"`
@@ -39,9 +45,7 @@ func (up *UpdateProperties) IncludeAdditional() {
 }
 
 type NetworkingProperties struct {
-	Nodes    Type `json:"nodes"`
-	Pods     Type `json:"pods"`
-	Services Type `json:"services"`
+	Nodes Type `json:"nodes"`
 }
 
 type NetworkingType struct {
@@ -177,14 +181,14 @@ func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTyp
 }
 
 func NewNetworkingSchema() *NetworkingType {
+	seedCIDRs := strings.Join(networking.GardenerSeedCIDRs, ", ")
 	return &NetworkingType{
-		Type: Type{Type: "object", Description: "Networking configuration"},
+		Type: Type{Type: "object", Description: "Networking configuration. These values are immutable and cannot be updated later."},
 		Properties: NetworkingProperties{
-			Nodes:    Type{Type: "string", Description: "Nodes CIDR"},
-			Pods:     Type{Type: "string", Description: "Pods CIDR"},
-			Services: Type{Type: "string", Description: "Services CIDR"},
+			Nodes: Type{Type: "string", Title: "Node network's CIDR", Description: fmt.Sprintf("Node network's CIDR, must not overlap with the following CIDRs: %s, %s, %s", networking.DefaultPodsCIDR, networking.DefaultServicesCIDR, seedCIDRs),
+				Default: networking.DefaultNodesCIDR},
 		},
-		Required: []string{},
+		Required: []string{"nodes"},
 	}
 }
 

@@ -49,6 +49,7 @@ These are the provisioning parameters that you can configure:
 | **oidc.signingAlgs** | string | Provides the OIDC signing algorithms for an SKR. | No | `RS256` |
 | **oidc.usernameClaim** | string | Provides an OIDC username claim for an SKR. | No | `email` |
 | **oidc.usernamePrefix** | string | Provides an OIDC username prefix for an SKR. | No | None |
+| **networking.nodes** | string | The Node network's CIDR. | No | `10.250.0.0/22` |
 
 ### Provider-specific parameters
 

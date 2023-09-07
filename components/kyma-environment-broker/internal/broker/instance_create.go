@@ -10,6 +10,8 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
@@ -464,6 +466,15 @@ func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningP
 	if parameters.Networking == nil {
 		return nil
 	}
+
+	// currently we do not support Pod's and Service's
+	if parameters.Networking.PodsCidr != nil {
+		return fmt.Errorf("pod network's CIDR is not supported in the request")
+	}
+	if parameters.Networking.ServicesCidr != nil {
+		return fmt.Errorf("service network's CIDR is not supported in the request")
+	}
+
 	var nodes, services, pods *net.IPNet
 	if nodes, e = validateCidr(parameters.Networking.NodesCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing nodes CIDR: %w", e))
@@ -474,11 +485,30 @@ func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningP
 		err = multierror.Append(err, fmt.Errorf("the suffix of the node CIDR must not be greater than 26"))
 	}
 
-	if pods, e = validateCidr(parameters.Networking.PodsCidr); e != nil {
-		err = multierror.Append(err, fmt.Errorf("while parsing pods CIDR: %w", e))
+	if err != nil {
+		return err
 	}
-	if services, e = validateCidr(parameters.Networking.ServicesCidr); e != nil {
-		err = multierror.Append(err, fmt.Errorf("while parsing services CIDR: %w", e))
+
+	for _, seed := range networking.GardenerSeedCIDRs {
+		_, seedCidr, _ := net.ParseCIDR(seed)
+		if e := validateOverlapping(*nodes, *seedCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap %s", seed))
+		}
+	}
+
+	if parameters.Networking.PodsCidr != nil {
+		if pods, e = validateCidr(*parameters.Networking.PodsCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("while parsing pods CIDR: %w", e))
+		}
+	} else {
+		_, pods, _ = net.ParseCIDR(networking.DefaultPodsCIDR)
+	}
+	if parameters.Networking.ServicesCidr != nil {
+		if services, e = validateCidr(*parameters.Networking.ServicesCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("while parsing services CIDR: %w", e))
+		}
+	} else {
+		_, services, _ = net.ParseCIDR(networking.DefaultServicesCIDR)
 	}
 	if err != nil {
 		return err
