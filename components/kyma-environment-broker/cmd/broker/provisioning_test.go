@@ -79,7 +79,6 @@ func TestProvisioning_Preview(t *testing.T) {
 func TestProvisioning_NetworkingParametersForAWS(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
-	suite.EnableDumpingProvisionerRequests()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
