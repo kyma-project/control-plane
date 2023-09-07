@@ -470,7 +470,7 @@ func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningP
 	}
 	// error is handled before, in the validate CIDR
 	cidr, _ := netip.ParsePrefix(parameters.Networking.NodesCidr)
-	if cidr.Bits() > 24 {
+	if cidr.Bits() > 23 {
 		err = multierror.Append(err, fmt.Errorf("the suffix of the node CIDR must not be greater than 26"))
 	}
 

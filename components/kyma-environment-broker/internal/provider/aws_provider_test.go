@@ -46,17 +46,17 @@ func TestAWSZonesWithCustomNodeIPRange(t *testing.T) {
 			givenNodesCidr: "10.250.0.0/16",
 			expectedAwsZones: []gqlschema.AWSZoneInput{
 				{
-					WorkerCidr:   "10.250.0.0/18",
+					WorkerCidr:   "10.250.0.0/19",
 					PublicCidr:   "10.250.32.0/20",
 					InternalCidr: "10.250.48.0/20",
 				},
 				{
-					WorkerCidr:   "10.250.64.0/18",
+					WorkerCidr:   "10.250.64.0/19",
 					PublicCidr:   "10.250.96.0/20",
 					InternalCidr: "10.250.112.0/20",
 				},
 				{
-					WorkerCidr:   "10.250.128.0/18",
+					WorkerCidr:   "10.250.128.0/19",
 					PublicCidr:   "10.250.160.0/20",
 					InternalCidr: "10.250.176.0/20",
 				},
@@ -66,17 +66,17 @@ func TestAWSZonesWithCustomNodeIPRange(t *testing.T) {
 			givenNodesCidr: "10.180.0.0/23",
 			expectedAwsZones: []gqlschema.AWSZoneInput{
 				{
-					WorkerCidr:   "10.180.0.0/25",
+					WorkerCidr:   "10.180.0.0/26",
 					PublicCidr:   "10.180.0.64/27",
 					InternalCidr: "10.180.0.96/27",
 				},
 				{
-					WorkerCidr:   "10.180.0.128/25",
+					WorkerCidr:   "10.180.0.128/26",
 					PublicCidr:   "10.180.0.192/27",
 					InternalCidr: "10.180.0.224/27",
 				},
 				{
-					WorkerCidr:   "10.180.1.0/25",
+					WorkerCidr:   "10.180.1.0/26",
 					PublicCidr:   "10.180.1.64/27",
 					InternalCidr: "10.180.1.96/27",
 				},
