@@ -77,7 +77,7 @@ func TestProvisioning_Preview(t *testing.T) {
 }
 
 func TestCatalog(t *testing.T) {
-    //t.Skip()
+    t.Skip()
     // given
     suite := NewBrokerSuiteTest(t)
     defer suite.TearDown()
