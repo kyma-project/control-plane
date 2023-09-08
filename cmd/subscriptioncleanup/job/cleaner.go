@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
+	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/model"
+	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

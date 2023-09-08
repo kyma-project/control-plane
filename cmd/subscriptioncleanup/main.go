@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
+	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/job"
+	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/job"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/dynamic"
