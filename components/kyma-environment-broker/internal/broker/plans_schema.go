@@ -170,6 +170,7 @@ func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTyp
 			Type: "string",
 			Enum: ToInterfaceSlice(regions),
 		},
+		Networking: NewNetworkingSchema(),
 	}
 
 	if update {
