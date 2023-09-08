@@ -76,6 +76,22 @@ func TestProvisioning_Preview(t *testing.T) {
 	suite.AssertSecretWithKubeconfigExists(opID)
 }
 
+func TestCatalog(t *testing.T) {
+	// this test is used for human-testing the catalog response
+	t.Skip()
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+
+	// when
+	resp := suite.CallAPI("GET", fmt.Sprintf("oauth/v2/catalog"), ``)
+
+	m, _ := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	fmt.Println(string(m))
+}
+
 func TestProvisioning_NetworkingParametersForAWS(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)

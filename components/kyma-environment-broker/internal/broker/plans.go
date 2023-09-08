@@ -348,7 +348,8 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(true)),
-		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, PreviewSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
+		PreviewPlanID: defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, PreviewSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, false, euAccessRestricted),
+			AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 	}
 
 	return outputPlans
