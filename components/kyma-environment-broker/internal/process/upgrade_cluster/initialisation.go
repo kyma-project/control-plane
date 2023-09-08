@@ -155,7 +155,12 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 
 	switch step {
 	case UpgradeInitSteps:
-		if hasMonitors && !inMaintenance {
+		if s.evaluationManager.IsMaintenanceModeDisabled() {
+			break
+		}
+		if hasMonitors &&
+			!inMaintenance &&
+			s.evaluationManager.IsMaintenanceModeApplicableForGAID(operation.ProvisioningParameters.ErsContext.GlobalAccountID) {
 			log.Infof("executing init upgrade steps")
 			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
 			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)

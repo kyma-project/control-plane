@@ -19,8 +19,8 @@ type GardenerConfig {
     diskType: String
     volumeSizeGB: Int
     workerCidr: String
-    podsCidr: String
-    servicesCidr: String
+    podsCidr: String #field not stored in provisioner database, see https://github.com/kyma-project/control-plane/issues/3038
+    servicesCidr: String #field not stored in provisioner database, see https://github.com/kyma-project/control-plane/issues/3038
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int

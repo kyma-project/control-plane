@@ -123,6 +123,14 @@ func OpenStackSchema(machineTypesDisplay map[string]string, machineTypes []strin
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
+func PreviewSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
+	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, AWSRegions(euAccessRestricted), update)
+	properties.AutoScalerMax.Minimum = 3
+	properties.AutoScalerMin.Minimum = 3
+	properties.Networking = NewNetworkingSchema()
+	return createSchemaWithProperties(properties, additionalParams, update)
+}
+
 func GCPSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, GCPRegions(), update)
 	properties.AutoScalerMax.Minimum = 3
@@ -340,7 +348,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(true)),
-		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
+		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, PreviewSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 	}
 
 	return outputPlans

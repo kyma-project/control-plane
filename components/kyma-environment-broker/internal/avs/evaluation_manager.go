@@ -80,3 +80,16 @@ func (em *EvaluationManager) InMaintenance(avsData internal.AvsLifecycleData) bo
 func (em *EvaluationManager) HasMonitors(avsData internal.AvsLifecycleData) bool {
 	return em.internalAssistant.IsValid(avsData) || em.externalAssistant.IsValid(avsData)
 }
+
+func (em *EvaluationManager) IsMaintenanceModeDisabled() bool {
+	return em.avsConfig.MaintenanceModeDuringUpgradeDisabled
+}
+
+func (em *EvaluationManager) IsMaintenanceModeApplicableForGAID(gaID string) bool {
+	for _, id := range em.avsConfig.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs {
+		if id == gaID {
+			return false
+		}
+	}
+	return true
+}

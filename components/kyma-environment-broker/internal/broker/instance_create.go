@@ -5,8 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/netip"
 	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
@@ -247,6 +253,15 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	if err != nil {
 		return ersContext, parameters, fmt.Errorf("while obtaining plan defaults: %w", err)
 	}
+
+	// TODO: remove when the feature (networking params) is completed and tested on prod
+	if !b.config.AllowNetworkingParameters && parameters.Networking != nil {
+		return ersContext, parameters, fmt.Errorf("providing networking parameters is not allowed")
+	}
+	if err := b.validateNetworking(parameters); err != nil {
+		return ersContext, parameters, err
+	}
+
 	var autoscalerMin, autoscalerMax int
 	if defaults.GardenerConfig != nil {
 		p := defaults.GardenerConfig
@@ -426,4 +441,97 @@ func (b *ProvisionEndpoint) createDashboardURL(planID, instanceID string) string
 	} else {
 		return fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
 	}
+}
+
+func validateCidr(cidr string) (*net.IPNet, error) {
+	ip, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, err
+	}
+	// find cases like: 10.250.0.1/19
+	if ipNet != nil {
+		if !ipNet.IP.Equal(ip) {
+			return nil, fmt.Errorf("%s must be valid canonical CIDR", ip)
+		}
+	}
+	return ipNet, nil
+}
+
+func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningParametersDTO) error {
+	var err, e error
+	if len(parameters.Zones) > 4 {
+		// the algorithm of creating AWS zone CIDRs does not work for more than 4 zones
+		err = multierror.Append(err, fmt.Errorf("number of zones must not be greater than 4"))
+	}
+	if parameters.Networking == nil {
+		return nil
+	}
+
+	// currently we do not support Pod's and Service's
+	if parameters.Networking.PodsCidr != nil {
+		return fmt.Errorf("pod network's CIDR is not supported in the request")
+	}
+	if parameters.Networking.ServicesCidr != nil {
+		return fmt.Errorf("service network's CIDR is not supported in the request")
+	}
+
+	var nodes, services, pods *net.IPNet
+	if nodes, e = validateCidr(parameters.Networking.NodesCidr); e != nil {
+		err = multierror.Append(err, fmt.Errorf("while parsing nodes CIDR: %w", e))
+	}
+	// error is handled before, in the validate CIDR
+	cidr, _ := netip.ParsePrefix(parameters.Networking.NodesCidr)
+	if cidr.Bits() > 23 {
+		err = multierror.Append(err, fmt.Errorf("the suffix of the node CIDR must not be greater than 26"))
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for _, seed := range networking.GardenerSeedCIDRs {
+		_, seedCidr, _ := net.ParseCIDR(seed)
+		if e := validateOverlapping(*nodes, *seedCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap %s", seed))
+		}
+	}
+
+	if parameters.Networking.PodsCidr != nil {
+		if pods, e = validateCidr(*parameters.Networking.PodsCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("while parsing pods CIDR: %w", e))
+		}
+	} else {
+		_, pods, _ = net.ParseCIDR(networking.DefaultPodsCIDR)
+	}
+	if parameters.Networking.ServicesCidr != nil {
+		if services, e = validateCidr(*parameters.Networking.ServicesCidr); e != nil {
+			err = multierror.Append(err, fmt.Errorf("while parsing services CIDR: %w", e))
+		}
+	} else {
+		_, services, _ = net.ParseCIDR(networking.DefaultServicesCIDR)
+	}
+	if err != nil {
+		return err
+	}
+
+	if e := validateOverlapping(*nodes, *pods); e != nil {
+		err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap pods CIDR"))
+	}
+	if e := validateOverlapping(*nodes, *services); e != nil {
+		err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap services CIDR"))
+	}
+	if e := validateOverlapping(*services, *pods); e != nil {
+		err = multierror.Append(err, fmt.Errorf("services CIDR must not overlap pods CIDR"))
+	}
+
+	return err
+}
+
+func validateOverlapping(n1 net.IPNet, n2 net.IPNet) error {
+
+	if n1.Contains(n2.IP) || n2.Contains(n1.IP) {
+		return fmt.Errorf("%s overlaps %s", n1.String(), n2.String())
+	}
+
+	return nil
 }

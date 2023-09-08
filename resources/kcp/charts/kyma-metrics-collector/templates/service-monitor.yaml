@@ -1,3 +1,5 @@
+{{- if .Values.global.kyma_metrics_collector.enabled -}}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -14,3 +16,28 @@ spec:
   selector:
     matchLabels:
 {{ include "kyma-metrics-collector.labels" . | indent 8 }}
+{{- end }}
+
+{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled .Values.global.kyma_metrics_collector.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  labels:
+{{ include "kyma-metrics-collector.labels" . | indent 4 }}
+  name: {{ include "kyma-metrics-collector.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - attach_metadata: {}
+      port: http
+      interval: {{ .Values.vmscrapes.interval }}
+      scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+{{ include "kyma-metrics-collector.labels" . | indent 6 }}
+{{- end }}

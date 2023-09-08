@@ -8,6 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -247,6 +251,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "configure DNS",
 			execute: r.configureDNS,
+		},
+		{
+			name:    "configure networking",
+			execute: r.configureNetworking,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -665,6 +673,25 @@ func (r *RuntimeInput) configureOIDC() error {
 		oidcParamsToSet := r.setOIDCForUpgrade()
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
+	return nil
+}
+
+func (r *RuntimeInput) configureNetworking() error {
+	if r.provisioningParameters.Parameters.Networking == nil {
+		return nil
+	}
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.WorkerCidr,
+		&r.provisioningParameters.Parameters.Networking.NodesCidr)
+
+	//if the Networking section is set, then
+	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr = ptr.String(networking.DefaultPodsCIDR)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr,
+		r.provisioningParameters.Parameters.Networking.PodsCidr)
+
+	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr = ptr.String(networking.DefaultServicesCIDR)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr,
+		r.provisioningParameters.Parameters.Networking.ServicesCidr)
+
 	return nil
 }
 

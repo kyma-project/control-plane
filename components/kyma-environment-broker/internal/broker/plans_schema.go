@@ -1,6 +1,12 @@
 package broker
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/networking"
+)
 
 type RootSchema struct {
 	Schema string `json:"$schema"`
@@ -17,10 +23,11 @@ type RootSchema struct {
 type ProvisioningProperties struct {
 	UpdateProperties
 
-	Name        NameType `json:"name"`
-	ShootName   *Type    `json:"shootName,omitempty"`
-	ShootDomain *Type    `json:"shootDomain,omitempty"`
-	Region      *Type    `json:"region,omitempty"`
+	Name        NameType        `json:"name"`
+	ShootName   *Type           `json:"shootName,omitempty"`
+	ShootDomain *Type           `json:"shootDomain,omitempty"`
+	Region      *Type           `json:"region,omitempty"`
+	Networking  *NetworkingType `json:"networking,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -35,6 +42,16 @@ type UpdateProperties struct {
 func (up *UpdateProperties) IncludeAdditional() {
 	up.OIDC = NewOIDCSchema()
 	up.Administrators = AdministratorsProperty()
+}
+
+type NetworkingProperties struct {
+	Nodes Type `json:"nodes"`
+}
+
+type NetworkingType struct {
+	Type
+	Properties NetworkingProperties `json:"properties"`
+	Required   []string             `json:"required"`
 }
 
 type OIDCProperties struct {
@@ -163,6 +180,18 @@ func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTyp
 	return properties
 }
 
+func NewNetworkingSchema() *NetworkingType {
+	seedCIDRs := strings.Join(networking.GardenerSeedCIDRs, ", ")
+	return &NetworkingType{
+		Type: Type{Type: "object", Description: "Networking configuration. These values are immutable and cannot be updated later."},
+		Properties: NetworkingProperties{
+			Nodes: Type{Type: "string", Title: "Node network's CIDR", Description: fmt.Sprintf("Node network's CIDR, must not overlap with the following CIDRs: %s, %s, %s", networking.DefaultPodsCIDR, networking.DefaultServicesCIDR, seedCIDRs),
+				Default: networking.DefaultNodesCIDR},
+		},
+		Required: []string{"nodes"},
+	}
+}
+
 func NewOIDCSchema() *OIDCType {
 	return &OIDCType{
 		Type: Type{Type: "object", Description: "OIDC configuration"},
@@ -218,7 +247,7 @@ func unmarshalOrPanic(from, to interface{}) interface{} {
 }
 
 func DefaultControlsOrder() []string {
-	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
+	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators", "networking"}
 }
 
 func ToInterfaceSlice(input []string) []interface{} {

@@ -39,6 +39,10 @@ spec:
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
         {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
         env:
+        {{- range $global.Values.global.mothership_reconciler.skippedComponents}}
+        - name: "SKIP_COMPONENT_{{ regexReplaceAll "-" . "_"  | upper }}"
+          value: "true"
+        {{- end}}
         {{- if (($values).deployment).gitCloneToken }}
         - name: GIT_CLONE_TOKEN
           valueFrom:

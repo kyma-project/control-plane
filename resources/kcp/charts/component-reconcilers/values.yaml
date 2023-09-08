@@ -29,5 +29,11 @@ service:
 # disable here to bypass deploy AuthorizationPolicy and ServiceMonitor in Pipeline Cluster
 serviceMonitor:
   enabled: false
-  scrapeTimeout: 30s
-  interval: 60s
+  scrapeTimeout: &scrapeTimeout 30s
+  interval: &scrapeInterval 60s
+
+vmscrapes:
+  enabled: false
+  scrapeTimeout: *scrapeTimeout
+  interval: *scrapeInterval
+
