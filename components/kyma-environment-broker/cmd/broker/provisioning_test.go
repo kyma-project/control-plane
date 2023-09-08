@@ -77,6 +77,7 @@ func TestProvisioning_Preview(t *testing.T) {
 }
 
 func TestCatalog(t *testing.T) {
+    // this test is used for human-testing the catalog response
     t.Skip()
     // given
     suite := NewBrokerSuiteTest(t)
