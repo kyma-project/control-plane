@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.32
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.117.0
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/docker/docker v24.0.5+incompatible
+	github.com/docker/docker v24.0.6+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-co-op/gocron v1.31.1
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
