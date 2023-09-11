@@ -5,7 +5,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     kyma_environment_broker:
       dir:
-      version: "v20230908-65bf79b9"
+      version: "v20230911-c3579f71"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230908-65bf79b9"
