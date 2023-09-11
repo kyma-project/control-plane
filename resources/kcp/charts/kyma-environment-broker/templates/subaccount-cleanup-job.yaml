@@ -30,7 +30,7 @@ spec:
           {{- end }}
           containers:
             - name: cleaner
-              image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
+              image: "{{ .Values.global.images.container_registry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
               imagePullPolicy: IfNotPresent
               env:
                 {{if eq .Values.global.database.embedded.enabled true}}
@@ -168,7 +168,7 @@ spec:
           {{- end }}
           containers:
             - name: cleaner
-              image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
+              image: "{{ .Values.global.images.container_registry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
               imagePullPolicy: IfNotPresent
               env:
                 {{if eq .Values.global.database.embedded.enabled true}}

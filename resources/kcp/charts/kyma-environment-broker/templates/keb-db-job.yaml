@@ -32,7 +32,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: {{ $job.cronJobName }}
-            image: "{{ $.Values.global.images.containerRegistry.path }}/{{ $job.dir }}{{ $job.imageName }}:{{ $job.version }}"
+            image: "{{ $.Values.global.images.container_registry.path }}/{{ $job.dir }}{{ $job.imageName }}:{{ $job.version }}"
             imagePullPolicy: IfNotPresent
             env:
               {{- range $key, $val := $job.envs }}

@@ -16,7 +16,7 @@ spec:
           {{- end }}
           restartPolicy: Never
           containers:
-            - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.dir }}kyma-environment-deprovision-retrigger-job:{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.version }}"
+            - image: "{{ .Values.global.images.container_registry.path }}/{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.dir }}kyma-environment-deprovision-retrigger-job:{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.version }}"
               name: deprovision-retrigger-job
               env:
                 {{if eq .Values.global.database.embedded.enabled true}}
