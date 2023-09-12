@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/int128/kubelogin v1.27.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230614160542-a4a34cb37016
