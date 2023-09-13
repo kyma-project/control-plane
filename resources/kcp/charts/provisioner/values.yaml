@@ -30,6 +30,8 @@ security:
   skipTLSCertificateVeryfication: false
 
 gardener:
+  helmAnnotation: false
+  argoAnnotation: false
   resourcePolicy: keep
   project: "" # Gardener project connected to SA
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
