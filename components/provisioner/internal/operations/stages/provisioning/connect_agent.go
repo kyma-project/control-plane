@@ -44,7 +44,7 @@ func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logru
 		var err error
 		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
 		if err != nil {
-			return operations.StageResult{}, err
+			return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 		}
 	}
 	err := s.runtimeConfigurator.ConfigureRuntime(cluster, string(kubeconfig))

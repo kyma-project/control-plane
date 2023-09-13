@@ -49,7 +49,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), result.Delay)
 	})
 
-	t.Run("should return error when failed to get dynamic kubeconfig", func(t *testing.T) {
+	t.Run("should attempt retry when failed to get dynamic kubeconfig", func(t *testing.T) {
 		// given
 		dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
 		dynamicKubeconfigProvider.On("FetchFromRequest", "shoot").Return(nil, errors.New("some error"))
@@ -59,10 +59,12 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		stage := NewConnectAgentStep(configurator, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
-		_, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
+		result, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
 
 		// then
-		require.Error(t, err)
+		require.NoError(t, err)
+		assert.Equal(t, model.ConnectRuntimeAgent, result.Stage)
+		assert.Equal(t, 20*time.Second, result.Delay)
 	})
 
 	t.Run("should return error when failed to configure cluster", func(t *testing.T) {
