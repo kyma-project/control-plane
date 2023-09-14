@@ -5,12 +5,10 @@ global:
     provisioner:
       version: "v20230830-022128f8"
       dir: "prod"
-
 vmscrapes:
   enabled: false
   scrapeTimeout: 10s
   interval: 30s
-
 deployment:
   replicaCount: 1
   image:

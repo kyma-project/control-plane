@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -152,6 +154,9 @@ func main() {
 	gardenerClientSet, err := gardener.NewClient(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
+	gardenerClient, err := client.New(gardenerClusterConfig, client.Options{})
+	exitOnError(err, "unable to create gardener client")
+
 	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Kubernetes clientset")
 
@@ -165,20 +170,22 @@ func main() {
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
+	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
+	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsInterface)
 
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
 		directorClient,
 		shootClient,
-		secretsInterface,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
-		runtimeConfigurator)
+		runtimeConfigurator,
+		kubeconfigProvider)
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)

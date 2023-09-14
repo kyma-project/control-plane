@@ -24,7 +24,7 @@ type GardenerClient interface {
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	FetchRaw(shootName string) ([]byte, error)
+	FetchFromShoot(shootName string) ([]byte, error)
 }
 
 type WaitForShootUpgradeStep struct {
@@ -73,7 +73,7 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, _ model.Operation, 
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
 
-			kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
+			kubeconfig, err := s.kubeconfigProvider.FetchFromShoot(shoot.Name)
 			if err != nil {
 				return operations.StageResult{}, err
 			}

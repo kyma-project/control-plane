@@ -31,6 +31,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
+	kubeconfigprovidermock "github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -139,21 +140,25 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	kubeconfigProviderMock := &kubeconfigprovidermock.KubeconfigProvider{}
+	kubeconfigProviderMock.On("FetchFromRequest", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
+	kubeconfigProviderMock.On("FetchFromShoot", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
+
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
-		secretsInterface,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
-		runtimeConfigurator)
+		runtimeConfigurator,
+		kubeconfigProviderMock)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, kubeconfigProviderMock)
 	shootUpgradeQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
