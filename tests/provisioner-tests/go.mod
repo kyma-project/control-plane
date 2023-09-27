@@ -18,7 +18,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/vektah/gqlparser v1.2.1 // indirect
 	github.com/vrischmann/envconfig v1.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	gopkg.in/yaml.v3 v3.0.0
 	k8s.io/api v0.20.5
 	k8s.io/apimachinery v0.20.5
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
