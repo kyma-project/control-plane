@@ -20,6 +20,9 @@ Runtime Provisioner also needs a kubeconfig for a garden and auth data for Direc
 
 ## Development
 
+### Testing
+Use `make verify` in the `/components/provisioner/` directory to run the unit and integration tests, or `/components/provisioner/e2e_test/test.sh` to run the e2e test. For the e2e, you must set up a few environmental variables, and the test output will guide you on what's missing. 
+
 ### GraphQL schema
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
@@ -74,7 +77,6 @@ This table lists the environment variables, their descriptions, and default valu
 | APP_PLAYGROUND_API_ENDPOINT                                   | Endpoint for the API playground                                                                           | `/graphql`                                                              |
 | APP_PROVISIONING_NO_INSTALL_TIMEOUT                           |                                                                                                           |                                                                         |
 | APP_PROVISIONING_TIMEOUT                                      |                                                                                                           |                                                                         |
-| APP_RUN_AWS_CONFIG_MIGRATION                                  | TODO: Remove after data migration                                                                         | `false`                                                                 |
 | APP_SKIP_DIRECTOR_CERT_VERIFICATION                           | Flag to skip certificate verification for Director                                                        | `false`                                                                 |
 
 Director OAUTH config should look like this:

@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 
@@ -86,45 +88,19 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
-	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
+func (r *Resolver) UpgradeRuntime(_ context.Context, runtimeID string, _ gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+	message := fmt.Sprintf("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", runtimeID)
 
-	if err := r.tenantUpdater.GetAndUpdateTenant(runtimeId, ctx); err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return &gqlschema.OperationStatus{}, err
-	}
-
-	if err := r.validator.ValidateUpgradeInput(input); err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return nil, err
-	}
-
-	operationStatus, err := r.provisioning.UpgradeRuntime(runtimeId, input)
-	if err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return nil, err
-	}
-
-	return operationStatus, nil
+	return nil, errors.New(message)
 }
 
-func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
-	if err != nil {
-		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
-		return nil, err
-	}
+func (r *Resolver) RollBackUpgradeOperation(_ context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	message := fmt.Sprintf("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", runtimeID)
 
-	runtimeStatus, err := r.provisioning.RollBackLastUpgrade(runtimeID)
-	if err != nil {
-		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
-		return nil, err
-	}
-
-	return runtimeStatus, nil
+	return nil, errors.New(message)
 }
 
-func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {
+func (r *Resolver) ReconnectRuntimeAgent(context.Context, string) (string, error) {
 	return "", nil
 }
 
@@ -193,22 +169,8 @@ func (r *Resolver) UpgradeShoot(ctx context.Context, runtimeID string, input gql
 	return status, nil
 }
 
-func (r *Resolver) HibernateRuntime(ctx context.Context, runtimeID string) (*gqlschema.OperationStatus, error) {
-	log.Infof("Requested to hibernate runtime : %s.", runtimeID)
-
-	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
-	if err != nil {
-		log.Errorf("Failed to hibernate Runtime  %s: %s", runtimeID, err)
-		return nil, err
-	}
-
-	status, err := r.provisioning.HibernateCluster(runtimeID)
-	if err != nil {
-		log.Errorf("Failed to hibernate Runtime %s: %s", runtimeID, err)
-		return nil, err
-	}
-
-	return status, nil
+func (r *Resolver) HibernateRuntime(context.Context, string) (*gqlschema.OperationStatus, error) {
+	return nil, nil
 }
 
 func getSubAccount(ctx context.Context) string {

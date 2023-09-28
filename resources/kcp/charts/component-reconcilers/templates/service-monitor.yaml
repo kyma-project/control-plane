@@ -1,5 +1,6 @@
 {{- range $component := .Values.global.components }}
 {{ if $.Values.serviceMonitor.enabled }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -18,6 +19,27 @@ spec:
   selector:
     matchLabels:
       component: {{ $component }}
+{{- end }}
+{{- if and ($.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") $.Values.vmscrapes.enabled }}
 ---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: {{ $component }}-reconciler
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    component: {{ $component }}
+spec:
+  endpoints:
+  - attach_metadata: {}
+    port: http
+    interval: {{ $.Values.vmscrapes.interval }}
+    scrapeTimeout: {{ $.Values.vmscrapes.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+    - {{ $.Release.Namespace }}
+  selector:
+    matchLabels:
+      component: {{ $component }}
 {{- end }}
 {{- end }}

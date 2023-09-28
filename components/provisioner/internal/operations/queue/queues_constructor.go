@@ -3,23 +3,17 @@ package queue
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
-
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type ProvisioningTimeouts struct {
@@ -45,19 +39,25 @@ type HibernationTimeouts struct {
 	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
+//go:generate mockery --name=KubeconfigProvider
+type KubeconfigProvider interface {
+	FetchFromShoot(shootName string) ([]byte, error)
+	FetchFromRequest(shootName string) ([]byte, error)
+}
+
 func CreateProvisioningQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
-	configurator runtime.Configurator) OperationQueue {
+	configurator runtime.Configurator,
+	kubeconfigProvider KubeconfigProvider) OperationQueue {
 
-	configureAgentStep := provisioning.NewConnectAgentStep(configurator, model.FinishedStage, timeouts.AgentConfiguration)
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, configureAgentStep.Name(), timeouts.BindingsCreation)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
+	configureAgentStep := provisioning.NewConnectAgentStep(configurator, kubeconfigProvider, model.FinishedStage, timeouts.AgentConfiguration)
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, configureAgentStep.Name(), timeouts.BindingsCreation)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), kubeconfigProvider, createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
@@ -76,32 +76,6 @@ func CreateProvisioningQueue(
 	)
 
 	return NewQueue(provisioningExecutor)
-}
-
-func CreateUpgradeQueue(
-	provisioningTimeouts ProvisioningTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	installationClient installation.Service) OperationQueue {
-
-	updatingUpgradeStep := upgrade.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), provisioningTimeouts.Installation, factory.NewWriteSession())
-	upgradeStep := upgrade.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), provisioningTimeouts.UpgradeTriggering)
-
-	upgradeSteps := map[model.OperationStage]operations.Step{
-		model.UpdatingUpgradeState:   updatingUpgradeStep,
-		model.WaitingForInstallation: waitForInstallStep,
-		model.StartingUpgrade:        upgradeStep,
-	}
-
-	upgradeExecutor := operations.NewExecutor(factory.NewReadWriteSession(),
-		model.Upgrade,
-		upgradeSteps,
-		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
-		directorClient,
-	)
-
-	return NewQueue(upgradeExecutor)
 }
 
 func CreateDeprovisioningQueue(
@@ -137,11 +111,11 @@ func CreateShootUpgradeQueue(
 	shootClient gardener_apis.ShootInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
-	secretsClient v1core.SecretInterface,
+	kubeconfigProvider KubeconfigProvider,
 ) OperationQueue {
 
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
-	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, model.FinishedStage, timeouts.BindingsCreation)
+	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, factory.NewReadWriteSession(), kubeconfigProvider, createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
 	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
@@ -159,27 +133,4 @@ func CreateShootUpgradeQueue(
 	)
 
 	return NewQueue(upgradeClusterExecutor)
-}
-
-func CreateHibernationQueue(
-	timeouts HibernationTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
-
-	waitForHibernation := hibernation.NewWaitForHibernationStep(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
-
-	hibernationSteps := map[model.OperationStage]operations.Step{
-		model.WaitForHibernation: waitForHibernation,
-	}
-
-	hibernateClusterExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Hibernate,
-		hibernationSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(hibernateClusterExecutor)
 }

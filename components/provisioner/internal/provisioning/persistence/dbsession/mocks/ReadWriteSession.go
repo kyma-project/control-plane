@@ -215,32 +215,6 @@ func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, a
 	return r0, r1
 }
 
-// GetUpdatedProviderSpecificConfigByID provides a mock function with given fields: id
-func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (string, apperrors.AppError) {
-	ret := _m.Called(id)
-
-	var r0 string
-	var r1 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string) (string, apperrors.AppError)); ok {
-		return rf(id)
-	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(id)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
-		r1 = rf(id)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(apperrors.AppError)
-		}
-	}
-
-	return r0, r1
-}
-
 // InProgressOperationsCount provides a mock function with given fields:
 func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, apperrors.AppError) {
 	ret := _m.Called()
@@ -315,22 +289,6 @@ func (_m *ReadWriteSession) InsertGardenerConfig(config model.GardenerConfig) ap
 	return r0
 }
 
-// InsertKymaConfig provides a mock function with given fields: kymaConfig
-func (_m *ReadWriteSession) InsertKymaConfig(kymaConfig model.KymaConfig) apperrors.AppError {
-	ret := _m.Called(kymaConfig)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(model.KymaConfig) apperrors.AppError); ok {
-		r0 = rf(kymaConfig)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
 // InsertOperation provides a mock function with given fields: operation
 func (_m *ReadWriteSession) InsertOperation(operation model.Operation) apperrors.AppError {
 	ret := _m.Called(operation)
@@ -338,22 +296,6 @@ func (_m *ReadWriteSession) InsertOperation(operation model.Operation) apperrors
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(model.Operation) apperrors.AppError); ok {
 		r0 = rf(operation)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// InsertRuntimeUpgrade provides a mock function with given fields: runtimeUpgrade
-func (_m *ReadWriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) apperrors.AppError {
-	ret := _m.Called(runtimeUpgrade)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(model.RuntimeUpgrade) apperrors.AppError); ok {
-		r0 = rf(runtimeUpgrade)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)
@@ -398,22 +340,6 @@ func (_m *ReadWriteSession) MarkClusterAsDeleted(runtimeID string) apperrors.App
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(string) apperrors.AppError); ok {
 		r0 = rf(runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// SetActiveKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
-func (_m *ReadWriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) apperrors.AppError {
-	ret := _m.Called(runtimeID, kymaConfigId)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
-		r0 = rf(runtimeID, kymaConfigId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)
@@ -542,22 +468,6 @@ func (_m *ReadWriteSession) UpdateTenant(runtimeID string, tenant string) apperr
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, tenant)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// UpdateUpgradeState provides a mock function with given fields: operationID, upgradeState
-func (_m *ReadWriteSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) apperrors.AppError {
-	ret := _m.Called(operationID, upgradeState)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, model.UpgradeState) apperrors.AppError); ok {
-		r0 = rf(operationID, upgradeState)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)

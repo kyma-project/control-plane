@@ -140,6 +140,8 @@ global:
         value: "false"
       - name: "DEBUG_LOGGING_FOR_SPECIFIC_OPERATIONS"
         value: "true"
+    # these components will NEVER be reconciled
+    skippedComponents: []
   component_reconcilers:
     enabled: false
     authentication: true

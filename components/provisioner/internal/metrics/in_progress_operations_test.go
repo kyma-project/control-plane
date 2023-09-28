@@ -15,7 +15,7 @@ func Test_InProgressOperationsCollector_Collect(t *testing.T) {
 
 	operationsCounts := model.OperationsCount{
 		Count: map[model.OperationType]int{
-			model.Provision:            6,
+			model.ProvisionNoInstall:   6,
 			model.Deprovision:          5,
 			model.DeprovisionNoInstall: 3,
 			model.Upgrade:              2,
@@ -39,10 +39,6 @@ func Test_InProgressOperationsCollector_Collect(t *testing.T) {
 	deprovisionMetric := <-receiver
 	assertGaugeValue(t, deprovisionMetric, float64(3))
 	assert.Contains(t, deprovisionMetric.Desc().String(), "kcp_provisioner_in_progress_deprovision_no_install_operations_total")
-
-	upgradeMetric := <-receiver
-	assertGaugeValue(t, upgradeMetric, float64(2))
-	assert.Contains(t, upgradeMetric.Desc().String(), "kcp_provisioner_in_progress_upgrade_operations_total")
 }
 
 func Test_InProgressOperationsCollector_Describe(t *testing.T) {
@@ -58,9 +54,6 @@ func Test_InProgressOperationsCollector_Describe(t *testing.T) {
 
 	deprovisionDesc := <-receiver
 	assert.Contains(t, deprovisionDesc.String(), "kcp_provisioner_in_progress_deprovision_no_install_operations_total")
-
-	upgradeDesc := <-receiver
-	assert.Contains(t, upgradeDesc.String(), "kcp_provisioner_in_progress_upgrade_operations_total")
 }
 
 func assertGaugeValue(t *testing.T, metric prometheus.Metric, expected float64) {

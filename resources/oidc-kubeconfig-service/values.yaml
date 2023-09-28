@@ -22,9 +22,9 @@ global:
 replicaCount: 1
 
 image:
-  repository: europe-docker.pkg.dev/kyma-project/dev/control-plane/kubeconfig-service
-  tag: "PR-2916"
-  pullPolicy: Always
+  repository: europe-docker.pkg.dev/kyma-project/prod/control-plane/kubeconfig-service
+  tag: "v20230927-3979470d"
+  pullPolicy: IfNotPresent
 
 config:
   servicePort: 9090

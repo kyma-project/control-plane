@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -11,16 +10,22 @@ import (
 )
 
 type ConnectAgentStep struct {
-	runtimeConfigurator runtime.Configurator
-	nextStage           model.OperationStage
-	timeLimit           time.Duration
+	runtimeConfigurator       runtime.Configurator
+	dynamicKubeconfigProvider DynamicKubeconfigProvider
+	nextStage                 model.OperationStage
+	timeLimit                 time.Duration
 }
 
-func NewConnectAgentStep(configurator runtime.Configurator, nextStage model.OperationStage, timeLimit time.Duration) *ConnectAgentStep {
+func NewConnectAgentStep(
+	configurator runtime.Configurator,
+	dynamicKubeconfigProvider DynamicKubeconfigProvider,
+	nextStage model.OperationStage,
+	timeLimit time.Duration) *ConnectAgentStep {
 	return &ConnectAgentStep{
-		runtimeConfigurator: configurator,
-		nextStage:           nextStage,
-		timeLimit:           timeLimit,
+		runtimeConfigurator:       configurator,
+		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
+		nextStage:                 nextStage,
+		timeLimit:                 timeLimit,
 	}
 }
 
@@ -34,11 +39,15 @@ func (s *ConnectAgentStep) TimeLimit() time.Duration {
 
 func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 
-	if cluster.Kubeconfig == nil {
-		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
+	var kubeconfig []byte
+	{
+		var err error
+		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
+		if err != nil {
+			return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
+		}
 	}
-
-	err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
+	err := s.runtimeConfigurator.ConfigureRuntime(cluster, string(kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, err.Append("failed to configure Runtime Agent")
 	}

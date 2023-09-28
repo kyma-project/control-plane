@@ -29,7 +29,6 @@ type ReadSession interface {
 	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
 	GetTenantForOperation(operationID string) (string, dberrors.Error)
 	InProgressOperationsCount() (model.OperationsCount, dberrors.Error)
-	GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error)
 }
 
 //go:generate mockery --name=WriteSession
@@ -38,17 +37,13 @@ type WriteSession interface {
 	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
 	UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error
 	InsertAdministrators(clusterId string, administrators []string) dberrors.Error
-	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
 	UpdateOperationLastError(operationID, msg, reason, component string) dberrors.Error
 	TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error
 	UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error
-	SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error
-	UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
 	MarkClusterAsDeleted(runtimeID string) dberrors.Error
-	InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error
 	UpdateTenant(runtimeID string, tenant string) dberrors.Error
 	UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error
 	UpdateShootNetworkingFilterDisabled(runtimeID string, shootNetworkingFilterDisabled *bool) dberrors.Error

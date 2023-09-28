@@ -18,23 +18,23 @@ import (
 )
 
 type WaitForClusterCreationStep struct {
-	gardenerClient     GardenerClient
-	dbSession          dbsession.ReadWriteSession
-	kubeconfigProvider KubeconfigProvider
-	nextStep           model.OperationStage
-	timeLimit          time.Duration
+	gardenerClient           GardenerClient
+	dbSession                dbsession.ReadWriteSession
+	staticKubeconfigProvider StaticKubeconfigProvider
+	nextStep                 model.OperationStage
+	timeLimit                time.Duration
 }
 
-//go:generate mockery --name=KubeconfigProvider
-type KubeconfigProvider interface {
-	FetchRaw(shootName string) ([]byte, error)
+//go:generate mockery --name=StaticKubeconfigProvider
+type StaticKubeconfigProvider interface {
+	FetchFromShoot(shootName string) ([]byte, error)
 }
 
-func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, kubeconfigProvider KubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
+func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, staticKubeconfigProvider StaticKubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
 	return &WaitForClusterCreationStep{
-		gardenerClient:     gardenerClient,
-		dbSession:          dbSession,
-		kubeconfigProvider: kubeconfigProvider,
+		gardenerClient:           gardenerClient,
+		dbSession:                dbSession,
+		staticKubeconfigProvider: staticKubeconfigProvider,
 
 		nextStep:  nextStep,
 		timeLimit: timeLimit,
@@ -101,7 +101,7 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 		}
 	}
 
-	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
+	kubeconfig, err := s.staticKubeconfigProvider.FetchFromShoot(shoot.Name)
 	if err != nil {
 		return operations.StageResult{}, err
 	}

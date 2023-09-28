@@ -1,10 +1,11 @@
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
   name: {{ include "kyma-env-broker.fullname" . }}
-  namespace: kcp-system
+  namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
   - port: http
@@ -12,7 +13,29 @@ spec:
     scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
   namespaceSelector:
     matchNames:
-    - kcp-system
+    - {{ .Release.Namespace }}
   selector:
     matchLabels:
 {{ include "kyma-env-broker.labels" . | indent 8 }}
+{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  labels:
+{{ include "kyma-env-broker.labels" . | indent 4 }}
+  name: {{ include "kyma-env-broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - attach_metadata: {}
+    port: http
+    interval: {{ .Values.vmscrapes.interval }}
+    scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+{{ include "kyma-env-broker.labels" . | indent 8 }}
+{{- end }}

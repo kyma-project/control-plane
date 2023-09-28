@@ -1,9 +1,0 @@
-components:
-  - name: "btp-operator"
-    namespace: "kyma-system"
-    source:
-      url: "https://btp-operator"
-  - name: "uaa-activator"
-    namespace: "kyma-system"
-  - name: "compass-runtime-agent"
-    namespace: "kyma-system"

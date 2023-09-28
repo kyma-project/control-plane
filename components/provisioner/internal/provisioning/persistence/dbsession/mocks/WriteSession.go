@@ -81,22 +81,6 @@ func (_m *WriteSession) InsertGardenerConfig(config model.GardenerConfig) apperr
 	return r0
 }
 
-// InsertKymaConfig provides a mock function with given fields: kymaConfig
-func (_m *WriteSession) InsertKymaConfig(kymaConfig model.KymaConfig) apperrors.AppError {
-	ret := _m.Called(kymaConfig)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(model.KymaConfig) apperrors.AppError); ok {
-		r0 = rf(kymaConfig)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
 // InsertOperation provides a mock function with given fields: operation
 func (_m *WriteSession) InsertOperation(operation model.Operation) apperrors.AppError {
 	ret := _m.Called(operation)
@@ -113,22 +97,6 @@ func (_m *WriteSession) InsertOperation(operation model.Operation) apperrors.App
 	return r0
 }
 
-// InsertRuntimeUpgrade provides a mock function with given fields: runtimeUpgrade
-func (_m *WriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) apperrors.AppError {
-	ret := _m.Called(runtimeUpgrade)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(model.RuntimeUpgrade) apperrors.AppError); ok {
-		r0 = rf(runtimeUpgrade)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
 // MarkClusterAsDeleted provides a mock function with given fields: runtimeID
 func (_m *WriteSession) MarkClusterAsDeleted(runtimeID string) apperrors.AppError {
 	ret := _m.Called(runtimeID)
@@ -136,22 +104,6 @@ func (_m *WriteSession) MarkClusterAsDeleted(runtimeID string) apperrors.AppErro
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(string) apperrors.AppError); ok {
 		r0 = rf(runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// SetActiveKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
-func (_m *WriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) apperrors.AppError {
-	ret := _m.Called(runtimeID, kymaConfigId)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
-		r0 = rf(runtimeID, kymaConfigId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)
@@ -280,22 +232,6 @@ func (_m *WriteSession) UpdateTenant(runtimeID string, tenant string) apperrors.
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, tenant)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// UpdateUpgradeState provides a mock function with given fields: operationID, upgradeState
-func (_m *WriteSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) apperrors.AppError {
-	ret := _m.Called(operationID, upgradeState)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, model.UpgradeState) apperrors.AppError); ok {
-		r0 = rf(operationID, upgradeState)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)

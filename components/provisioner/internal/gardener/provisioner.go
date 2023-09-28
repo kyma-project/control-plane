@@ -9,21 +9,18 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/util/retry"
-	"k8s.io/utils/clock"
-
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v12 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -130,48 +127,6 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	return nil
 }
 
-func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig model.GardenerConfig) apperrors.AppError {
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
-		if err != nil {
-			appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
-			return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
-		}
-
-		condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
-		if condition.Status == v1beta1.ConditionFalse {
-			return k8sErrors.NewBadRequest(fmt.Sprintf("cannot hibernate cluster: %s", condition.Message))
-		}
-
-		enabled := true
-		if shoot.Spec.Hibernation != nil {
-			shoot.Spec.Hibernation.Enabled = &enabled
-		} else {
-			shoot.Spec.Hibernation = &v1beta1.Hibernation{
-				Enabled: &enabled,
-			}
-		}
-
-		setObjectFields(shoot)
-
-		shootData, err := json.Marshal(shoot)
-		if err != nil {
-			apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
-			return apperr.Append("error during marshaling Shoot data")
-		}
-
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
-		return err
-	})
-
-	if err != nil {
-		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
-		return apperr.Append("error executing update shoot configuration")
-	}
-
-	return nil
-}
-
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
@@ -214,21 +169,6 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	message := fmt.Sprintf("Deprovisioning started")
 
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
-}
-
-func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
-	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
-	if err != nil {
-		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
-		return model.HibernationStatus{}, appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
-	}
-
-	condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
-
-	return model.HibernationStatus{
-		Hibernated:          shoot.Status.IsHibernated,
-		HibernationPossible: condition.Status == v1beta1.ConditionTrue,
-	}, nil
 }
 
 func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {

@@ -9,6 +9,7 @@ spec:
     spec:
       template:
         spec:
+          serviceAccountName: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
           shareProcessNamespace: true
           {{- with .Values.deployment.securityContext }}
           securityContext:
@@ -16,7 +17,7 @@ spec:
           {{- end }}
           restartPolicy: Never
           containers:
-            - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.dir }}kyma-environment-deprovision-retrigger-job:{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.version }}"
+            - image: "{{ .Values.global.images.container_registry.path }}/{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.dir }}kyma-environment-deprovision-retrigger-job:{{ .Values.global.images.kyma_environment_deprovision_retrigger_job.version }}"
               name: deprovision-retrigger-job
               env:
                 {{if eq .Values.global.database.embedded.enabled true}}
@@ -78,19 +79,20 @@ spec:
                   readOnly: true
               {{- end}}
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
-                - name: cloudsql-instance-credentials
-                  mountPath: /secrets/cloudsql-instance-credentials
-                  readOnly: true
-
             - name: cloudsql-proxy
               image: {{ .Values.global.images.cloudsql_proxy_image }}
-              command: [ "/cloud_sql_proxy",
-                         "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                         "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
+              {{- if .Values.global.database.cloudsqlproxy.workloadIdentity.enabled }}
+              command: ["/cloud_sql_proxy",
+                        "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"]
+              {{- else }}
+              command: ["/cloud_sql_proxy",
+                        "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                        "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
+              {{- end }}
               {{- with .Values.deployment.securityContext }}
               securityContext:
                 {{ toYaml . | nindent 16 }}
