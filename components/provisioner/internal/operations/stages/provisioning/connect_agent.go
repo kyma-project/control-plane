@@ -37,13 +37,14 @@ func (s *ConnectAgentStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
+func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
 
 	var kubeconfig []byte
 	{
 		var err error
 		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
 		if err != nil {
+			log.Warn("Could not read dynamic kubeconfig. Will retry")
 			return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 		}
 	}

@@ -102,7 +102,8 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 	}
 
 	kubeconfig, err := s.staticKubeconfigProvider.FetchFromShoot(shoot.Name)
-	if err != nil {
+	if err != nil || len(kubeconfig) == 0 {
+		log.Warn("Could not read static kubeconfig for created shoot.")
 		return operations.StageResult{}, err
 	}
 

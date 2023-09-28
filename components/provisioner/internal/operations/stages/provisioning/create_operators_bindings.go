@@ -87,6 +87,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
 		if err != nil {
 			// we cannot read kubeconfig from gardener cluster
+			log.Warn("Could not read dynamic kubeconfig. Will retry")
 			return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 		}
 	}

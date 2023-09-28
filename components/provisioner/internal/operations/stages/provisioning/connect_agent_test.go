@@ -59,7 +59,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		stage := NewConnectAgentStep(configurator, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
-		result, err := stage.Run(cluster, model.Operation{}, &logrus.Entry{})
+		result, err := stage.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.NoError(t, err)

@@ -112,7 +112,7 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		step := NewCreateBindingsForOperatorsStep(nil, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
-		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
+		result, err := step.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.NoError(t, err)
