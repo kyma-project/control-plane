@@ -41,7 +41,6 @@ global:
     - eventing
     - serverless
     - cluster-essentials
-    - rma
   provisioning:
     enabled: false
   kyma_environment_broker:
