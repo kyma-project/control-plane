@@ -144,6 +144,8 @@ func dnsConfigFromInput(input *gqlschema.DNSConfigInput) *model.DNSConfig {
 		if len(input.Providers) != 0 {
 			for _, v := range input.Providers {
 				config.Providers = append(config.Providers, &model.DNSProvider{
+					// after KEB fix it - restore original code
+					// DomainsInclude: v.DomainsInclude,
 					DomainsInclude: []string{input.Domain},
 					Primary:        v.Primary,
 					SecretName:     v.SecretName,
