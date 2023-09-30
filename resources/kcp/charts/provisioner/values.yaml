@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20230914-9e7cdb09"
+      version: "v20230930-6fff193f"
       dir: "prod"
 vmscrapes:
   enabled: false
