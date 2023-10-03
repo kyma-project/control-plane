@@ -103,7 +103,7 @@ spec:
               - name: kyma-environment-broker
                 configMap:
                   name: kyma-environment-broker-migrations
-            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
@@ -222,7 +222,7 @@ spec:
               - name: provisioner
                 configMap:
                   name: provisioner-migrations
-            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials

@@ -108,7 +108,7 @@ spec:
             {{ toYaml . | nindent 16 }}
           {{- end }}
         {{- end}}
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       volumes:
         - name: cloudsql-instance-credentials
           secret:
