@@ -101,7 +101,7 @@ spec:
               {{- end }}
             {{- end}}
           volumes:
-          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
