@@ -1,6 +1,6 @@
-{{- if .Capabilities.APIVersions.Has "networking.istio.io/v1alpha3" }}
+{{- if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1" }}
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1abeta1
 kind: VirtualService
 metadata:
   name: {{ template "oidc-kubeconfig-service.fullname" . }}
@@ -11,6 +11,9 @@ spec:
     - {{ .Values.service.hostname }}.{{ .Values.global.ingress.domainName }}
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    {{- if .Values.global.istio.additionalGateways }}
+    {{ toYaml .Values.global.istio.additionalGateways | nindent 4 }}
+    {{- end }}
   http:
     - match:
         - uri:
