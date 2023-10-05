@@ -1,6 +1,6 @@
 {{- if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1" }}
 ---
-apiVersion: networking.istio.io/v1abeta1
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ template "oidc-kubeconfig-service.fullname" . }}
