@@ -34,36 +34,6 @@
         ]
       },
       {
-        "component": "logging",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "tracing",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "kiali",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "monitoring",
         "namespace": "kyma-system",
         "configuration": [
@@ -104,8 +74,18 @@
         ]
       },
       {
+        "component": "serverless",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "global.domainName",
+            "value": "example.com"
+          }
+        ]
+      },
+      {
         "component": "application-connector",
-        "namespace": "kyma-integration",
+        "namespace": "kyma-system",
         "configuration": [
           {
             "key": "global.domainName",
