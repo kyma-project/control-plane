@@ -19,10 +19,6 @@ mutation {
         ]
         components: [
           {
-            component: "cluster-essentials"
-            namespace: "kyma-system"
-          }
-          {
             component: "testing"
             namespace: "kyma-system"
           }
