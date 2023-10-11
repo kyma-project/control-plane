@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/components/provisioner
 
-go 1.20
+go 1.21.3
 
 require (
 	github.com/99designs/gqlgen v0.11.3
@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.4.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221021121045-dec2d997352a
-	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20221014105541-fb0caf22fdd0
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
