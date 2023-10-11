@@ -34,16 +34,6 @@
         ]
       },
       {
-        "component": "istio-resources",
-        "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "monitoring",
         "namespace": "kyma-system",
         "configuration": [
@@ -75,26 +65,6 @@
       },
       {
         "component": "api-gateway",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "cluster-users",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "serverless",
         "namespace": "kyma-system",
         "configuration": [
           {

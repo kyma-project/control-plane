@@ -14,16 +14,6 @@
     "profile": "Evaluation",
     "components": [
       {
-        "component": "cluster-essentials",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "istio",
         "namespace": "istio-system",
         "configuration": [
@@ -35,16 +25,6 @@
       },
       {
         "component": "certificates",
-        "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "istio-resources",
         "namespace": "istio-system",
         "configuration": [
           {
@@ -145,26 +125,6 @@
       },
       {
         "component": "helm-broker",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "cluster-users",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "serverless",
         "namespace": "kyma-system",
         "configuration": [
           {
