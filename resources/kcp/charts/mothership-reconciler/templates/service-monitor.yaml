@@ -49,7 +49,7 @@ spec:
     interval: {{ .Values.vmscrapes.interval }}
     scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
     path: /api/v1/metrics/prometheus
-    metricRelabelings:
+    metricRelabelConfigs:
       - action: keep
         regex: ^(fluentbit_.*|go_.*|process_.*)$
         sourceLabels:
