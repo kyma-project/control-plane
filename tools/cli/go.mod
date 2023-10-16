@@ -1,6 +1,8 @@
 module github.com/kyma-project/control-plane/tools/cli
 
-go 1.20
+go 1.21
+
+toolchain go1.21.1
 
 require (
 	github.com/golang/mock v1.6.0
