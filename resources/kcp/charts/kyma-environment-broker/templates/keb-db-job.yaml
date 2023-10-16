@@ -5,6 +5,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $job.name }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   schedule: {{ $job.schedule }}
   failedJobsHistoryLimit: 5

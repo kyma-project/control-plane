@@ -3,6 +3,8 @@ kind: PeerAuthentication
 metadata:
   name: {{ include "kyma-env-broker.fullname" . }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   selector:
     matchLabels:

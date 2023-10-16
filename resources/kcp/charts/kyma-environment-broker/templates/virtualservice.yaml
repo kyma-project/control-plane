@@ -4,6 +4,8 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ template "fullname" . }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
