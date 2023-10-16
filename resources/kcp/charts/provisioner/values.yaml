@@ -3,8 +3,8 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-3113"
-      dir: "dev"
+      version: "v20230930-6fff193f"
+      dir: "prod"
 vmscrapes:
   enabled: false
   scrapeTimeout: 10s
