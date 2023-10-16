@@ -21,7 +21,7 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.18
+FROM eu.gcr.io/kyma-project/external/alpine:3.17.3
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
