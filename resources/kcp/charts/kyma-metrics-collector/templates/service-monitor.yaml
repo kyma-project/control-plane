@@ -1,4 +1,4 @@
-{{- if .Values.global.kyma_metrics_collector.enabled -}}
+{{- if .Values.serviceMonitor.enabled -}}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -18,7 +18,7 @@ spec:
 {{ include "kyma-metrics-collector.labels" . | indent 8 }}
 {{- end }}
 
-{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled .Values.global.kyma_metrics_collector.enabled }}
+{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled }}
 ---
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMServiceScrape

@@ -5,7 +5,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     kyma_environment_broker:
       dir:
-      version: "v20231003-7756a730"
+      version: "v20231013-c329e328"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230929-752f7838"
@@ -197,10 +197,13 @@ avs:
   #   - content: tag-B
   #     tag_id: 2
   #     tag_name: value-B
-  internalTesterTags: ""
-  externalTesterTags: ""
-  additionalTagsEnabled: "false"
-  gardenerSeedNameTagClassId: "0"
+  instanceIdTagClassId: "0"
+  globalAccountIdTagClassId: "0"
+  subAccountIdTagClassId: "0"
+  landscapeTagClassId: "0"
+  providerTagClassId: "0"
+  regionTagClassId: "0"
+  shootNameTagClassId: "0"
   gardenerShootNameTagClassId: "0"
   regionTagClassId: "0"
   trialApiKey: ""
@@ -292,6 +295,7 @@ deprovisionRetrigger:
   #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
+  enabled: true
   scrapeTimeout: &scrapeTimeout 10s
   interval: &scrapeInterval 30s
 

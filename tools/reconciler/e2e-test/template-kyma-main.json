@@ -34,16 +34,6 @@
         ]
       },
       {
-        "component": "monitoring",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "eventing",
         "namespace": "kyma-system",
         "configuration": [
