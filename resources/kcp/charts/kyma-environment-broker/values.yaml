@@ -197,10 +197,13 @@ avs:
   #   - content: tag-B
   #     tag_id: 2
   #     tag_name: value-B
-  internalTesterTags: ""
-  externalTesterTags: ""
-  additionalTagsEnabled: "false"
-  gardenerSeedNameTagClassId: "0"
+  instanceIdTagClassId: "0"
+  globalAccountIdTagClassId: "0"
+  subAccountIdTagClassId: "0"
+  landscapeTagClassId: "0"
+  providerTagClassId: "0"
+  regionTagClassId: "0"
+  shootNameTagClassId: "0"
   gardenerShootNameTagClassId: "0"
   regionTagClassId: "0"
   trialApiKey: ""
