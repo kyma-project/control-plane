@@ -292,6 +292,7 @@ deprovisionRetrigger:
   #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
+  enabled: true
   scrapeTimeout: &scrapeTimeout 10s
   interval: &scrapeInterval 30s
 
