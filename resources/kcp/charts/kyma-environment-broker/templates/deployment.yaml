@@ -288,18 +288,18 @@ spec:
                 secretKeyRef:
                   key: trialParentId
                   name: {{ .Values.avs.secretName }}
-	    - name: APP_AVS_INSTANCE_ID_TAG_CLASS_ID
-              value: "{{ .Values.avs.instanceIdTagClassId }}”
+            - name: APP_AVS_INSTANCE_ID_TAG_CLASS_ID
+              value: "{{ .Values.avs.instanceIdTagClassId }}"
             - name: APP_AVS_GLOBAL_ACCOUNT_ID_TAG_CLASS_ID
-              value: "{{ .Values.avs.globalAccountIdTagClassId }}”
+              value: "{{ .Values.avs.globalAccountIdTagClassId }}"
             - name: APP_AVS_SUB_ACCOUNT_ID_TAG_CLASS_ID
-              value: "{{ .Values.avs.subAccountIdTagClassId }}”
+              value: "{{ .Values.avs.subAccountIdTagClassId }}"
             - name: APP_AVS_LANDSCAPE_TAG_CLASS_ID
-              value: "{{ .Values.avs.landscapeTagClassId }}”
+              value: "{{ .Values.avs.landscapeTagClassId }}"
             - name: APP_AVS_REGION_TAG_CLASS_ID
               value: "{{ .Values.avs.regionTagClassId }}"
             - name: APP_AVS_PROVIDER_TAG_CLASS_ID
-              value: "{{ .Values.avs.providerTagClassId }}”
+              value: "{{ .Values.avs.providerTagClassId }}"
             - name: APP_AVS_SHOOT_NAME_TAG_CLASS_ID
               value: "{{ .Values.avs.shootNameTagClassId }}"
             - name: APP_AVS_GARDENER_SHOOT_NAME_TAG_CLASS_ID
