@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "kcp-subaccount-cleaner-v1.0"
-annotations:
+  annotations:
     argocd.argoproj.io/sync-options: Prune=false
 spec:
   schedule: "{{ .Values.subaccountCleanup.schedule }}"
