@@ -32,6 +32,8 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
@@ -49,5 +51,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 {{- if .Values.serviceAccount.annotations }}
   annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 {{ tpl (toYaml .Values.serviceAccount.annotations) . | indent 4 }}
 {{- end }}

@@ -3,6 +3,8 @@ kind: RequestAuthentication
 metadata:
   name: jwt-auth-keb
   namespace: kcp-system
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   jwtRules:
   - issuer: https://oauth2.{{ .Values.global.ingress.domainName }}/

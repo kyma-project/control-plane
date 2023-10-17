@@ -3,6 +3,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "kcp-subaccount-cleaner-v1.0"
+annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   schedule: "{{ .Values.subaccountCleanup.schedule }}"
   failedJobsHistoryLimit: 5
@@ -147,6 +149,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "kcp-subaccount-cleaner-v2.0"
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   schedule: "{{ .Values.subaccountCleanup.schedule }}"
   failedJobsHistoryLimit: 5

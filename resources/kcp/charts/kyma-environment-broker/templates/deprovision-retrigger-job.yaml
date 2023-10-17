@@ -2,6 +2,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: deprovision-retrigger-job
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   jobTemplate:
     metadata:

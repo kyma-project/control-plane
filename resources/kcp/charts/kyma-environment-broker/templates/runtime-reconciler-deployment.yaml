@@ -6,6 +6,8 @@ metadata:
   namespace: kcp-system
   labels:
     app: runtime-reconciler
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   replicas: 1
   selector:

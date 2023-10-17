@@ -4,6 +4,8 @@ metadata:
   name: {{ include "kyma-env-broker.fullname" . }}
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:
