@@ -1,4 +1,4 @@
-FROM golang:1.20.6-alpine3.18 as builder
+FROM golang:1.21.3-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/provisioner
 WORKDIR ${BASE_APP_DIR}
