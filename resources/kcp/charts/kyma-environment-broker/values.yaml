@@ -8,7 +8,7 @@ global:
       version: "v20231013-c329e328"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "vv20231013-c329e328"
+      version: "v20231013-c329e328"
     kyma_environment_trial_cleanup_job:
       dir:
       version: "v20231013-c329e328"
