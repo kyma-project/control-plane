@@ -1,7 +1,10 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -9,6 +12,10 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+const (
+	gitHubAPIEndpoint = "https://api.github.com/repos/kyma-project/control-plane/commits/main"
 )
 
 // Version is the CLI version to be filled in by the build system
@@ -38,6 +45,7 @@ See the **Global Options** section of each command for the description of these 
 			if cmd.CalledAs() != "help" {
 				return ValidateGlobalOpts()
 			}
+			checkForLatestRelease(Version)
 			return nil
 		},
 		SilenceUsage: true,
@@ -94,4 +102,31 @@ func initConfig() {
 // CLICredentialManager returns a credential.Manager configured using the CLI global options
 func CLICredentialManager(logger logger.Logger) credential.Manager {
 	return credential.NewManager(GlobalOpts.OIDCIssuerURL(), GlobalOpts.OIDCClientID(), GlobalOpts.OIDCClientSecret(), GlobalOpts.Username(), logger)
+}
+
+type latestGitTag struct {
+	Sha string `json:"sha"`
+}
+
+func checkForLatestRelease(version string) {
+	response, err := http.Get(gitHubAPIEndpoint)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	var latestGitTag latestGitTag
+	if err := json.Unmarshal(responseData, &latestGitTag); err != nil {
+		return
+	}
+
+	if Version != latestGitTag.Sha[:8] {
+		fmt.Println("CAUTION: You're using an outdated version of the KCP CLI.\n" +
+			"To update, please visit https://github.tools.sap/kyma/documentation/blob/main/on-call-guides/common/kcp-cli.md\n")
+	}
 }
