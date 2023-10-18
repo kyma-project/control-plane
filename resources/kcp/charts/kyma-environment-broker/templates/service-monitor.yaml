@@ -1,3 +1,4 @@
+{{- if .Values.serviceMonitor.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -6,6 +7,8 @@ metadata:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
   name: {{ include "kyma-env-broker.fullname" . }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   endpoints:
   - port: http
@@ -17,6 +20,7 @@ spec:
   selector:
     matchLabels:
 {{ include "kyma-env-broker.labels" . | indent 8 }}
+{{- end }}
 {{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled }}
 ---
 apiVersion: operator.victoriametrics.com/v1beta1
@@ -26,6 +30,8 @@ metadata:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
   name: {{ include "kyma-env-broker.fullname" . }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   endpoints:
   - attach_metadata: {}

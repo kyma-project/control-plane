@@ -6,6 +6,8 @@ metadata:
   labels:
     grafana_dashboard: "1"
     app: monitoring-grafana
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 data:
   {{ template "fullname" . }}-dashboard.json: |-
 {{ .Files.Get "files/dashboard.json" | indent 4 }}

@@ -6,6 +6,8 @@ metadata:
   namespace: kcp-system
   labels:
     app: runtime-reconciler
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   replicas: 1
   selector:
@@ -108,7 +110,7 @@ spec:
             {{ toYaml . | nindent 16 }}
           {{- end }}
         {{- end}}
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       volumes:
         - name: cloudsql-instance-credentials
           secret:
