@@ -304,7 +304,7 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 		Components:  []string{},    // fill with optional components
 		KymaVersion: customVersion, // If empty filed will be omitted
 	}
-	if strings.TrimSpace(c.brokerConfig.Region) != "" {
+	if c.brokerConfig.PlanID != "7d55d31d-35ae-4438-bf13-6ffdfa107d9f" {
 		parameters.Region = c.brokerConfig.Region
 	}
 	ctx := inputContext{
