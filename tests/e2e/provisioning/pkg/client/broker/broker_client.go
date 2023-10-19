@@ -301,9 +301,11 @@ func (c *Client) FetchDashboardURL() (string, error) {
 func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 	parameters := provisionParameters{
 		Name:        c.clusterName,
-		Region:      c.brokerConfig.Region,
 		Components:  []string{},    // fill with optional components
 		KymaVersion: customVersion, // If empty filed will be omitted
+	}
+	if strings.TrimSpace(c.brokerConfig.Region) != "" {
+		parameters.Region = c.brokerConfig.Region
 	}
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
