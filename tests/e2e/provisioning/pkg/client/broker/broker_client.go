@@ -29,7 +29,7 @@ type Config struct {
 	TokenURL     string
 	URL          string
 	PlanID       string
-	Region       string `envconfig:"optional"`
+	Region       string
 }
 
 type BrokerOAuthConfig struct {
@@ -98,6 +98,7 @@ type instanceDetailsResponse struct {
 
 type provisionParameters struct {
 	Name        string   `json:"name"`
+	Region      string   `json:"region"`
 	Components  []string `json:"components"`
 	KymaVersion string   `json:"kymaVersion,omitempty"`
 }
@@ -300,6 +301,7 @@ func (c *Client) FetchDashboardURL() (string, error) {
 func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 	parameters := provisionParameters{
 		Name:        c.clusterName,
+		Region:      c.brokerConfig.Region,
 		Components:  []string{},    // fill with optional components
 		KymaVersion: customVersion, // If empty filed will be omitted
 	}
