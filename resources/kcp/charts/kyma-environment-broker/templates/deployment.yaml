@@ -302,8 +302,6 @@ spec:
               value: "{{ .Values.avs.providerTagClassId }}"
             - name: APP_AVS_SHOOT_NAME_TAG_CLASS_ID
               value: "{{ .Values.avs.shootNameTagClassId }}"
-            - name: APP_AVS_GARDENER_SHOOT_NAME_TAG_CLASS_ID
-              value: "{{ .Values.avs.gardenerShootNameTagClassId }}"
             - name: APP_AVS_MAINTENANCE_MODE_DURING_UPGRADE_DISABLED
               value: "{{ .Values.avs.maintenanceModeDuringUpgrade.disabled }}"
             - name: APP_AVS_MAINTENANCE_MODE_DURING_UPGRADE_ALWAYS_DISABLED_GLOBAL_ACCOUNTS_FILE_PATH
@@ -456,7 +454,7 @@ spec:
       - name: cloudsql-sslrootcert
         secret:
           secretName: kcp-postgresql
-          items: 
+          items:
           - key: postgresql-sslRootCert
             path: server-ca.pem
           optional: true

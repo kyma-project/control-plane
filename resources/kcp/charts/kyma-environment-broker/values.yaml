@@ -5,7 +5,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     kyma_environment_broker:
       dir:
-      version: "v20231013-c329e328"
+      version: "v20231019-ed2b4bb9"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20231013-c329e328"
@@ -204,8 +204,6 @@ avs:
   providerTagClassId: "0"
   regionTagClassId: "0"
   shootNameTagClassId: "0"
-  gardenerShootNameTagClassId: "0"
-  regionTagClassId: "0"
   trialApiKey: ""
   trialInternalTesterAccessId: "0"
   trialGroupId: "0"
