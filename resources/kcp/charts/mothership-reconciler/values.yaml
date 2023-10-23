@@ -171,3 +171,15 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
+  certificates:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: apigateways
+  api-gateway:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: apigateways
+  ory:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: apigateways
