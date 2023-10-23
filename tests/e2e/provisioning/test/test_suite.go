@@ -38,7 +38,7 @@ type Config struct {
 	ProvisionTimeout      time.Duration `default:"3h"`
 	DeprovisionTimeout    time.Duration `default:"1h"`
 	PreUpgradeKymaVersion string        `envconfig:"optional"`
-	ConfigName            string        `default:"mm-e2e-runtime-config"`
+	ConfigName            string        `default:"e2e-runtime-config"`
 	DeployNamespace       string        `default:"kcp-system"`
 
 	UpgradeTest  bool `envconfig:"default=false"`
