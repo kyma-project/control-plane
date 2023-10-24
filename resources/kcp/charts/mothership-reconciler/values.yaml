@@ -171,3 +171,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
+  eventing:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: eventings
