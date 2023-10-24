@@ -175,3 +175,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: eventings
+  application-connector:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: applicationconnector
