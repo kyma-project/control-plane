@@ -3,6 +3,8 @@ kind: AuthorizationPolicy
 metadata:
   name: istio-passthrough
   namespace: kcp-system
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   action: ALLOW
   rules:

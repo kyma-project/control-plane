@@ -1,4 +1,6 @@
-apiVersion: networking.istio.io/v1alpha3
+{{- if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1" }}
+---
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ template "fullname" . }}
@@ -14,6 +16,9 @@ spec:
     - provisioner.{{ .Values.global.ingress.domainName }}
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    {{- if .Values.global.istio.additionalGateways }}
+    {{ toYaml .Values.global.istio.additionalGateways | nindent 4 }}
+    {{- end }}
   http:
       - match:
         - uri:
@@ -23,3 +28,4 @@ spec:
               port:
                 number: {{ .Values.global.provisioner.graphql.port }}
               host: {{ template "fullname" . }}
+{{- end }}

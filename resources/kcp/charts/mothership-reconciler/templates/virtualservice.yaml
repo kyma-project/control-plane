@@ -1,11 +1,15 @@
-{{ if .Values.global.mothership_reconciler.expose }}
-apiVersion: networking.istio.io/v1alpha3
+{{- if and .Values.global.mothership_reconciler.expose (.Capabilities.APIVersions.Has "networking.istio.io/v1beta1") }}
+---
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ template "fullname" . }}
 spec:
   gateways:
-  - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    {{- if .Values.global.istio.additionalGateways }}
+    {{ toYaml .Values.global.istio.additionalGateways | nindent 4 }}
+    {{- end }}
   hosts:
   - {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
   http:

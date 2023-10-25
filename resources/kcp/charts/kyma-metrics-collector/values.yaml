@@ -7,10 +7,15 @@ global:
 nameOverride: ""
 fullnameOverride: ""
 
+serviceMonitor:
+  enabled: true
+  scrapeTimeout: &scrapeTimeout 10s
+  interval: &scrapeInterval 30s
+
 vmscrapes:
   enabled: false
-  scrapeTimeout: 10s
-  interval: 30s
+  scrapeTimeout: *scrapeTimeout
+  interval: *scrapeInterval
 
 image:
   # these override the values from global chart

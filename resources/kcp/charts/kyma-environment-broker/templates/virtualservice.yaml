@@ -1,10 +1,17 @@
-apiVersion: networking.istio.io/v1alpha3
+{{- if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1" }}
+---
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ template "fullname" . }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   gateways:
-  - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+    {{- if .Values.global.istio.additionalGateways }}
+    {{ toYaml .Values.global.istio.additionalGateways | nindent 4 }}
+    {{- end }}
   hosts:
   - {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
   http:
@@ -163,3 +170,4 @@ spec:
           port:
             number: 80
   {{ end }}
+{{- end }}

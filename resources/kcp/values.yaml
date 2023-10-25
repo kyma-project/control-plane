@@ -40,7 +40,6 @@ global:
     - ory
     - eventing
     - serverless
-    - cluster-essentials
   provisioning:
     enabled: false
   kyma_environment_broker:
