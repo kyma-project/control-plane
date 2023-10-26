@@ -53,7 +53,7 @@ require (
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -94,14 +94,3 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.22.12
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.12
 )
-
-replace (
-	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
-	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
-	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
-	k8s.io/kubernetes => k8s.io/kubernetes v1.20.11
-)
-
-replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 //this fixes cve-2022-1996
