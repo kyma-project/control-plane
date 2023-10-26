@@ -40,7 +40,6 @@ global:
     - ory
     - eventing
     - serverless
-    - rma
   provisioning:
     enabled: false
   kyma_environment_broker:
