@@ -3,7 +3,7 @@ package keb
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -95,10 +95,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	var resp *http.Response
 	var err error
 	err = retry.OnError(customBackoff, func(err error) bool {
-		if err != nil {
-			return true
-		}
-		return false
+		return err != nil 
 	}, func() (err error) {
 		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		resp, err = c.HTTPClient.Do(req)
@@ -124,7 +121,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		return nil, failedErr
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("read response body")
 		return nil, err

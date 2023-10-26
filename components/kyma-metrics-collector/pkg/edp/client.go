@@ -3,7 +3,7 @@ package edp
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -77,13 +77,10 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		Jitter:   0.1,
 	}
 	err = retry.OnError(customBackoff, func(err error) bool {
-		if err != nil {
-			return true
-		}
-		return false
+		return err != nil 
 	}, func() (err error) {
 		metricTimer := prometheus.NewTimer(sentRequestDuration)
-		req.Body = ioutil.NopCloser(bytes.NewReader(payload))
+		req.Body = io.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
 		metricTimer.ObserveDuration()
 		if err != nil {

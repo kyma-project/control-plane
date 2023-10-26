@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -71,7 +71,7 @@ func WithProvisionedAndDeprovisionedState(runtime *kebruntime.RuntimeDTO) {
 }
 
 func LoadFixtureFromFile(filePath string) ([]byte, error) {
-	return ioutil.ReadFile(filePath)
+	return os.ReadFile(filePath)
 }
 
 func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega) *httptest.Server {
@@ -408,7 +408,7 @@ func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
-			"kubeconfig": []byte(fmt.Sprintf("%s", kubeconfigVal)),
+			"kubeconfig": []byte(kubeconfigVal),
 		},
 	}
 }

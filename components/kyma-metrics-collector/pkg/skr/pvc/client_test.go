@@ -30,12 +30,10 @@ func TestList(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotPVCList.Items)).To(gomega.Equal(len(pvcList.Items)))
 	sort.Slice(gotPVCList.Items, func(i, j int) bool {
-		if gotPVCList.Items[i].Name < gotPVCList.Items[j].Name {
-			return true
-		}
-		return false
+		return gotPVCList.Items[i].Name < gotPVCList.Items[j].Name 
 	})
 	g.Expect(*gotPVCList).To(gomega.Equal(*pvcList))
+
 	// Tests metric
 	metricName := "kmc_skr_calls_total"
 	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
@@ -55,6 +53,7 @@ func TestList(t *testing.T) {
 	gotPVCList, err = client.List(ctx)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotPVCList.Items)).To(gomega.Equal(0))
+
 	// Tests metric
 	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
 	callsSuccess, err = skrcommons.TotalCalls.GetMetricWithLabelValues(skrcommons.SuccessStatusLabel, skrcommons.SuccessListingPVCLabel)
