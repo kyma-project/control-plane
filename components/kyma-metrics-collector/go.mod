@@ -5,11 +5,11 @@ go 1.21
 toolchain go1.21.3
 
 require (
-	github.com/gardener/gardener v1.82.0
+	github.com/gardener/gardener v1.82.1
 	github.com/gardener/gardener-extension-provider-aws v1.48.0
 	github.com/gardener/gardener-extension-provider-azure v1.38.2
 	github.com/gardener/gardener-extension-provider-gcp v1.32.1
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230911130701-f7d1ac254205
