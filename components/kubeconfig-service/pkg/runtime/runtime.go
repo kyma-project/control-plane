@@ -82,17 +82,20 @@ type RuntimeClient struct {
 }
 
 func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string, tenant string) (*RuntimeClient, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
+	config, err := clientcmd.RESTConfigFromKubeConfig(kubeConfig)
 	if err != nil {
+		log.Errorf("Failed to fetch rest config from kubeconfig.")
 		return nil, err
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
+		log.Errorf("Failed to new clientset from kubeconfig.")
 		return nil, err
 	}
 
 	coreClientset, err := GetK8sClient()
 	if err != nil {
+		log.Errorf("Failed to create K8s client.")
 		return nil, err
 	}
 
