@@ -6,6 +6,8 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
