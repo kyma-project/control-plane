@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kyma-environment-broker-migrations
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false
-data:
-{{ (.Files.Glob "migrations/*").AsConfig | indent 2 }}
