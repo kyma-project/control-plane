@@ -5,19 +5,19 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     kyma_environment_broker:
       dir:
-      version: "v20231027-e9399d33"
+      version: "v20231107-c6cd2fee"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20231027-e9399d33"
+      version: "v20231107-c6cd2fee"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20231027-e9399d33"
+      version: "v20231107-c6cd2fee"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20231027-e9399d33"
+      version: "v20231107-c6cd2fee"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20231027-e9399d33"
+      version: "v20231107-c6cd2fee"
 
 deployment:
   replicaCount: 1
@@ -147,6 +147,7 @@ showTrialExpirationInfo: "false"
 subaccountsIdsToShowTrialExpirationInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
 trialDocsURL: "https://help.sap.com/docs/"
 allowNetworkingParameters: "false"
+exposeSchemaWithRegionRequired: "false"
 regionParameterIsRequired: "false"
 exposeSchemaWithRegionRequired: "false"
 
