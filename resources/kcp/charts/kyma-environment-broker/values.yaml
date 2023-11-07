@@ -149,7 +149,6 @@ trialDocsURL: "https://help.sap.com/docs/"
 allowNetworkingParameters: "false"
 exposeSchemaWithRegionRequired: "false"
 regionParameterIsRequired: "false"
-exposeSchemaWithRegionRequired: "false"
 
 osbUpdateProcessingEnabled: "false"
 
