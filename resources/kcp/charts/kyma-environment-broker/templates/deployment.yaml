@@ -304,6 +304,8 @@ spec:
               value: "{{ .Values.avs.landscapeTagClassId }}"
             - name: APP_AVS_REGION_TAG_CLASS_ID
               value: "{{ .Values.avs.regionTagClassId }}"
+            - name: APP_AVS_EXTERNAL_TESTER_DISABLED
+              value: "{{ .Values.avs.externalTesterDisabled }}"
             - name: APP_AVS_PROVIDER_TAG_CLASS_ID
               value: "{{ .Values.avs.providerTagClassId }}"
             - name: APP_AVS_SHOOT_NAME_TAG_CLASS_ID
