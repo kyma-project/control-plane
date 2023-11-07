@@ -63,6 +63,8 @@ spec:
           image: "{{ .Values.global.images.container_registry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
+            - name: APP_BROKER_EXPOSE_SCHEMA_WITH_REGION_REQUIRED
+              value: "{{ .Values.exposeSchemaWithRegionRequired }}"
             - name: APP_BROKER_REGION_PARAMETER_IS_REQUIRED
               value: "{{ .Values.regionParameterIsRequired }}"
             - name: APP_BROKER_ALLOW_NETWORKING_PARAMETERS
