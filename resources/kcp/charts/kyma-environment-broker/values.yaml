@@ -5,19 +5,19 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     kyma_environment_broker:
       dir:
-      version: "v20231107-c6cd2fee"
+      version: "v20231107-5c3727af"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20231107-c6cd2fee"
+      version: "v20231107-5c3727af"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20231107-c6cd2fee"
+      version: "v20231107-5c3727af"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20231107-c6cd2fee"
+      version: "v20231107-5c3727af"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20231107-c6cd2fee"
+      version: "v20231107-5c3727af"
 
 deployment:
   replicaCount: 1
