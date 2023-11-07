@@ -69,6 +69,8 @@ spec:
               value: "{{ .Values.regionParameterIsRequired }}"
             - name: APP_BROKER_ALLOW_NETWORKING_PARAMETERS
               value: "{{ .Values.allowNetworkingParameters }}"
+            - name: APP_BROKER_ALLOW_MODULES_PARAMETERS
+              value: "{{ .Values.allowModulesParameters }}"
             - name: APP_DISABLE_PROCESS_OPERATIONS_IN_PROGRESS
               value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
