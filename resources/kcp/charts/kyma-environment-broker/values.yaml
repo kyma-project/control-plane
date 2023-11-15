@@ -256,6 +256,7 @@ cis:
     requestInterval: "200ms"
     rateLimitingInterval: "2s"
     maxRequestRetries: 3
+    jobRetries: 6
 
 notification:
   url: "TBD"

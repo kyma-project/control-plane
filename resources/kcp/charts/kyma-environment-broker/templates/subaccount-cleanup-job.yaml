@@ -161,6 +161,7 @@ spec:
       labels:
         cronjob: subaccount-cleaner-v2.0
     spec:
+      backoffLimit: {{ .Values.cis.v2.jobRetries }}
       template:
         metadata:
           labels:
