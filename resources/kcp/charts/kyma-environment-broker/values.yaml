@@ -253,6 +253,9 @@ cis:
     id: "TBD"
     secret: "TBD"
     secretName: "cis-creds-v2"
+    requestInterval: "200ms"
+    rateLimitingInterval: "2s"
+    maxRequestRetries: 3
 
 notification:
   url: "TBD"
