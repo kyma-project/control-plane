@@ -22,14 +22,15 @@ import (
 )
 
 type Config struct {
-	ClientName   string
-	ClientID     string
-	ClientSecret string
-	Scope        string `envconfig:"default=broker:write"`
-	TokenURL     string
-	URL          string
-	PlanID       string
-	Region       string
+	ClientName     string
+	ClientID       string
+	ClientSecret   string
+	Scope          string `envconfig:"default=broker:write"`
+	TokenURL       string
+	URL            string
+	PlanID         string
+	Region         string
+	PlatformRegion string `envconfig:"optional"`
 }
 
 type BrokerOAuthConfig struct {
@@ -407,8 +408,8 @@ func (c *Client) warnOnError(do func() error) {
 
 func (c *Client) baseURL() string {
 	base := fmt.Sprintf("%s/oauth", c.brokerConfig.URL)
-	if c.brokerConfig.Region == "" {
+	if c.brokerConfig.PlatformRegion == "" {
 		return fmt.Sprintf("%s/v2", base)
 	}
-	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.Region)
+	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.PlatformRegion)
 }
