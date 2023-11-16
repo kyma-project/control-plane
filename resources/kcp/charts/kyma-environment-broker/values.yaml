@@ -255,7 +255,7 @@ cis:
     secretName: "cis-creds-v2"
     requestInterval: "200ms"
     rateLimitingInterval: "2s"
-    maxRequestRetries: 3
+    maxRequestRetries: "3"
     jobRetries: 6
 
 notification:
