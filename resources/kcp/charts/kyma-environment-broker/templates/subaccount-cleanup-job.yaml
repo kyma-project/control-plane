@@ -161,6 +161,7 @@ spec:
       labels:
         cronjob: subaccount-cleaner-v2.0
     spec:
+      backoffLimit: {{ .Values.cis.v2.jobRetries }}
       template:
         metadata:
           labels:
@@ -202,6 +203,12 @@ spec:
                   value: {{ .Values.cis.v2.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
                   value: {{ .Values.cis.v2.eventServiceURL }}
+                - name: APP_CIS_REQUEST_INTERVAL
+                  value: {{ .Values.cis.v2.requestInterval | quote }}
+                - name: APP_CIS_RATE_LIMITING_INTERVAL
+                  value: {{ .Values.cis.v2.rateLimitingInterval | quote }}
+                - name: APP_CIS_MAX_REQUEST_RETRIES
+                  value: {{ .Values.cis.v2.maxRequestRetries | quote }}
                 - name: APP_DATABASE_SECRET_KEY
                   valueFrom:
                     secretKeyRef:

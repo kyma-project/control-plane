@@ -10,21 +10,11 @@
     }
   },
   "kymaConfig": {
-    "version": "2.0.4",
+    "version": "main",
     "profile": "Evaluation",
     "components": [
       {
-        "component": "cluster-essentials",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "istio-configuration",
+        "component": "istio",
         "namespace": "istio-system",
         "configuration": [
           {
@@ -36,36 +26,6 @@
       {
         "component": "certificates",
         "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "logging",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "tracing",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "kiali",
-        "namespace": "kyma-system",
         "configuration": [
           {
               "key": "global.domainName",
@@ -114,58 +74,8 @@
         ]
       },
       {
-        "component": "service-catalog",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "service-catalog-addons",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "helm-broker",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "cluster-users",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "serverless",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "application-connector",
-        "namespace": "kyma-integration",
         "configuration": [
           {
             "key": "global.domainName",

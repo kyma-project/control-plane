@@ -22,14 +22,15 @@ import (
 )
 
 type Config struct {
-	ClientName   string
-	ClientID     string
-	ClientSecret string
-	Scope        string `envconfig:"default=broker:write"`
-	TokenURL     string
-	URL          string
-	PlanID       string
-	Region       string `envconfig:"optional"`
+	ClientName     string
+	ClientID       string
+	ClientSecret   string
+	Scope          string `envconfig:"default=broker:write"`
+	TokenURL       string
+	URL            string
+	PlanID         string
+	Region         string
+	PlatformRegion string `envconfig:"optional"`
 }
 
 type BrokerOAuthConfig struct {
@@ -74,6 +75,7 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	trialPlanID = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 )
 
 type inputContext struct {
@@ -98,6 +100,7 @@ type instanceDetailsResponse struct {
 
 type provisionParameters struct {
 	Name        string   `json:"name"`
+	Region      string   `json:"region"`
 	Components  []string `json:"components"`
 	KymaVersion string   `json:"kymaVersion,omitempty"`
 }
@@ -303,6 +306,9 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 		Components:  []string{},    // fill with optional components
 		KymaVersion: customVersion, // If empty filed will be omitted
 	}
+	if c.brokerConfig.PlanID != trialPlanID {
+		parameters.Region = c.brokerConfig.Region
+	}
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
 		SubAccountID:    c.subAccountID,
@@ -402,8 +408,8 @@ func (c *Client) warnOnError(do func() error) {
 
 func (c *Client) baseURL() string {
 	base := fmt.Sprintf("%s/oauth", c.brokerConfig.URL)
-	if c.brokerConfig.Region == "" {
+	if c.brokerConfig.PlatformRegion == "" {
 		return fmt.Sprintf("%s/v2", base)
 	}
-	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.Region)
+	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.PlatformRegion)
 }

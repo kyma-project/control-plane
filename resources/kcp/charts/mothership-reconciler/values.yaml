@@ -36,7 +36,7 @@ db:
   connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
 preComponents:
-  - [cluster-essentials, istio, certificates]
+  - [istio, certificates]
 
 options:
   verbose: false
@@ -171,3 +171,11 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
+  eventing:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: eventings
+  application-connector:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: applicationconnector
