@@ -74,6 +74,11 @@ func (c *configurator) configureAgent(cluster model.Cluster, token graphql.OneTi
 		"TOKEN":         token.Token,
 	}
 
+	err = util.RetryOnError(3*time.Second, 2, "Error while creating istio-system namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
+		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), "istio-system")
+		return
+	})
+
 	err = util.RetryOnError(3*time.Second, 2, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
 		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), namespace)
 		return
