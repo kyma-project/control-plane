@@ -48,6 +48,7 @@ var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
 		rbacv1helpers.NewRule("*").URLs("*").RuleOrDie(),
 	},
 	RUNTIME_OPERATOR: {
+		rbacv1helpers.NewRule("*").Groups("*").Resources("pods/ephemeralcontainers").RuleOrDie(),
 		rbacv1helpers.NewRule("get", "list", "watch").Groups("*").Resources("*").RuleOrDie(),
 		rbacv1helpers.NewRule("get", "list", "watch").URLs("*").RuleOrDie(),
 	},
