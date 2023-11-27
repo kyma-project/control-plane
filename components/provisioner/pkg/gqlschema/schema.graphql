@@ -129,6 +129,7 @@ type OperationStatus {
     state: OperationState!
     message: String
     runtimeID: String
+    compassRuntimeID: String
     lastError: LastError
 }
 
