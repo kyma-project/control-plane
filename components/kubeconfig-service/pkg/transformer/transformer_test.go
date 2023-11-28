@@ -18,7 +18,7 @@ func TestSpec(t *testing.T) {
 		Convey("when given correct raw KubeConfig", func() {
 			Convey("Should return a Client", func() {
 				//given, when
-				c, err := transformer.NewClient(testInputRawKubeconfig, testUserID)
+				c, err := transformer.NewClient([]byte(testInputRawKubeconfig), testUserID)
 				//then
 				So(err, ShouldBeNil)
 				So(c.ContextName, ShouldEqual, "test--aa1234b")
@@ -33,7 +33,7 @@ func TestSpec(t *testing.T) {
 	Convey("client.TransformKubeconfig()", t, func() {
 		Convey("Should return transformed kubeconfig", func() {
 			//given
-			c, err := transformer.NewClient(testInputRawKubeconfig, testUserID)
+			c, err := transformer.NewClient([]byte(testInputRawKubeconfig), testUserID)
 			c.SaToken = "abcdef"
 			So(err, ShouldBeNil)
 			//when

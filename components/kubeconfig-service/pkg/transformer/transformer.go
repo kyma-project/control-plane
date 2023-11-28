@@ -21,9 +21,9 @@ type Client struct {
 }
 
 // NewClient Create new instance of TransformerClient
-func NewClient(rawKubeCfg string, userID string) (*Client, error) {
+func NewClient(rawKubeCfg []byte, userID string) (*Client, error) {
 	var kubeCfg kubeconfig
-	err := yaml.Unmarshal([]byte(rawKubeCfg), &kubeCfg)
+	err := yaml.Unmarshal(rawKubeCfg, &kubeCfg)
 	if err != nil {
 		return nil, err
 	}
