@@ -44,8 +44,8 @@ const Token = "token"
 
 var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
 	RUNTIME_ADMIN: {
-		rbacv1helpers.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
-		rbacv1helpers.NewRule("*").URLs("*").RuleOrDie(),
+		rbacv1helpers.NewRule("create", "delete", "deletecollection", "get", "list", "patch", "update", "watch").Groups("*").Resources("*").RuleOrDie(),
+		rbacv1helpers.NewRule("create", "delete", "deletecollection", "get", "list", "patch", "update", "watch").URLs("*").RuleOrDie(),
 	},
 	RUNTIME_OPERATOR: {
 		rbacv1helpers.NewRule("*").Groups("*").Resources("pods/ephemeralcontainers").RuleOrDie(),
@@ -130,7 +130,7 @@ func (rtc *RuntimeClient) Run() (string, error) {
 	err = rtc.createClusterRoleRules()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA)
-		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
+		return "", errors.Wrapf(err, "while createClusterRoleRules %s", rtc.User.ClusterRoleRulesName)
 	}
 
 	err = rtc.createClusterRole()
