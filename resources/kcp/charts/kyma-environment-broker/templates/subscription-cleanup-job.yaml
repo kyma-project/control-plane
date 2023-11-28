@@ -2,6 +2,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: subscription-cleanup-job
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   jobTemplate:
     metadata:
