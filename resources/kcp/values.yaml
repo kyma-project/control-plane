@@ -119,6 +119,8 @@ global:
     expose: true
     authentication: true
     serviceAccountName: "mothership-reconciler"
+    roleName: "mothership-reconciler-role"
+    roleBindingName: "mothership-reconciler-rolebinding"
     auditlog:
       enabled: true
       logPath: "/var/log/auditlog"
