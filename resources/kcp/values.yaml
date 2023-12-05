@@ -37,7 +37,6 @@ global:
     - cleaner
     - connectivity-proxy
     - istio
-    - ory
     - eventing
     - serverless
   provisioning:
