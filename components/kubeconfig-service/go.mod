@@ -51,11 +51,11 @@ require (
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
@@ -76,7 +76,7 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.3 // CVE-2021-43784
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1 // CVE-2022-21698
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // CVE-2022-27191
-	golang.org/x/net => golang.org/x/net v0.9.0
+	golang.org/x/net => golang.org/x/net v0.19.0
 	golang.org/x/text => golang.org/x/text v0.3.8 // CVE-2022-32149
 	k8s.io/api => k8s.io/api v0.26.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.2
