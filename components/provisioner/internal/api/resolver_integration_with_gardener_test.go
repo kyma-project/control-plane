@@ -386,12 +386,13 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvision,
-		State:     gqlschema.OperationStateSucceeded,
-		RuntimeID: runtimeId,
-		Message:   util.StringPtr("Operation succeeded"),
-		LastError: &gqlschema.LastError{},
+		ID:               operationId,
+		Operation:        gqlschema.OperationTypeProvision,
+		State:            gqlschema.OperationStateSucceeded,
+		RuntimeID:        runtimeId,
+		CompassRuntimeID: runtimeId,
+		Message:          util.StringPtr("Operation succeeded"),
+		LastError:        &gqlschema.LastError{},
 	}
 }
 
