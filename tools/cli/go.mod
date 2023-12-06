@@ -19,8 +19,8 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/mod v0.13.0
-	golang.org/x/net v0.17.0
+	golang.org/x/mod v0.14.0
+	golang.org/x/net v0.19.0
 	golang.org/x/oauth2 v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.0-alpha.0
@@ -33,7 +33,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible // indirect
-	github.com/coreos/go-oidc/v3 v3.6.0 // indirect
+	github.com/coreos/go-oiqdc/v3 v3.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
