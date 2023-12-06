@@ -8,12 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
-	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/env"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -60,10 +59,10 @@ func SetupConfigMap() error {
 		tenantID := configMap.ObjectMeta.Annotations["tenant"]
 		for runtimeID, startTimeString := range configMap.Data {
 			log.Infof("Found ConfigMap for runtime %s user %s.", runtimeID, userID)
-			c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
-			status, err := c.RuntimeStatus(runtimeID)
-			if strings.Contains(fmt.Sprint(err), "not found") && strings.Contains(fmt.Sprint(err), "error getting Shoot") {
-				//delete ConfigMap if shoot no longer exists
+
+			//delete ConfigMap if shoot no longer exists
+			rawConfig, err := GetRawConfig(runtimeID)
+			if k8serrors.IsNotFound(err) {
 				coreClientset, err := GetK8sClient()
 				if err != nil {
 					log.Errorf("Failed to create core client set.")
@@ -76,11 +75,11 @@ func SetupConfigMap() error {
 				}
 				continue
 			} else if err != nil {
-				log.Errorf("Failed to fetch runtime status.")
+				log.Errorf("Failed to fetch Config for runtime %s.", runtimeID)
 				return err
 			}
-			rawConfig := *status.RuntimeConfiguration.Kubeconfig
-			rtc, err := NewRuntimeClient([]byte(rawConfig), userID, role, tenantID)
+
+			rtc, err := NewRuntimeClient(rawConfig, userID, role, tenantID)
 			if err != nil {
 				log.Errorf("Failed to create runtime client.")
 				return err
@@ -307,4 +306,30 @@ func cleanConfigMap(coreClientset kubernetes.Interface, userID string, runtimeID
 		log.Infof("Succeeded in removing ConfigMap for user %s.", userID)
 	}
 	return nil
+}
+
+func GetRawConfig(runtimeID string) ([]byte, error) {
+	coreClientset, err := GetK8sClient()
+	if err != nil {
+		log.Errorf("Failed to get kcp k8s client.")
+		return nil, err
+	}
+	secretList, err := coreClientset.CoreV1().Secrets(KcpNamespace).List(context.Background(), metav1.ListOptions{LabelSelector: fmt.Sprintf("kyma-project.io/runtime-id=%s", runtimeID)})
+	if len((*secretList).Items) == 0 {
+		log.Infof("No secret found for runtime %s.", runtimeID)
+		return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+	} else if len((*secretList).Items) > 1 {
+		log.Warnf("More than one secrets found for runtime %s.", runtimeID)
+	} else if err != nil {
+		log.Errorf("Failed to filter secret for runtime %s: %s", runtimeID, err.Error())
+		return nil, err
+	}
+
+	var secret []byte
+	for _, item := range (*secretList).Items {
+		secret = item.Data["config"]
+		break
+	}
+
+	return secret, nil
 }
