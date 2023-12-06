@@ -36,7 +36,7 @@ db:
   connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
 preComponents:
-  - [istio, certificates]
+  - [certificates]
 
 options:
   verbose: false

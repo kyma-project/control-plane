@@ -14,16 +14,6 @@
     "profile": "Evaluation",
     "components": [
       {
-        "component": "istio",
-        "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "certificates",
         "namespace": "istio-system",
         "configuration": [
