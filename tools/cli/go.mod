@@ -33,7 +33,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible // indirect
-	github.com/coreos/go-oiqdc/v3 v3.6.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
