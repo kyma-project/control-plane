@@ -26,11 +26,12 @@ func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatu
 
 func (c graphQLConverter) OperationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		ID:        &operation.ID,
-		Operation: c.operationTypeToGraphQLType(operation.Type),
-		State:     c.operationStateToGraphQLState(operation.State),
-		Message:   &operation.Message,
-		RuntimeID: &operation.ClusterID,
+		ID:               &operation.ID,
+		Operation:        c.operationTypeToGraphQLType(operation.Type),
+		State:            c.operationStateToGraphQLState(operation.State),
+		Message:          &operation.Message,
+		RuntimeID:        &operation.ClusterID,
+		CompassRuntimeID: &operation.ClusterID,
 		LastError: &gqlschema.LastError{
 			ErrMessage: operation.ErrMessage,
 			Reason:     operation.Reason,
