@@ -104,3 +104,7 @@ tests:
     provisioning: "5h"
     deprovisioning: "4h"
     hibernation: "1h"
+gardener:
+  project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
+  kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
+  secretName: "gardener-credentials"
