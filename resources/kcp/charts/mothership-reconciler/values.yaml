@@ -35,9 +35,6 @@ db:
   connMaxLifetime: 10m # If d <= 0, connections are not closed due to a connection's age.
   connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
-preComponents:
-  - [istio, certificates]
-
 options:
   verbose: false
   workerCount: 50
