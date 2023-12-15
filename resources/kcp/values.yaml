@@ -36,9 +36,7 @@ global:
     - base
     - cleaner
     - connectivity-proxy
-    - istio
     - eventing
-    - serverless
   provisioning:
     enabled: false
   kyma_environment_broker:
