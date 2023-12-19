@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/kyma-project/kyma-environment-broker v0.0.0-20231219084608-df422dc6e33d
 	github.com/onsi/gomega v1.29.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -37,7 +38,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230809132955-b02e11a4eec7 // indirect
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d // indirect
-	github.com/kyma-project/kyma-environment-broker v0.0.0-20231219084608-df422dc6e33d
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
