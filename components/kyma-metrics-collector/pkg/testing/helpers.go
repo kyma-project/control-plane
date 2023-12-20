@@ -24,7 +24,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 )
 
 const (
