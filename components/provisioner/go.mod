@@ -4,7 +4,13 @@ go 1.21
 
 require (
 	github.com/99designs/gqlgen v0.11.3
+    github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.29
+	github.com/Azure/go-autorest/autorest/adal v0.9.23
 	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/aws/aws-sdk-go-v2 v1.23.5
+	github.com/aws/aws-sdk-go-v2/credentials v1.16.9
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.137.1	
 	github.com/gardener/gardener v1.74.1
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.4.0
