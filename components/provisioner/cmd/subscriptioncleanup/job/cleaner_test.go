@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider/mocks"
-	"github.com/kyma-project/kyma-environment-broker/cmd/subscriptioncleanup/model"
+	"github.com/kyma-project/control-plane/components/provisioner/cmd/subscriptioncleanup/cloudprovider/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/cmd/subscriptioncleanup/model"
 	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
