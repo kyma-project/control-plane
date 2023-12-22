@@ -212,7 +212,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -294,7 +294,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -376,7 +376,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -458,7 +458,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -540,7 +540,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
