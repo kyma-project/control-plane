@@ -4,10 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -71,7 +71,7 @@ func WithProvisionedAndDeprovisionedState(runtime *kebruntime.RuntimeDTO) {
 }
 
 func LoadFixtureFromFile(filePath string) ([]byte, error) {
-	return ioutil.ReadFile(filePath)
+	return os.ReadFile(filePath)
 }
 
 func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega) *httptest.Server {
