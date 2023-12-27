@@ -16,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	go.uber.org/zap v1.26.0
-	k8s.io/api v0.28.3
+	k8s.io/api v0.28.5
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
@@ -73,4 +73,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.28.3
+replace k8s.io/client-go => k8s.io/client-go v0.28.5
