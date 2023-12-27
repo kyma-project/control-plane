@@ -5,17 +5,16 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-	"github.com/onsi/gomega"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 func TestList(t *testing.T) {
@@ -30,10 +29,7 @@ func TestList(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotPVCList.Items)).To(gomega.Equal(len(pvcList.Items)))
 	sort.Slice(gotPVCList.Items, func(i, j int) bool {
-		if gotPVCList.Items[i].Name < gotPVCList.Items[j].Name {
-			return true
-		}
-		return false
+		return gotPVCList.Items[i].Name < gotPVCList.Items[j].Name
 	})
 	g.Expect(*gotPVCList).To(gomega.Equal(*pvcList))
 	// Tests metric

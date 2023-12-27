@@ -6,13 +6,11 @@ import (
 	"io"
 	"net/http"
 
-	"go.uber.org/zap"
-
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
-
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
@@ -77,10 +75,7 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		Jitter:   0.1,
 	}
 	err = retry.OnError(customBackoff, func(err error) bool {
-		if err != nil {
-			return true
-		}
-		return false
+		return err != nil
 	}, func() (err error) {
 		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		req.Body = io.NopCloser(bytes.NewReader(payload))

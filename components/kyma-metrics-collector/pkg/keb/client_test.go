@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-	"github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/onsi/gomega"
 )
 
 const (
@@ -24,13 +24,12 @@ const (
 	kebRuntimePage1ResponseFilePath = "../testing/fixtures/runtimes_response_page1.json"
 	kebRuntimePage2ResponseFilePath = "../testing/fixtures/runtimes_response_page2.json"
 
-	//Metrics related variables
+	// Metrics related variables
 	metricsName   = "kmc_keb_request_total"
 	histogramName = "kmc_keb_request_duration_seconds"
 )
 
 func TestGetAllRuntimes(t *testing.T) {
-
 	t.Run("when 2 pages are returned for all runtimes on matching path and HTTP 404 for non matched ones", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
 		totalRequest.Reset()
@@ -57,7 +56,6 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		getRuntimesHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-
 			// Success endpoint
 			switch req.URL.Path {
 			case expectedPathPrefix:
@@ -123,7 +121,6 @@ func TestGetAllRuntimes(t *testing.T) {
 		counter, err = totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusNotFound))
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
-
 	})
 
 	t.Run("when all runtimes are returned in 1 page", func(t *testing.T) {
@@ -158,11 +155,8 @@ func TestGetAllRuntimes(t *testing.T) {
 		kebURL := fmt.Sprintf("%s%s", srv.URL, expectedPathPrefixWith1Page)
 		kebClient := getKEBClient(kebURL)
 
-		req, err := kebClient.NewRequest()
-		g.Expect(err).Should(gomega.BeNil())
-
 		// Testing response which contains all the records
-		req, err = kebClient.NewRequest()
+		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
 		gotRuntimes, err := kebClient.GetAllRuntimes(req)
 		g.Expect(err).Should(gomega.BeNil())
@@ -203,11 +197,8 @@ func TestGetAllRuntimes(t *testing.T) {
 
 		kebClient := getKEBClient(kebURL)
 
-		req, err := kebClient.NewRequest()
-		g.Expect(err).Should(gomega.BeNil())
-
 		// Testing response which contains HTTP 500
-		req, err = kebClient.NewRequest()
+		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
 		_, err = kebClient.GetAllRuntimes(req)
 		g.Expect(err.Error()).Should(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 500"))
