@@ -356,6 +356,36 @@ data:
          "cpu_cores": 80,
          "memory": 320
        }
+     },
+      "sap-converged-cloud": {
+       "g_c12_m48": {
+         "cpu_cores": 12,
+         "memory": 48
+       },
+       "g_c16_m64": {
+         "cpu_cores": 16,
+         "memory": 64
+       },
+       "g_c32_m128": {
+         "cpu_cores": 32,
+         "memory": 128
+       },
+       "g_c4_m16": {
+         "cpu_cores": 4,
+         "memory": 16
+       },
+       "g_c64_m256": {
+         "cpu_cores": 64,
+         "memory": 256
+       },
+       "g_c6_m24": {
+         "cpu_cores": 6,
+         "memory": 24
+       },
+       "g_c8_m32": {
+         "cpu_cores": 8,
+         "memory": 32
+       }
      }
     }
 {{- end -}}
