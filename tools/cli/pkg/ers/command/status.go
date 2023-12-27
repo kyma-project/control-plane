@@ -9,7 +9,7 @@ import (
 
 	"errors"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	mothershipAuth "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/kyma-environment-broker/common/orchestration"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

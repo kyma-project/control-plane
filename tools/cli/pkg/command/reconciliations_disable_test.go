@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	"github.com/stretchr/testify/require"
 )

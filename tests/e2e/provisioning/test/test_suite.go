@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/kyma-environment-broker/common/director"
+	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"

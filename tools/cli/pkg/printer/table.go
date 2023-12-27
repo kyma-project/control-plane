@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/events"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/liggitt/tabwriter"
 
 	"k8s.io/apimachinery/pkg/util/duration"
