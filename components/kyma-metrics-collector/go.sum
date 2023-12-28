@@ -86,8 +86,8 @@ github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d h1:4CXt3urEn22GxBRNSY6kxlGAIJwKHp6XDjwD2AJhf8Y=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d/go.mod h1:dskjODHoePep31rb2cpQnSsHXgM8/ES8v55BHmFjgwo=
-github.com/kyma-project/kyma-environment-broker v0.0.0-20231219084608-df422dc6e33d h1:9g/RQHCkJwzu2xsXqcEtQRE5DOTX1eLoW92Yd4IAZrM=
-github.com/kyma-project/kyma-environment-broker v0.0.0-20231219084608-df422dc6e33d/go.mod h1:aHBl05IkfV4rOMBdx68t4z7Z1uamNSvjCMn7fa/gHxQ=
+github.com/kyma-project/kyma-environment-broker v0.0.1 h1:TuA5ZYLmsQU7Pk4+cLnVvIJYsgWmAj9qT7UvcBWSkGU=
+github.com/kyma-project/kyma-environment-broker v0.0.1/go.mod h1:DbKiOMeg0FzWKTW7gRF53QMBueMSb5e1K9Q9695G6EM=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6/go.mod h1:RzRNmOyU59g0phPOjlZ/QAGTf+J1ff51r5/EHvBhbrI=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
