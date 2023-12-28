@@ -30,10 +30,7 @@ func TestList(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotSvcList.Items)).To(gomega.Equal(len(svcList.Items)))
 	sort.Slice(gotSvcList.Items, func(i, j int) bool {
-		if gotSvcList.Items[i].Name < gotSvcList.Items[j].Name {
-			return true
-		}
-		return false
+		return gotSvcList.Items[i].Name < gotSvcList.Items[j].Name
 	})
 	g.Expect(*gotSvcList).To(gomega.Equal(*svcList))
 	// Tests metric
