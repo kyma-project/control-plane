@@ -5,7 +5,7 @@ Kyma Metrics Collector (KMC) is a component that scrapes all Kyma clusters to ge
 
 ## Functionality
 The basic flow for KMC is as follows:
-* KMC workers get a list of runtimes from Kyma Environment Broker [(KEB)](https://github.com/kyma-project/control-plane/tree/main/components/kyma-environment-broker). 
+* KMC workers get a list of runtimes from [Kyma Environment Broker (KEB)](https://github.com/kyma-project/kyma-environment-broker/tree/main). 
  * Additionally, the workers get the kubeconfig, secret and shoot from Gardener. 
  * KMC adds the runtimes to a queue to work through them and re-queues a runtime should an error occur. 
  * Information on PVCs, SVCs and Nodes is retrieved from SAP Kyma Runtime (SKR). 

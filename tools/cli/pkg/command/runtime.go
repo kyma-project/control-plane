@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/events"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
 	"github.com/pkg/errors"
@@ -77,7 +77,7 @@ func NewRuntimeCmd() *cobra.Command {
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.
 
 Progress of each operation can be tracked by looking at finished stages. 
-https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-broker/03-03-runtime-operations.md
+https://github.com/kyma-project/kyma-environment-broker/blob/main/docs/user/03-20-runtime-operations.md
 `,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
