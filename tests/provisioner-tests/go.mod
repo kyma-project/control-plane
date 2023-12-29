@@ -31,4 +31,5 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
 	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/client-go => k8s.io/client-go v0.20.5
+	sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67
 )
