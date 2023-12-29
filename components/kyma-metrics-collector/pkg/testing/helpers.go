@@ -4,27 +4,21 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/onsi/gomega"
-
 	"github.com/gorilla/mux"
-
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -55,6 +49,7 @@ func NewRuntimesDTO(subAccountID string, shootName string, opts ...NewRuntimeOpt
 func WithSucceededState(runtime *kebruntime.RuntimeDTO) {
 	runtime.Status.Provisioning.State = "succeeded"
 }
+
 func WithFailedState(runtime *kebruntime.RuntimeDTO) {
 	runtime.Status.Provisioning.State = "failed"
 }
@@ -71,7 +66,7 @@ func WithProvisionedAndDeprovisionedState(runtime *kebruntime.RuntimeDTO) {
 }
 
 func LoadFixtureFromFile(filePath string) ([]byte, error) {
-	return ioutil.ReadFile(filePath)
+	return os.ReadFile(filePath)
 }
 
 func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega) *httptest.Server {
@@ -261,7 +256,7 @@ func GenerateRandomAlphaString(length int) string {
 
 // secureRandomBytes returns the requested number of bytes using crypto/rand
 func secureRandomBytes(length int) []byte {
-	var randomBytes = make([]byte, length)
+	randomBytes := make([]byte, length)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		log.Fatal("Unable to generate random bytes")
@@ -408,7 +403,7 @@ func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
-			"kubeconfig": []byte(fmt.Sprintf("%s", kubeconfigVal)),
+			"kubeconfig": []byte(kubeconfigVal),
 		},
 	}
 }

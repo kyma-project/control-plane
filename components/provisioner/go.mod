@@ -139,4 +139,5 @@ replace (
 	golang.org/x/text => golang.org/x/text v0.14.0
 	golang.org/x/tools => golang.org/x/tools v0.16.0
 	k8s.io/client-go => k8s.io/client-go v0.26.1
+	sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67
 )

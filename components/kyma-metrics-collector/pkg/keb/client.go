@@ -3,20 +3,18 @@ package keb
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
-	"go.uber.org/zap"
-
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"k8s.io/client-go/util/retry"
 )
 
 type Client struct {
@@ -95,10 +93,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	var resp *http.Response
 	var err error
 	err = retry.OnError(customBackoff, func(err error) bool {
-		if err != nil {
-			return true
-		}
-		return false
+		return err != nil
 	}, func() (err error) {
 		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		resp, err = c.HTTPClient.Do(req)
@@ -124,7 +119,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		return nil, failedErr
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("read response body")
 		return nil, err
