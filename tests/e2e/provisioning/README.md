@@ -12,7 +12,7 @@ To run this test, you must have the following Secrets inside your cluster:
 - Gardener Secret per provider
 - Service Manager Secret
 
-You must also have the Kyma Environment Broker [configured](https://github.com/kyma-project/kyma-environment-broker/tree/main#configuration) to use these Secrets in order to successfully create a Runtime.
+You must also have Kyma Environment Broker [configured](https://github.com/kyma-project/kyma-environment-broker/tree/main#configuration) to use these Secrets in order to successfully create Kyma runtime.
 
 ## Details
 
