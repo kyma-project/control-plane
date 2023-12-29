@@ -1,7 +1,7 @@
 APP_NAME = provisioner
 APP_PATH = components/provisioner
 ENTRYPOINT = cmd/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20230323-a1ac96db
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220809-002bc8cf3
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
