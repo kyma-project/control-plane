@@ -148,7 +148,7 @@ func (gql GQLClient) waitForOp(ctx context.Context, runtimeID string) (resp Stat
 type testConfig struct {
 	ProviderSecret    string `envconfig:"GARDENER_SECRET_NAME"`
 	Provider          string `envconfig:"GARDENER_PROVIDER,default=gcp"`
-	KubernetesVersion string `envconfig:"default=1.27.6"`
+	KubernetesVersion string `envconfig:"default=1.26.11"`
 	MachineType       string `envconfig:"default=e2-medium"`
 	DiskType          string `envconfig:"default=pd-balanced"`
 	Region            string `envconfig:"default=europe-west3"`
