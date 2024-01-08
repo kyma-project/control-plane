@@ -57,7 +57,7 @@ func CreateProvisioningQueue(
 
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, kubeconfigProvider, model.FinishedStage, timeouts.AgentConfiguration)
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, configureAgentStep.Name(), timeouts.BindingsCreation)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), kubeconfigProvider, createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
 	provisionSteps := map[model.OperationStage]operations.Step{

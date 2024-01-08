@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
@@ -53,7 +52,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 	}{
 		{
 			description: "should continue waiting if cluster not created",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
 			},
@@ -63,7 +62,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should continue waiting if last operation not set",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInUnknownState(clusterName), nil)
 			},
@@ -107,7 +106,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
-			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
+			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, nextStageName, 10*time.Minute)
 			// when
 			result, err := waitForClusterCreationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
@@ -127,24 +126,15 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 	}{
 		{
 			description: "should return error if failed to read Shoot",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
 		},
 		{
-			description: "should return error if failed to fetch kubeconfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
-				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return(nil, errors.New("some error"))
-			},
-			unrecoverableError: false,
-			cluster:            cluster,
-		},
-		{
 			description: "should return error if Shoot is in failed state due to rate limits exceeded",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedStateWithLimitRatingError(clusterName), nil)
 			},
 			unrecoverableError: false,
@@ -152,7 +142,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return error if Shoot is in failed state during reconcile operation",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootDuringReconcileInFailedState(clusterName), nil)
 			},
 			unrecoverableError: false,
@@ -160,26 +150,15 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
 			},
 			unrecoverableError: true,
 			cluster:            cluster,
 		},
 		{
-			description: "should return error if failed to update kubeconfig data in database",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
-				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return([]byte("kubeconfig"), nil)
-
-				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("some error"))
-			},
-			unrecoverableError: false,
-			cluster:            cluster,
-		},
-		{
 			description: "should return error if failed to update seed in database",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
 
 				dbSession.On("UpdateGardenerClusterConfig", cluster.ClusterConfig).Return(dberrors.Internal("some error"))
@@ -196,7 +175,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
-			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
+			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, nextStageName, 10*time.Minute)
 
 			// when
 			_, err := waitForClusterCreationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
@@ -213,64 +192,64 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 	}
 }
 
-func fixShootInSucceededState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateSucceeded,
+func fixShootInSucceededState(name string) *v1beta1.Shoot {
+	return fixShoot(name, &v1beta1.LastOperation{
+		State: v1beta1.LastOperationStateSucceeded,
 	})
 }
 
-func fixShootInSucceededStateWithSeed(name string, seed string) *gardener_types.Shoot {
+func fixShootInSucceededStateWithSeed(name string, seed string) *v1beta1.Shoot {
 	shoot := fixShootInSucceededState(name)
 	shoot.Spec.SeedName = &seed
 	return shoot
 }
 
-func fixShootInFailedState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateFailed,
+func fixShootInFailedState(name string) *v1beta1.Shoot {
+	return fixShoot(name, &v1beta1.LastOperation{
+		State: v1beta1.LastOperationStateFailed,
 	})
 }
 
-func fixShootDuringReconcileInFailedState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateFailed,
-		Type:  gardencorev1beta1.LastOperationTypeReconcile,
+func fixShootDuringReconcileInFailedState(name string) *v1beta1.Shoot {
+	return fixShoot(name, &v1beta1.LastOperation{
+		State: v1beta1.LastOperationStateFailed,
+		Type:  v1beta1.LastOperationTypeReconcile,
 	})
 }
 
-func fixShootInFailedStateWithLimitRatingError(name string) *gardener_types.Shoot {
-	shoot := fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateFailed,
+func fixShootInFailedStateWithLimitRatingError(name string) *v1beta1.Shoot {
+	shoot := fixShoot(name, &v1beta1.LastOperation{
+		State: v1beta1.LastOperationStateFailed,
 	})
 
-	codes := make([]gardener_types.ErrorCode, 1)
-	codes[0] = gardener_types.ErrorInfraRateLimitsExceeded
+	codes := make([]v1beta1.ErrorCode, 1)
+	codes[0] = v1beta1.ErrorInfraRateLimitsExceeded
 
-	lastError := gardener_types.LastError{Codes: codes}
+	lastError := v1beta1.LastError{Codes: codes}
 
-	lastErrors := make([]gardener_types.LastError, 1)
+	lastErrors := make([]v1beta1.LastError, 1)
 	lastErrors[0] = lastError
 	shoot.Status.LastErrors = lastErrors
 
 	return shoot
 }
 
-func fixShootInProcessingState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateProcessing,
+func fixShootInProcessingState(name string) *v1beta1.Shoot {
+	return fixShoot(name, &v1beta1.LastOperation{
+		State: v1beta1.LastOperationStateProcessing,
 	})
 }
 
-func fixShootInUnknownState(name string) *gardener_types.Shoot {
+func fixShootInUnknownState(name string) *v1beta1.Shoot {
 	return fixShoot(name, nil)
 }
 
-func fixShoot(name string, lastOperation *gardener_types.LastOperation) *gardener_types.Shoot {
-	return &gardener_types.Shoot{
+func fixShoot(name string, lastOperation *v1beta1.LastOperation) *v1beta1.Shoot {
+	return &v1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Status: gardener_types.ShootStatus{
+		Status: v1beta1.ShootStatus{
 			LastOperation: lastOperation,
 		},
 	}
