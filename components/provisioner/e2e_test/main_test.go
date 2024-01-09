@@ -203,10 +203,10 @@ func TestName(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(provisionResp)
 
-	operationID := provisionResp.ProvisionRuntime.Id
+	operationID := provisionResp.ProvisionRuntime.Operation
 	runtimeID := provisionResp.ProvisionRuntime.RuntimeID
 
-	t.Logf("Waiting for %s to provision", name)
+	t.Logf("Waiting for %s to provision, runtimeID %s, OperationID %s", name, runtimeID, operationID)
 	statusResp, err := cli.waitForOp(ctx, operationID)
 	assert.NoError(t, err)
 	t.Log(statusResp)
