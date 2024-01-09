@@ -45,8 +45,10 @@ type StatusResp struct {
 }
 
 type OperationStatusResp struct {
-	Operation string `json:"operation"`
-	State     string `json:"state"`
+	OperationStatus struct {
+		Operation string `json:"operation"`
+		State     string `json:"state"`
+	} `json:"runtimeOperationStatus"`
 }
 
 type DeprovisionResp struct {
@@ -146,9 +148,9 @@ func (gql GQLClient) waitForOp(ctx context.Context, operationID string) (resp Op
 			return
 		}
 
-		fmt.Printf("resp:[%s:%s]\n", resp.Operation, resp.State)
+		fmt.Printf("resp:[%s:%s]\n", resp.OperationStatus.Operation, resp.OperationStatus.State)
 
-		msg := resp.State
+		msg := resp.OperationStatus.State
 		if msg == "IN_PROGRESS" {
 			if time.Since(start) > waitTimeout {
 				return
