@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
@@ -43,6 +42,11 @@ type StatusResp struct {
 			} `json:"lastError"`
 		} `json:"lastOperationStatus"`
 	} `json:"runtimeStatus"`
+}
+
+type OperationStatusResp struct {
+	Operation string `json:"operation"`
+	State     string `json:"state"`
 }
 
 type DeprovisionResp struct {
@@ -111,7 +115,7 @@ func (gql GQLClient) deprovision(ctx context.Context, runtimeID string) (resp De
 	return
 }
 
-func (gql GQLClient) status(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
+func (gql GQLClient) runtimeStatus(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
 	err = gql.gqlRequest(
 		ctx,
 		"status.graphql",
@@ -120,19 +124,27 @@ func (gql GQLClient) status(ctx context.Context, runtimeID string) (resp StatusR
 	return
 }
 
-func (gql GQLClient) waitForOp(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
+func (gql GQLClient) operationStatus(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
+	err = gql.gqlRequest(
+		ctx,
+		"operationstatus.graphql",
+		map[string]string{"operationID": operationID},
+		&resp)
+	return
+}
+
+func (gql GQLClient) waitForOp(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
 	start := time.Now()
 	defer fmt.Println()
 	for {
-		resp, err = gql.status(ctx, runtimeID)
+		resp, err = gql.operationStatus(ctx, operationID)
 		if err != nil {
 			return
 		}
 
-		msg := resp.RuntimeStatus.LastOperationStatus.Message
+		msg := resp.State
 
-		if strings.HasPrefix(msg, "Operation in progress.") ||
-			strings.HasSuffix(msg, "started") {
+		if msg == "IN_PROGRESS" {
 			if time.Since(start) > waitTimeout {
 				return
 			}
@@ -189,10 +201,11 @@ func TestName(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(provisionResp)
 
+	operationID := provisionResp.ProvisionRuntime.Operation
 	runtimeID := provisionResp.ProvisionRuntime.RuntimeID
 
 	t.Logf("Waiting for %s to provision", name)
-	statusResp, err := cli.waitForOp(ctx, runtimeID)
+	statusResp, err := cli.waitForOp(ctx, operationID)
 	assert.NoError(t, err)
 	t.Log(statusResp)
 

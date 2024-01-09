@@ -1,0 +1,9 @@
+query checkStatus($operationID: String!) {
+    runtimeOperationStatus(id: $operationID)
+    {
+        operation
+        state
+        message
+        runtimeID
+    }
+}
