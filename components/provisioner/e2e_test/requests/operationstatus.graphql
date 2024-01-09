@@ -3,7 +3,5 @@ query checkStatus($operationID: String!) {
     {
         operation
         state
-        message
-        runtimeID
     }
 }

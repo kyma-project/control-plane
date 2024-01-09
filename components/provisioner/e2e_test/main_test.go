@@ -125,6 +125,8 @@ func (gql GQLClient) runtimeStatus(ctx context.Context, runtimeID string) (resp 
 }
 
 func (gql GQLClient) operationStatus(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
+	fmt.Println("Getting operation status for ", operationID)
+
 	err = gql.gqlRequest(
 		ctx,
 		"operationstatus.graphql",
