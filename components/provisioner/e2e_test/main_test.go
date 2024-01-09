@@ -150,8 +150,7 @@ func (gql GQLClient) waitForOp(ctx context.Context, operationID string) (resp Op
 
 		fmt.Printf("resp:[%s:%s]\n", resp.OperationStatus.Operation, resp.OperationStatus.State)
 
-		msg := resp.OperationStatus.State
-		if msg == "IN_PROGRESS" {
+		if resp.OperationStatus.State == "InProgress" {
 			if time.Since(start) > waitTimeout {
 				return
 			}
