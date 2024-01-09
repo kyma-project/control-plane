@@ -14,9 +14,10 @@ import (
 )
 
 type Resolver struct {
-	provisioning  provisioning.Service
-	validator     Validator
-	tenantUpdater TenantUpdater
+	provisioning              provisioning.Service
+	validator                 Validator
+	tenantUpdater             TenantUpdater
+	dynamicKubeconfigProvider DynamicKubeconfigProvider
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
@@ -34,11 +35,16 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
+type DynamicKubeconfigProvider interface {
+	FetchFromRequest(shootName string) ([]byte, error)
+}
+
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, dynamicKubeconfigProvider DynamicKubeconfigProvider) *Resolver {
 	return &Resolver{
-		provisioning:  provisioningService,
-		validator:     validator,
-		tenantUpdater: tenantUpdater,
+		provisioning:              provisioningService,
+		validator:                 validator,
+		tenantUpdater:             tenantUpdater,
+		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
 	}
 }
 

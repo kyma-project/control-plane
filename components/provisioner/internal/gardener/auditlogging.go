@@ -163,7 +163,7 @@ func (a *auditLogConfigurator) ConfigureAuditLogs(logger logrus.FieldLogger, sho
 
 	providerConfig := auditLogConfig[provider]
 	if providerConfig == nil {
-		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
+		return false, fmt.Errorf("cannot find config for provider %s", provider)
 	}
 
 	ctxLogger := logger.WithField("provider", provider)

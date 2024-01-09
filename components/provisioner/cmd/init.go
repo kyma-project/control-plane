@@ -30,6 +30,10 @@ const (
 	defaultSyncPeriod         = 10 * time.Minute
 )
 
+type DynamicKubeconfigProvider interface {
+	FetchFromRequest(shootName string) ([]byte, error)
+}
+
 func newProvisioningService(
 	gardenerProject string,
 	provisioner provisioning.Provisioner,
@@ -40,14 +44,27 @@ func newProvisioningService(
 	deprovisioningQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) provisioning.Service {
+	defaultEnableMachineImageVersionAutoUpdate bool,
+	dynamicKubeconfigProvider DynamicKubeconfigProvider,
 
+) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
-
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
+	return provisioning.NewProvisioningService(
+		inputConverter,
+		graphQLConverter,
+		directorService,
+		dbsFactory,
+		provisioner,
+		uuidGenerator,
+		shootProvider,
+		provisioningQueue,
+		deprovisioningQueue,
+		shootUpgradeQueue,
+		dynamicKubeconfigProvider,
+	)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

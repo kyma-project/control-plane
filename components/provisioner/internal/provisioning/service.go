@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type DynamicKubeconfigProvider interface {
+	FetchFromRequest(shootName string) ([]byte, error)
+}
+
 //go:generate mockery --name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
@@ -40,10 +44,11 @@ type ShootProvider interface {
 }
 
 type service struct {
-	inputConverter   InputConverter
-	graphQLConverter GraphQLConverter
-	directorService  director.DirectorClient
-	shootProvider    ShootProvider
+	inputConverter            InputConverter
+	graphQLConverter          GraphQLConverter
+	directorService           director.DirectorClient
+	shootProvider             ShootProvider
+	dynamicKubeconfigProvider DynamicKubeconfigProvider
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -67,19 +72,21 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
+	dynamicKubeconfigProvider DynamicKubeconfigProvider,
 
 ) Service {
 	return &service{
-		inputConverter:      inputConverter,
-		graphQLConverter:    graphQLConverter,
-		directorService:     directorService,
-		dbSessionFactory:    factory,
-		provisioner:         provisioner,
-		uuidGenerator:       generator,
-		provisioningQueue:   provisioningQueue,
-		deprovisioningQueue: deprovisioningQueue,
-		shootUpgradeQueue:   shootUpgradeQueue,
-		shootProvider:       shootProvider,
+		inputConverter:            inputConverter,
+		graphQLConverter:          graphQLConverter,
+		directorService:           directorService,
+		dbSessionFactory:          factory,
+		provisioner:               provisioner,
+		uuidGenerator:             generator,
+		provisioningQueue:         provisioningQueue,
+		deprovisioningQueue:       deprovisioningQueue,
+		shootUpgradeQueue:         shootUpgradeQueue,
+		shootProvider:             shootProvider,
+		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
 	}
 }
 
@@ -300,6 +307,13 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apper
 	if err != nil {
 		return model.RuntimeStatus{}, err
 	}
+
+	kubeconfig, fetchErr := r.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
+	if fetchErr != nil {
+		return model.RuntimeStatus{}, apperrors.Internal("unable to fetch kubeconfig: %s", fetchErr)
+	}
+
+	cluster.Kubeconfig = util.StringPtr(string(kubeconfig))
 
 	return model.RuntimeStatus{
 		LastOperationStatus:  operation,

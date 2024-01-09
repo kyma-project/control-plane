@@ -209,13 +209,24 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(
+				inputConverter,
+				graphQLConverter,
+				directorServiceMock,
+				dbsFactory,
+				provisioner,
+				uuidGenerator,
+				gardener.NewShootProvider(shootInterface),
+				provisioningQueue,
+				deprovisioningQueue,
+				shootUpgradeQueue,
+				kubeconfigProviderMock)
 
 			validator := api.NewValidator()
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
-			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+			resolver := api.NewResolver(provisioningService, validator, tenantUpdater, kubeconfigProviderMock)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
@@ -445,7 +456,7 @@ func simulateShootUpgrade(t *testing.T, f gardener_apis.ShootInterface, shootNam
 	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
 	require.NoError(t, err)
 
-	s.Status.ObservedGeneration = s.ObjectMeta.Generation + 1
+	s.Status.ObservedGeneration = s.Generation + 1
 
 	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)
