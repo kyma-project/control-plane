@@ -7,9 +7,9 @@ global:
     schema_migrator:
       dir:
       version: "v20230120-865831c1"
-    kyma_environments_subscription_cleanup_job:
+    subscription_cleanup_job:
       dir:
-      version: "v20230522-605f31f1"
+      version: "v20240109-3d6a573e"
     kyma_metrics_collector:
       dir:
       version: v20231220-5c7452bb
