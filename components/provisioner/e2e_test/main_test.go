@@ -135,20 +135,22 @@ func (gql GQLClient) operationStatus(ctx context.Context, operationID string) (r
 
 func (gql GQLClient) waitForOp(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
 	start := time.Now()
-	defer fmt.Println()
+	defer func() {
+		fmt.Printf("done in: %s", time.Since(start))
+	}()
 	for {
 		resp, err = gql.operationStatus(ctx, operationID)
 		if err != nil {
 			return
 		}
 
-		msg := resp.State
+		fmt.Printf("resp:[%s:%s]\n", resp.Operation, resp.State)
 
+		msg := resp.State
 		if msg == "IN_PROGRESS" {
 			if time.Since(start) > waitTimeout {
 				return
 			}
-			fmt.Print(".")
 			time.Sleep(waitDelay)
 			continue
 		}
@@ -201,7 +203,7 @@ func TestName(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(provisionResp)
 
-	operationID := provisionResp.ProvisionRuntime.Operation
+	operationID := provisionResp.ProvisionRuntime.Id
 	runtimeID := provisionResp.ProvisionRuntime.RuntimeID
 
 	t.Logf("Waiting for %s to provision", name)
