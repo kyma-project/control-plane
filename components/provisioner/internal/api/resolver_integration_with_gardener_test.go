@@ -226,7 +226,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
-			resolver := api.NewResolver(provisioningService, validator, tenantUpdater, kubeconfigProviderMock)
+			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 

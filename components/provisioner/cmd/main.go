@@ -211,7 +211,7 @@ func main() {
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()
-	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater, kubeconfigProvider)
+	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
