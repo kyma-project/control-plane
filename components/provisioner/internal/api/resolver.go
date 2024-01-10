@@ -34,10 +34,6 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-type DynamicKubeconfigProvider interface {
-	FetchFromRequest(shootName string) ([]byte, error)
-}
-
 func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
 	return &Resolver{
 		provisioning:  provisioningService,
