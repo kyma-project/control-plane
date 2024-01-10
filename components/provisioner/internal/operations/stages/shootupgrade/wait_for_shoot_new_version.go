@@ -43,7 +43,7 @@ func (s *WaitForShootNewVersionStep) Run(cluster model.Cluster, operation model.
 		return operations.StageResult{}, err
 	}
 
-	if shoot.Status.ObservedGeneration == shoot.ObjectMeta.Generation {
+	if shoot.Status.ObservedGeneration == shoot.Generation {
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 

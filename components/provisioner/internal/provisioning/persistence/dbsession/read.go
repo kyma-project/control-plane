@@ -153,16 +153,16 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	}
 	cluster := clusterWithProvider.Cluster
 
-	err = clusterWithProvider.gardenerConfigRead.DecodeProviderConfig()
+	err = clusterWithProvider.DecodeProviderConfig()
 	if err != nil {
 		return model.Cluster{}, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
 	}
-	cluster.ClusterConfig = clusterWithProvider.gardenerConfigRead.GardenerConfig
+	cluster.ClusterConfig = clusterWithProvider.GardenerConfig
 
 	if cluster.ActiveKymaConfigId != nil {
-		kymaConfig, dberr := r.getKymaConfig(clusterWithProvider.Cluster.ID, *cluster.ActiveKymaConfigId)
+		kymaConfig, dberr := r.getKymaConfig(clusterWithProvider.ID, *cluster.ActiveKymaConfigId)
 		if dberr != nil {
-			return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
+			return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", clusterWithProvider.ID)
 		}
 		cluster.KymaConfig = &kymaConfig
 	}
@@ -212,7 +212,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}
 
 	keys := make([]int, 0, len(kymaModulesOrdered))
-	for k, _ := range kymaModulesOrdered {
+	for k := range kymaModulesOrdered {
 		keys = append(keys, k)
 	}
 	sort.Ints(keys)
@@ -520,7 +520,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	}
 
 	for _, provider := range dnsProvidersPreSplit {
-		provider.DNSProvider.DomainsInclude = strings.Split(provider.RawDomains, ",")
+		provider.DomainsInclude = strings.Split(provider.RawDomains, ",")
 		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
 	}
 

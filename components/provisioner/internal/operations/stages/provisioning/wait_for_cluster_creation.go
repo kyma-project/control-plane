@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -18,26 +17,18 @@ import (
 )
 
 type WaitForClusterCreationStep struct {
-	gardenerClient           GardenerClient
-	dbSession                dbsession.ReadWriteSession
-	staticKubeconfigProvider StaticKubeconfigProvider
-	nextStep                 model.OperationStage
-	timeLimit                time.Duration
+	gardenerClient GardenerClient
+	dbSession      dbsession.ReadWriteSession
+	nextStep       model.OperationStage
+	timeLimit      time.Duration
 }
 
-//go:generate mockery --name=StaticKubeconfigProvider
-type StaticKubeconfigProvider interface {
-	FetchFromShoot(shootName string) ([]byte, error)
-}
-
-func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, staticKubeconfigProvider StaticKubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
+func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
 	return &WaitForClusterCreationStep{
-		gardenerClient:           gardenerClient,
-		dbSession:                dbSession,
-		staticKubeconfigProvider: staticKubeconfigProvider,
-
-		nextStep:  nextStep,
-		timeLimit: timeLimit,
+		gardenerClient: gardenerClient,
+		dbSession:      dbSession,
+		nextStep:       nextStep,
+		timeLimit:      timeLimit,
 	}
 }
 
@@ -58,22 +49,22 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
-		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
+		if lastOperation.State == v1beta1.LastOperationStateSucceeded {
 			return s.proceedToInstallation(cluster, shoot)
 		}
 
-		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+		if lastOperation.State == v1beta1.LastOperationStateFailed {
 			var reason apperrors.ErrReason
 
 			if len(shoot.Status.LastErrors) > 0 {
 				reason = util.GardenerErrCodesToErrReason(shoot.Status.LastErrors...)
 			}
 
-			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
+			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, v1beta1.ErrorInfraRateLimitsExceeded) {
 				return operations.StageResult{}, apperrors.External("error during cluster provisioning: rate limits exceeded").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
-			if lastOperation.Type == gardencorev1beta1.LastOperationTypeReconcile {
+			if lastOperation.Type == v1beta1.LastOperationTypeReconcile {
 				return operations.StageResult{}, apperrors.External("error during cluster provisioning: reconcilation error").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
@@ -88,27 +79,15 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
-func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot) (operations.StageResult, error) {
+func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *v1beta1.Shoot) (operations.StageResult, error) {
 
 	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
-
 		cluster.ClusterConfig.Seed = *shoot.Spec.SeedName
-
 		dberr := s.dbSession.UpdateGardenerClusterConfig(cluster.ClusterConfig)
 
 		if dberr != nil {
 			return operations.StageResult{}, dberr
 		}
-	}
-
-	kubeconfig, err := s.staticKubeconfigProvider.FetchFromShoot(shoot.Name)
-	if err != nil {
-		return operations.StageResult{}, err
-	}
-
-	dberr := s.dbSession.UpdateKubeconfig(cluster.ID, string(kubeconfig))
-	if dberr != nil {
-		return operations.StageResult{}, dberr
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil

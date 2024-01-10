@@ -205,7 +205,9 @@ func main() {
 		deprovisioningQueue,
 		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
-		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
+		kubeconfigProvider,
+	)
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()

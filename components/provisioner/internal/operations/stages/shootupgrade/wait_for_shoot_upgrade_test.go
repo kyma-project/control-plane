@@ -41,7 +41,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 	}{
 		{
 			description: "should continue waiting if cluster is in processing state",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationProcessing().
@@ -52,7 +52,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should continue waiting if cluster is in pending state",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationPending().
@@ -63,7 +63,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should continue waiting if cluster is in error state - the operation will be retried on Gardener side",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationError().
@@ -74,7 +74,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should continue waiting if last operation not set",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationNil().
@@ -85,13 +85,12 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should return finished stage if cluster upgrade has succeeded",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationSucceeded().
 						ToShoot(), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return([]byte("kubeconfig"), nil)
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
 			},
 			expectedStage: model.FinishedStage,
@@ -103,6 +102,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSession := &dbMocks.ReadWriteSession{}
 			kubeconfigProvider := &shootupgrade_mocks.KubeconfigProvider{}
+			kubeconfigProvider.On("FetchFromRequest", clusterName).Return([]byte("kubeconfig"), nil)
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
@@ -126,7 +126,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 	}{
 		{
 			description: "should return error if failed to read Shoot",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			unrecoverableError: false,
@@ -134,7 +134,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should return error if Shoot is in failed state with rate limit exceeded error",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationFailed().
@@ -146,12 +146,11 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should return an error if failed to update encrypted kubeconfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationSucceeded().
 						ToShoot(), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return([]byte("kubeconfig"), nil)
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("error"))
 			},
 			unrecoverableError: false,
@@ -159,7 +158,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		},
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *shootupgrade_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *shootupgrade_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationFailed().
@@ -174,6 +173,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSession := &dbMocks.ReadWriteSession{}
 			kubeconfigProvider := &shootupgrade_mocks.KubeconfigProvider{}
+			kubeconfigProvider.On("FetchFromRequest", clusterName).Return([]byte("kubeconfig"), nil)
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 

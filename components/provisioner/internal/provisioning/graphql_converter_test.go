@@ -526,7 +526,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 			{
 				Component:     clusterEssentialsComponent,
 				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+				Configuration: make([]*gqlschema.ConfigEntry, 0),
 			},
 			{
 				Component: coreComponent,
@@ -540,7 +540,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 				Component:     rafterComponent,
 				Namespace:     kymaSystemNamespace,
 				SourceURL:     util.StringPtr(rafterSourceURL),
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+				Configuration: make([]*gqlschema.ConfigEntry, 0),
 			},
 			{
 				Component: applicationConnectorComponent,
@@ -594,7 +594,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			KymaConfigID:   "id",
 			Component:      clusterEssentialsComponent,
 			Namespace:      kymaSystemNamespace,
-			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0)},
 			ComponentOrder: 1,
 		},
 		{
@@ -616,7 +616,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			Component:      rafterComponent,
 			Namespace:      kymaSystemNamespace,
 			SourceURL:      util.StringPtr(rafterSourceURL),
-			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0)},
 			ComponentOrder: 3,
 		},
 		{
