@@ -9,8 +9,8 @@ type KubeconfigProvider struct {
 	mock.Mock
 }
 
-// FetchFromShoot provides a mock function with given fields: shootName
-func (_m *KubeconfigProvider) FetchFromShoot(shootName string) ([]byte, error) {
+// FetchFromRequest provides a mock function with given fields: shootName
+func (_m *KubeconfigProvider) FetchFromRequest(shootName string) ([]byte, error) {
 	ret := _m.Called(shootName)
 
 	var r0 []byte

@@ -45,14 +45,14 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description   string
-		mockFunc      func(ardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider)
+		mockFunc      func(ardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.DynamicKubeconfigProvider)
 		expectedStage model.OperationStage
 		expectedDelay time.Duration
 		cluster       model.Cluster
 	}{
 		{
 			description: "should continue waiting if cluster not created",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
 			},
@@ -62,7 +62,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should continue waiting if last operation not set",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInUnknownState(clusterName), nil)
 			},
@@ -72,12 +72,9 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next stage if cluster was created based on configuration with gardener seed provided",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return([]byte("kubeconfig"), nil)
-
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
-
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -85,13 +82,11 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next stage if cluster was created based on configuration without gardener seed provided",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
-				kubeconfigProvider.On("FetchFromShoot", clusterName).Return([]byte("kubeconfig"), nil)
 
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
 				dbSession.On("UpdateGardenerClusterConfig", cluster.ClusterConfig).Return(nil)
-
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -102,7 +97,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			// given
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSession := &dbMocks.ReadWriteSession{}
-			kubeconfigProvider := &provisioning_mocks.KubeconfigProvider{}
+			kubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
@@ -120,13 +115,13 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description        string
-		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider)
+		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.DynamicKubeconfigProvider)
 		cluster            model.Cluster
 		unrecoverableError bool
 	}{
 		{
 			description: "should return error if failed to read Shoot",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			unrecoverableError: false,
@@ -134,7 +129,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return error if Shoot is in failed state due to rate limits exceeded",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedStateWithLimitRatingError(clusterName), nil)
 			},
 			unrecoverableError: false,
@@ -142,7 +137,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return error if Shoot is in failed state during reconcile operation",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootDuringReconcileInFailedState(clusterName), nil)
 			},
 			unrecoverableError: false,
@@ -150,7 +145,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, _ *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
 			},
 			unrecoverableError: true,
@@ -158,7 +153,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		},
 		{
 			description: "should return error if failed to update seed in database",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *provisioning_mocks.KubeconfigProvider) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, _ *provisioning_mocks.DynamicKubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
 
 				dbSession.On("UpdateGardenerClusterConfig", cluster.ClusterConfig).Return(dberrors.Internal("some error"))
@@ -171,7 +166,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			// given
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSession := &dbMocks.ReadWriteSession{}
-			kubeconfigProvider := &provisioning_mocks.KubeconfigProvider{}
+			kubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 

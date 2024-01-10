@@ -142,7 +142,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	kubeconfigProviderMock := &kubeconfigprovidermock.KubeconfigProvider{}
 	kubeconfigProviderMock.On("FetchFromRequest", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
-	kubeconfigProviderMock.On("FetchFromShoot", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
 
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),

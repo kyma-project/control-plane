@@ -41,7 +41,6 @@ type HibernationTimeouts struct {
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	FetchFromShoot(shootName string) ([]byte, error)
 	FetchFromRequest(shootName string) ([]byte, error)
 }
 
