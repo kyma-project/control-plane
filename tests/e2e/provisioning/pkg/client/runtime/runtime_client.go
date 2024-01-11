@@ -1,19 +1,19 @@
 package runtime
 
 import (
-    "context"
-    "fmt"
-    "io/ioutil"
-    "net/http"
-    "os"
+	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 
-    v1 "k8s.io/api/core/v1"
-    "sigs.k8s.io/controller-runtime/pkg/client"
+	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
-    schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-    "github.com/pkg/errors"
-    "github.com/sirupsen/logrus"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // tenantHeaderName is a header key name for request send by graphQL client
