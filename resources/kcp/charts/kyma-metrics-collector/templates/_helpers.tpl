@@ -75,7 +75,7 @@ imagePullSecrets:
 {{- if .Values.global -}}
   {{- if .Values.global.images -}}
     {{- if .Values.global.images.containerRegistry -}}
-      {{- $repository = printf "%s/%skyma-metrics-collector" .Values.global.images.containerRegistry.path (default "" .Values.global.images.kyma_metrics_collector.dir) -}}
+      {{- $repository = printf "%s/%s/kyma-metrics-collector" .Values.global.images.containerRegistry.path (default "" .Values.global.images.kyma_metrics_collector.dir) -}}
       {{- $tag = .Values.global.images.kyma_metrics_collector.version | toString -}}
     {{- end -}}
   {{- end -}}
