@@ -8,7 +8,7 @@ global:
       dir: control-plane/
       version: "v20230120-865831c1"
     subscription_cleanup_job:
-      dir: 
+      dir:
       version: "v20240109-3d6a573e"
     kyma_metrics_collector:
       dir: control-plane/
