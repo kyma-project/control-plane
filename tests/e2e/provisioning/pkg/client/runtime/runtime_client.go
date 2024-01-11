@@ -10,8 +10,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/kyma-environment-broker/common/director"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
