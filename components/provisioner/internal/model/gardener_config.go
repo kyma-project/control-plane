@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
