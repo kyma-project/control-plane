@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-version"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
@@ -710,6 +711,12 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 
 	if upgradeConfig.KubernetesVersion != "" {
 		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+
+		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
+		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
+		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
+			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
+		}
 	}
 
 	if util.NotNilOrEmpty(upgradeConfig.Purpose) {
