@@ -621,14 +621,6 @@ func TestAdjustStaticKubeconfigFlagForK8s127(t *testing.T) {
 	assert.Equal(t, util.BoolPtr(false), shoot.ToShoot().Spec.Kubernetes.EnableStaticTokenKubeconfig)
 }
 
-//func adjustStaticKubeconfigFlag(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) {
-//	var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
-//	var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
-//	if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
-//		shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
-//	}
-//}
-
 func TestEditShootConfig(t *testing.T) {
 	zones := []string{"fix-zone-1", "fix-zone-2"}
 
