@@ -794,7 +794,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 }
 
 func adjustStaticKubeconfigFlag(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) {
-	if util.NotNilOrEmpty(&upgradeConfig.KubernetesVersion) {
+	if upgradeConfig.KubernetesVersion != "" {
 		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
 		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
 		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
