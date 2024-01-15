@@ -713,11 +713,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	if upgradeConfig.KubernetesVersion != "" {
 		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
 
-		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
-		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
-		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
-			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
-		}
+		adjustStaticKubeconfigFlag(upgradeConfig, shoot)
 	}
 
 	if util.NotNilOrEmpty(upgradeConfig.Purpose) {
@@ -795,6 +791,16 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins = append(shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, podSecurityPolicyPlugin)
 
 	return nil
+}
+
+func adjustStaticKubeconfigFlag(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) {
+	if util.NotNilOrEmpty(&upgradeConfig.KubernetesVersion) {
+		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
+		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
+		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
+			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
+		}
+	}
 }
 
 func getMachineConfig(config GardenerConfig) gardener_types.Machine {
