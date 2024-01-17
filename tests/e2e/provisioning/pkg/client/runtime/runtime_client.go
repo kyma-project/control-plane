@@ -47,10 +47,6 @@ type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-type SecretProvider struct {
-	kcpK8sClient client.Client
-}
-
 func (c *Client) kubeconfigForRuntimeID(runtimeId string) ([]byte, error) {
 	kubeConfigSecret := &v1.Secret{}
 	err := c.kcpK8sClient.Get(context.Background(), c.objectKey(runtimeId), kubeConfigSecret)
