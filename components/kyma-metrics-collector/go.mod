@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/kyma-environment-broker v0.0.1
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/gomega v1.31.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
@@ -54,10 +54,10 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
