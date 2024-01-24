@@ -6,7 +6,7 @@ toolchain go1.21.1
 
 require (
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.6.0
 	github.com/int128/kubelogin v1.28.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
