@@ -24,9 +24,10 @@ const (
 	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64
 	storageRoundingFactor = 32
 
-	Azure = "azure"
-	AWS   = "aws"
-	GCP   = "gcp"
+	Azure     = "azure"
+	AWS       = "aws"
+	GCP       = "gcp"
+	OpenStack = "openstack"
 )
 
 type EventStream struct {
@@ -131,6 +132,11 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
 				vnets += 1
 			}
+		case OpenStack:
+			// TODO: check if we need this for openstack
+			//if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
+			//	vnets += 1
+			//}
 		default:
 			return nil, fmt.Errorf("provider: %s does not match in the system", inp.shoot.Spec.Provider.Type)
 		}
