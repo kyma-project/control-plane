@@ -394,7 +394,6 @@ func TestExecute(t *testing.T) {
 	edpConfig := newEDPConfig(srv.URL)
 	edpClient := edp.NewClient(edpConfig, log)
 	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-	secret := kmctesting.NewSecret(shootName, expectedKubeconfig)
 	secretKCPStored := kmctesting.NewKCPStoredSecret(runtimeID, expectedKubeconfig)
 
 	// Populate cache
@@ -423,8 +422,6 @@ func TestExecute(t *testing.T) {
 	shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
 	shootClient, err := NewFakeShootClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
-	secretClient, err := NewFakeSecretClient(secret)
-	g.Expect(err).Should(gomega.BeNil())
 	secretCacheClient := fake.NewSimpleClientset(secretKCPStored)
 
 	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
@@ -440,7 +437,6 @@ func TestExecute(t *testing.T) {
 		EDPClient:         edpClient,
 		Queue:             queue,
 		ShootClient:       shootClient,
-		SecretClient:      secretClient,
 		SecretCacheClient: secretCacheClient,
 		Cache:             cache,
 		Providers:         providers,

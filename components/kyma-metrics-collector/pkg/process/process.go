@@ -16,7 +16,6 @@ import (
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
-	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
@@ -40,7 +39,6 @@ type Process struct {
 	EDPClient         *edp.Client
 	Queue             workqueue.DelayingInterface
 	ShootClient       *gardenershoot.Client
-	SecretClient      *gardenersecret.Client
 	SecretCacheClient kmccache.CoreV1
 	Cache             *cache.Cache
 	Providers         *Providers

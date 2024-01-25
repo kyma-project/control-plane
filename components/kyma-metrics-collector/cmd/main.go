@@ -30,7 +30,6 @@ import (
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/service"
 
-	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
 
@@ -69,13 +68,9 @@ func main() {
 	if err != nil {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load InCluster Config")
 	}
-	secretCacheCl, err := kubernetes.NewForConfig(k8sConfig)
+	secretCacheClient, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Setup secrets client")
-	}
-	secretClient, err := gardenersecret.NewClient(opts)
-	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener secrets")
 	}
 
 	shootClient, err := gardenershoot.NewClient(opts)
@@ -114,8 +109,7 @@ func main() {
 	kmcProcess := kmcprocess.Process{
 		KEBClient:         kebClient,
 		ShootClient:       shootClient,
-		SecretClient:      secretClient,
-		SecretCacheClient: secretCacheCl,
+		SecretCacheClient: secretCacheClient,
 		EDPClient:         edpClient,
 		Logger:            logger,
 		Providers:         publicCloudSpecs,
