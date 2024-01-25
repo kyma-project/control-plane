@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 
@@ -42,7 +41,7 @@ type Process struct {
 	Queue             workqueue.DelayingInterface
 	ShootClient       *gardenershoot.Client
 	SecretClient      *gardenersecret.Client
-	SecretCacheClient *kubernetes.Clientset
+	SecretCacheClient kmccache.CoreV1
 	Cache             *cache.Cache
 	Providers         *Providers
 	ScrapeInterval    time.Duration
@@ -79,6 +78,7 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 	p.namedLogger().With(log.KeyWorkerID, identifier).Debugf("record found from cache: %+v", record)
 
 	runtimeID := record.RuntimeID
+	shootName := record.ShootName
 
 	kubeconfig, err := kmccache.GetKubeConfigFromCache(p.Logger, p.SecretCacheClient, runtimeID)
 	if err != nil {
@@ -88,9 +88,9 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 
 	// Get shoot CR
 	var shoot *gardenerv1beta1.Shoot
-	shoot, err = p.ShootClient.Get(ctx, runtimeID)
+	shoot, err = p.ShootClient.Get(ctx, shootName)
 	if err != nil {
-		p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, runtimeID).Error("Failed to get shoot")
+		p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, shootName).Error("Failed to get shoot")
 		return
 	}
 
