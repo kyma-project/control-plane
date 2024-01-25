@@ -70,7 +70,7 @@ has_to_succeed
 
 wait_for postgres 5432
 
-export APP_DIRECTOR_URL=https://compass-gateway-auth-oauth.mps.dev.kyma.cloud.sap/director/graphql
+export APP_DIRECTOR_URL=https://compass-gateway-auth-oauth.cmp-main.dev.kyma.cloud.sap/director/graphql
 if [[ -z "$APP_DIRECTOR_OAUTH_PATH" ]]; then
     export APP_DIRECTOR_OAUTH_PATH=/compass-director-secret/secret.yaml
 fi
