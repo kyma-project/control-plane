@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 
@@ -17,8 +19,9 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	"k8s.io/client-go/util/workqueue"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -32,9 +35,10 @@ import (
 	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
 
 	"github.com/kelseyhightower/envconfig"
+	gocache "github.com/patrickmn/go-cache"
+
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
-	gocache "github.com/patrickmn/go-cache"
 )
 
 const (
@@ -61,6 +65,14 @@ func main() {
 	}
 	logger.Debugf("public cloud spec: %v", publicCloudSpecs)
 
+	k8sConfig, err := rest.InClusterConfig()
+	if err != nil {
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load InCluster Config")
+	}
+	secretCacheCl, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Setup secrets client")
+	}
 	secretClient, err := gardenersecret.NewClient(opts)
 	if err != nil {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener secrets")
@@ -100,19 +112,20 @@ func main() {
 	queue := workqueue.NewDelayingQueue()
 
 	kmcProcess := kmcprocess.Process{
-		KEBClient:       kebClient,
-		ShootClient:     shootClient,
-		SecretClient:    secretClient,
-		EDPClient:       edpClient,
-		Logger:          logger,
-		Providers:       publicCloudSpecs,
-		Cache:           cache,
-		ScrapeInterval:  opts.ScrapeInterval,
-		Queue:           queue,
-		WorkersPoolSize: opts.WorkerPoolSize,
-		NodeConfig:      skrnode.Config{},
-		PVCConfig:       skrpvc.Config{},
-		SvcConfig:       skrsvc.Config{},
+		KEBClient:         kebClient,
+		ShootClient:       shootClient,
+		SecretClient:      secretClient,
+		SecretCacheClient: secretCacheCl,
+		EDPClient:         edpClient,
+		Logger:            logger,
+		Providers:         publicCloudSpecs,
+		Cache:             cache,
+		ScrapeInterval:    opts.ScrapeInterval,
+		Queue:             queue,
+		WorkersPoolSize:   opts.WorkerPoolSize,
+		NodeConfig:        skrnode.Config{},
+		PVCConfig:         skrpvc.Config{},
+		SvcConfig:         skrsvc.Config{},
 	}
 
 	// Start execution
