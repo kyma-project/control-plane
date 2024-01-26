@@ -1,8 +1,9 @@
 package api
 
 import (
-	"k8s.io/utils/strings/slices"
 	"strings"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
