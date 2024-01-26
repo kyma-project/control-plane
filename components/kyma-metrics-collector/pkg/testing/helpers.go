@@ -407,3 +407,20 @@ func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
 		},
 	}
 }
+
+func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fmt.Sprintf("kubeconfig-%s", shootName),
+			Namespace: "kcp-system",
+		},
+		Data: map[string][]byte{
+			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
+			"config": []byte(kubeconfigVal),
+		},
+	}
+}

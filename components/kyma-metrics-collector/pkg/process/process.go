@@ -14,8 +14,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
-	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
@@ -28,25 +28,26 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/patrickmn/go-cache"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 type Process struct {
-	KEBClient       *keb.Client
-	EDPClient       *edp.Client
-	Queue           workqueue.DelayingInterface
-	ShootClient     *gardenershoot.Client
-	SecretClient    *gardenersecret.Client
-	Cache           *cache.Cache
-	Providers       *Providers
-	ScrapeInterval  time.Duration
-	WorkersPoolSize int
-	NodeConfig      skrnode.ConfigInf
-	PVCConfig       skrpvc.ConfigInf
-	SvcConfig       skrsvc.ConfigInf
-	Logger          *zap.SugaredLogger
+	KEBClient         *keb.Client
+	EDPClient         *edp.Client
+	Queue             workqueue.DelayingInterface
+	ShootClient       *gardenershoot.Client
+	SecretCacheClient kmccache.CoreV1
+	Cache             *cache.Cache
+	Providers         *Providers
+	ScrapeInterval    time.Duration
+	WorkersPoolSize   int
+	NodeConfig        skrnode.ConfigInf
+	PVCConfig         skrpvc.ConfigInf
+	SvcConfig         skrsvc.ConfigInf
+	Logger            *zap.SugaredLogger
 }
 
 const (
@@ -55,6 +56,7 @@ const (
 
 var (
 	errorSubAccountIDNotTrackable = errors.New("subAccountID is not trackable")
+	ErrLoadingFailed              = errors.New("could not load resource")
 )
 
 func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
@@ -73,23 +75,14 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 	}
 	p.namedLogger().With(log.KeyWorkerID, identifier).Debugf("record found from cache: %+v", record)
 
+	runtimeID := record.RuntimeID
 	shootName := record.ShootName
 
-	if record.KubeConfig == "" {
-		// Get shoot kubeconfig secret
-		var secret *corev1.Secret
-		secret, err = p.SecretClient.Get(ctx, shootName)
-		if err != nil {
-			p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, shootName).Error("Failed to get secret")
-			return
-		}
-
-		record.KubeConfig = string(secret.Data[shootKubeconfigKey])
-		if record.KubeConfig == "" {
-			err = fmt.Errorf("kubeconfig for shoot not found")
-			return
-		}
+	kubeconfig, err := kmccache.GetKubeConfigFromCache(p.Logger, p.SecretCacheClient, runtimeID)
+	if err != nil {
+		return record, fmt.Errorf("Loading Kubeconfig for %s failed: %w", ErrLoadingFailed, err)
 	}
+	record.KubeConfig = kubeconfig
 
 	// Get shoot CR
 	var shoot *gardenerv1beta1.Shoot
