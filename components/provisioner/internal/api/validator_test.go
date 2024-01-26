@@ -10,11 +10,12 @@ import (
 )
 
 func TestValidator_ValidateProvisioningInput(t *testing.T) {
-	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
+
+	clusterConfig, runtimeInput, kymaConfig, supportedOpenStackRegions := initializeConfigs()
 
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -31,7 +32,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return nil when kyma config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -47,7 +48,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when config is incorrect", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{}
 
@@ -60,7 +61,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when Runtime Agent component is not passed in installation config", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -87,7 +88,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("should return error when machine image version is set, but machine image is empty", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		testClusterConfig := clusterConfig
 		testClusterConfig.GardenerConfig.MachineImageVersion = util.StringPtr("24.3")
@@ -132,7 +133,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		//when
 		err := validator.ValidateProvisioningInput(config)
@@ -149,13 +150,33 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+
+	t.Run("should return error when requested OpenStack region is not supported", func(t *testing.T) {
+		//given
+		validator := NewValidator(supportedOpenStackRegions)
+
+		clusterConfig.GardenerConfig.Provider = "openstack"
+		clusterConfig.GardenerConfig.Region = "not-supported-region"
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: clusterConfig,
+			KymaConfig:    kymaConfig,
+		}
+
+		//when
+		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+	})
 }
 
 func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
-
+	supportedOpenStackRegions := []string{"region1", "region2"}
 	t.Run("Should return nil when input is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -181,7 +202,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.UpgradeShootInput{}
 
@@ -195,7 +216,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for machine type", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -222,7 +243,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for disk type", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -249,7 +270,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for purpose", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -276,7 +297,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for kubernetes version", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -302,7 +323,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 	})
 }
 
-func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
+func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput, []string) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                   "tets-clst",
@@ -341,5 +362,7 @@ func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput
 			},
 		},
 	}
-	return clusterConfig, runtimeInput, kymaConfig
+
+	supportedOpenStackRegions := []string{"region1", "region2"}
+	return clusterConfig, runtimeInput, kymaConfig, supportedOpenStackRegions
 }
