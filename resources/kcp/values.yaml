@@ -11,8 +11,8 @@ global:
       dir:
       version: "v20240109-3d6a573e"
     kyma_metrics_collector:
-      dir: dev
-      version: PR-3288
+      dir: control-plane/
+      version: v20240126-0f92a93f
     tests:
       provisioner:
         dir: control-plane/
