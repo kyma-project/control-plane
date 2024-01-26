@@ -9,6 +9,7 @@ import (
 	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -133,10 +134,14 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 				vnets += 1
 			}
 		case OpenStack:
-			// TODO: check if we need this for openstack
-			//if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
-			//	vnets += 1
-			//}
+			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+			infraConfig := &gardeneropenstackv1alpha1.InfrastructureConfig{}
+			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+				return nil, err
+			}
+			if infraConfig.Networks.Router != nil {
+				vnets += 1
+			}
 		default:
 			return nil, fmt.Errorf("provider: %s does not match in the system", inp.shoot.Spec.Provider.Type)
 		}
