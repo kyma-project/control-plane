@@ -9,7 +9,7 @@ global:
       version: "v20230120-865831c1"
     subscription_cleanup_job:
       dir:
-      version: "v20240109-3d6a573e"
+      version: "v20240129-70857389"
     kyma_metrics_collector:
       dir: control-plane/
       version: v20240126-0f92a93f
