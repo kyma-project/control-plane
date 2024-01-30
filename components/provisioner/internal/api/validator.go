@@ -140,7 +140,7 @@ func (v *validator) validateOpenStackRegions(provider, requestedRegion string) a
 			return apperrors.Internal("error: OpenStack regions are not provided to the Provisioner")
 		}
 		if !slices.Contains(v.availableOpenStackRegions, requestedRegion) {
-			return apperrors.BadRequest("error: Requested OpenStack region is currently not supported: region == " + requestedRegion)
+			return apperrors.BadRequest("error: Requested OpenStack region " + requestedRegion + " is currently not supported. Check the documentation to find out what regions are supported")
 		}
 	}
 	return nil
