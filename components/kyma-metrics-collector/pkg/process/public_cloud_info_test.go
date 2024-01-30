@@ -86,6 +86,62 @@ func TestGetFeature(t *testing.T) {
 				Memory:   64,
 			},
 		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c12_m48",
+			expectedFeature: Feature{
+				CpuCores: 12,
+				Memory:   48,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c16_m64",
+			expectedFeature: Feature{
+				CpuCores: 16,
+				Memory:   64,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c32_m128",
+			expectedFeature: Feature{
+				CpuCores: 32,
+				Memory:   128,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c4_m16",
+			expectedFeature: Feature{
+				CpuCores: 4,
+				Memory:   16,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c64_m256",
+			expectedFeature: Feature{
+				CpuCores: 64,
+				Memory:   256,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c6_m24",
+			expectedFeature: Feature{
+				CpuCores: 6,
+				Memory:   24,
+			},
+		},
+		{
+			cloudProvider: "openstack",
+			vmType:        "g_c8_m32",
+			expectedFeature: Feature{
+				CpuCores: 8,
+				Memory:   32,
+			},
+		},
 	}
 
 	for _, tc := range testCases {

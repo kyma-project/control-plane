@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -127,6 +128,31 @@ func WithVMSpecs(shoot *gardencorev1beta1.Shoot) {
 	}
 }
 
+func WithOpenStackProviderAndMachineGC12M48(shoot *gardencorev1beta1.Shoot) {
+	infraConfig := NewOpenStackInfraConfig()
+	byteInfraConfig, err := json.Marshal(infraConfig)
+	if err != nil {
+		log.Fatalf("failed to marshal: %v", err)
+	}
+	shoot.Spec.Provider = gardencorev1beta1.Provider{
+		Type: "openstack",
+		InfrastructureConfig: &runtime.RawExtension{
+			Raw: byteInfraConfig,
+		},
+		Workers: []gardencorev1beta1.Worker{
+			{
+				Name: "cpu-worker-0",
+				Machine: gardencorev1beta1.Machine{
+					Type: "g_c12_m48",
+					Image: &gardencorev1beta1.ShootMachineImage{
+						Name: "gardenlinux",
+					},
+				},
+			},
+		},
+	}
+}
+
 func WithAzureProviderAndStandardD8V3VMs(shoot *gardencorev1beta1.Shoot) {
 	infraConfig := NewInfraConfig()
 	byteInfraConfig, err := json.Marshal(infraConfig)
@@ -167,6 +193,17 @@ func NewInfraConfig() *gardenerazurev1alpha1.InfrastructureConfig {
 	}
 }
 
+func NewOpenStackInfraConfig() *gardeneropenstackv1alpha1.InfrastructureConfig {
+	id := "1234-4567-6789"
+	return &gardeneropenstackv1alpha1.InfrastructureConfig{
+		Networks: gardeneropenstackv1alpha1.Networks{
+			Router: &gardeneropenstackv1alpha1.Router{
+				ID: id,
+			},
+		},
+	}
+}
+
 func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
 	shoot.Spec.Provider = gardencorev1beta1.Provider{
 		Type:                 "azure",
@@ -189,6 +226,14 @@ func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
 func Get2Nodes() *corev1.NodeList {
 	node1 := GetNode("node1", "Standard_D8_v3")
 	node2 := GetNode("node2", "Standard_D8_v3")
+	return &corev1.NodeList{
+		Items: []corev1.Node{node1, node2},
+	}
+}
+
+func Get2NodesOpenStack() *corev1.NodeList {
+	node1 := GetNode("node1", "g_c12_m48")
+	node2 := GetNode("node2", "g_c12_m48")
 	return &corev1.NodeList{
 		Items: []corev1.Node{node1, node2},
 	}

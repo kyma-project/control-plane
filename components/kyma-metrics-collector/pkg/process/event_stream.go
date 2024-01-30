@@ -9,6 +9,7 @@ import (
 	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -24,9 +25,10 @@ const (
 	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64
 	storageRoundingFactor = 32
 
-	Azure = "azure"
-	AWS   = "aws"
-	GCP   = "gcp"
+	Azure     = "azure"
+	AWS       = "aws"
+	GCP       = "gcp"
+	OpenStack = "openstack"
 )
 
 type EventStream struct {
@@ -129,6 +131,15 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 				return nil, err
 			}
 			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
+				vnets += 1
+			}
+		case OpenStack:
+			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+			infraConfig := &gardeneropenstackv1alpha1.InfrastructureConfig{}
+			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+				return nil, err
+			}
+			if infraConfig.Networks.Router != nil {
 				vnets += 1
 			}
 		default:
