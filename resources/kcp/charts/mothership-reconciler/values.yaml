@@ -176,3 +176,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: applicationconnector
+  connectivity-proxy:
+    group: connectivityproxy.sap.com
+    version: v1
+    kind: connectivityproxies
