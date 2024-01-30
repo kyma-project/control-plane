@@ -98,7 +98,7 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	}
 	openStackMachines := &OpenStackMachines{}
 	if err = json.Unmarshal(openStackMachinesData, openStackMachines); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal GCP machines data")
+		return nil, errors.Wrapf(err, "failed to unmarshal OpenStack machines data")
 	}
 
 	providers := Providers{
