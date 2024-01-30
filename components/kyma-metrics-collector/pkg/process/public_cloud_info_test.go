@@ -48,6 +48,66 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
+			vmType:        "Standard_D4s_v5",
+			expectedFeature: Feature{
+				CpuCores: 4,
+				Memory:   16,
+				Storage:  0,
+				MaxNICs:  2,
+			},
+		},
+		{
+			cloudProvider: "azure",
+			vmType:        "Standard_D8s_v5",
+			expectedFeature: Feature{
+				CpuCores: 8,
+				Memory:   32,
+				Storage:  0,
+				MaxNICs:  4,
+			},
+		},
+		{
+			cloudProvider: "azure",
+			vmType:        "Standard_D16s_v5",
+			expectedFeature: Feature{
+				CpuCores: 16,
+				Memory:   64,
+				Storage:  0,
+				MaxNICs:  8,
+			},
+		},
+		{
+			cloudProvider: "azure",
+			vmType:        "Standard_D32s_v5",
+			expectedFeature: Feature{
+				CpuCores: 32,
+				Memory:   128,
+				Storage:  0,
+				MaxNICs:  8,
+			},
+		},
+		{
+			cloudProvider: "azure",
+			vmType:        "Standard_D48s_v5",
+			expectedFeature: Feature{
+				CpuCores: 48,
+				Memory:   192,
+				Storage:  0,
+				MaxNICs:  8,
+			},
+		},
+		{
+			cloudProvider: "azure",
+			vmType:        "Standard_D64s_v5",
+			expectedFeature: Feature{
+				CpuCores: 64,
+				Memory:   256,
+				Storage:  0,
+				MaxNICs:  8,
+			},
+		},
+		{
+			cloudProvider: "azure",
 			vmType:        "standard_d8_foo",
 		},
 		{
