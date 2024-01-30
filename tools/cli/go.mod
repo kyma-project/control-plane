@@ -10,7 +10,7 @@ require (
 	github.com/int128/kubelogin v1.28.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
-	github.com/kyma-project/kyma-environment-broker v0.0.0-20240129090812-8b77e7fd4f97
+	github.com/kyma-project/kyma-environment-broker v0.0.1
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
