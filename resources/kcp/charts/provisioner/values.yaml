@@ -32,7 +32,7 @@ security:
   skipTLSCertificateVeryfication: false
 
 openStackConfig:
-  regions: ~
+  regions: '["eu-de-1"]'
 
 gardener:
   helmAnnotation: false
