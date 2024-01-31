@@ -37,6 +37,7 @@ global:
     - cleaner
     - connectivity-proxy
     - eventing
+    - warden
   provisioning:
     enabled: false
   kyma_environment_broker:
