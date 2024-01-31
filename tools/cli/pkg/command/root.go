@@ -126,6 +126,6 @@ func checkForLatestRelease(version string) {
 
 	if Version != latestGitTag.Sha[:8] {
 		fmt.Println("CAUTION: You're using an outdated version of the KCP CLI.\n" +
-			"To update, please visit https://github.tools.sap/kyma/documentation/blob/main/kyma-internal/on-call-guides/common/kcp-cli.md\n")
+			"To update, please visit https://github.tools.sap/kyma/documentation/blob/main/kyma-internal/on-call-guides/common/kcp-cli.md")
 	}
 }
