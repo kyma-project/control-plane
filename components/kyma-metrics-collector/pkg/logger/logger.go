@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	// OutputFormatJSON is used to define output format as json
+	// OutputFormatJSON is used to define output format as json.
 	OutputFormatJSON OutputFormat = "json"
 
-	// OutputFormatPlain is used to define output format as plain text
+	// OutputFormatPlain is used to define output format as plain text.
 	OutputFormatPlain OutputFormat = "plain"
 
 	// KeyError is used as a named key for a log message with error.
@@ -29,10 +29,10 @@ const (
 	// KeyWorkerID is used as a named key for a log message with worker ID.
 	KeyWorkerID = "WorkerID"
 
-	// KeyRetry is used as named key for a log message which indicates the step will be retried
+	// KeyRetry is used as named key for a log message which indicates the step will be retried.
 	KeyRetry = "willRetry"
 
-	// KeyRequeue is used as named key for a log message which indicates that it will be requeued
+	// KeyRequeue is used as named key for a log message which indicates that it will be requeued.
 	KeyRequeue = "requeue"
 
 	// KeyShoot is used as a named key for a log message with shoot.
@@ -44,10 +44,10 @@ const (
 	// ValueSuccess is used as a value for a log message with success.
 	ValueSuccess = "success"
 
-	// ValueTrue is used as a value for a message with true status
+	// ValueTrue is used as a value for a message with true status.
 	ValueTrue = "true"
 
-	// ValueFalse is used as a value for a message with true status
+	// ValueFalse is used as a value for a message with true status.
 	ValueFalse = "false"
 )
 
@@ -60,17 +60,7 @@ func NewLogger(logLevel zapcore.Level) *zap.SugaredLogger {
 }
 
 func newLogger(logLevel zapcore.Level) *zap.Logger {
-	encoderConfig := zapcore.EncoderConfig{
-		MessageKey:   "message",
-		LevelKey:     "level",
-		EncodeLevel:  zapcore.CapitalLevelEncoder,
-		TimeKey:      "time",
-		EncodeTime:   zapcore.ISO8601TimeEncoder,
-		CallerKey:    "caller",
-		EncodeCaller: zapcore.ShortCallerEncoder,
-	}
-
-	encoderConfig = zap.NewProductionEncoderConfig()
+	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
@@ -96,7 +86,7 @@ func newLogger(logLevel zapcore.Level) *zap.Logger {
 		zap.ErrorOutput(os.Stderr))
 }
 
-// SetOutputFormat sets the log output format
+// SetOutputFormat sets the log output format.
 func SetOutputFormat(of OutputFormat) {
 	outputFormat = of
 }

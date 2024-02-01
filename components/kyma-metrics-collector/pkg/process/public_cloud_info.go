@@ -3,9 +3,9 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
+	"github.com/pkg/errors"
 )
 
 type Providers struct {
@@ -54,7 +54,7 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 	return nil
 }
 
-// LoadPublicCloudSpecs loads string data to Providers object from an env var
+// LoadPublicCloudSpecs loads string data to Providers object from an env var.
 func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if cfg.PublicCloudSpecs == "" {
 		return nil, fmt.Errorf("public cloud specification is not configured")

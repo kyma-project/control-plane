@@ -8,11 +8,10 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	"go.uber.org/zap/zapcore"
-
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -23,10 +22,8 @@ const (
 	testDataStreamVersion = "v1"
 	testToken             = "token"
 	testEnv               = "env"
-
-	//Metrics related variable
-	metricsName   = "kmc_edp_request_total"
-	histogramName = "kmc_edp_request_duration_seconds"
+	metricsName           = "kmc_edp_request_total"
+	histogramName         = "kmc_edp_request_duration_seconds"
 )
 
 func TestClient(t *testing.T) {

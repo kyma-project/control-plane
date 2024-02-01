@@ -11,18 +11,17 @@ import (
 	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
 	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 const (
 	nodeInstanceTypeLabel = "node.kubernetes.io/instance-type"
-	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64
+	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64.
 	storageRoundingFactor = 32
 
 	Azure     = "azure"
@@ -102,7 +101,6 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	if inp.shoot.Spec.Provider.InfrastructureConfig != nil {
 		rawExtension := *inp.shoot.Spec.Provider.InfrastructureConfig
 		switch inp.shoot.Spec.Provider.Type {
-
 		// Raw extensions varies based on the provider type
 		case Azure:
 			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
@@ -167,7 +165,7 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	return metric, nil
 }
 
-// getTimestampNow returns the time now in the format of RFC3339
+// getTimestampNow returns the time now in the format of RFC3339.
 func getTimestampNow() string {
 	return time.Now().Format(time.RFC3339)
 }
