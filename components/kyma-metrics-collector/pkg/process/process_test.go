@@ -10,17 +10,6 @@ import (
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/google/uuid"
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/onsi/gomega"
-	gocache "github.com/patrickmn/go-cache"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	"go.uber.org/zap/zapcore"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/util/workqueue"
-
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
@@ -32,6 +21,16 @@ import (
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.uber.org/zap/zapcore"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/util/workqueue"
 )
 
 const (
