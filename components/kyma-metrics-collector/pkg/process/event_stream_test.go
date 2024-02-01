@@ -3,13 +3,11 @@ package process
 import (
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-
 	"github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestParse(t *testing.T) {
@@ -37,7 +35,7 @@ func TestParse(t *testing.T) {
 			},
 			providers: *providers,
 			expectedMetrics: edp.ConsumptionMetrics{
-				//ResourceGroups: nil,
+				// ResourceGroups: nil,
 				Compute: edp.Compute{
 					VMTypes: []edp.VMType{{
 						Name:  "standard_d8_v3",
@@ -65,7 +63,7 @@ func TestParse(t *testing.T) {
 			},
 			providers: *providers,
 			expectedMetrics: edp.ConsumptionMetrics{
-				//ResourceGroups: nil,
+				// ResourceGroups: nil,
 				Compute: edp.Compute{
 					VMTypes: []edp.VMType{{
 						Name:  "standard_d8_v3",

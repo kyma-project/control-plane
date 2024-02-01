@@ -15,6 +15,10 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
+const (
+	defaultTTL = 30 * time.Minute
+)
+
 var (
 	ttl             = getTTL()
 	kubeConfigCache = ttlcache.New[string, string](
@@ -23,14 +27,11 @@ var (
 	)
 )
 
-type CoreV1 interface {
-	CoreV1() v1.CoreV1Interface
-}
-
 // GetKubeConfigFromCache returns the kubeconfig from the cache if it is not expired.
 // If it is expired, it will get the kubeconfig from the secret and set it in the cache.
-func GetKubeConfigFromCache(logger *zap.SugaredLogger, clientSet CoreV1, runtimeID string) (string,
-	error) {
+func GetKubeConfigFromCache(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface, runtimeID string) (string,
+	error,
+) {
 	kubeConfigCache.DeleteExpired()
 
 	if kubeConfigCache.Has(runtimeID) {
@@ -43,7 +44,7 @@ func GetKubeConfigFromCache(logger *zap.SugaredLogger, clientSet CoreV1, runtime
 		return cacheEntry.Value(), nil
 	}
 
-	kubeConfig, err := getKubeConfigFromSecret(logger, clientSet, runtimeID)
+	kubeConfig, err := getKubeConfigFromSecret(logger, coreV1, runtimeID)
 	if err == nil {
 		logger.Debugf("Kubeconfig cache retrieved kubeconfig for cluster (runtimeID: %s) from secret: caching it now",
 			runtimeID)
@@ -59,10 +60,11 @@ func GetKubeConfigFromCache(logger *zap.SugaredLogger, clientSet CoreV1, runtime
 }
 
 // getkubeConfigFromSecret gets the kubeconfig from the secret.
-func getKubeConfigFromSecret(logger *zap.SugaredLogger, clientSet CoreV1, runtimeID string) (string,
-	error) {
+func getKubeConfigFromSecret(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface, runtimeID string) (string,
+	error,
+) {
 	secretResourceName := fmt.Sprintf("kubeconfig-%s", runtimeID)
-	secret, err := getKubeConfigSecret(logger, clientSet, runtimeID, secretResourceName)
+	secret, err := getKubeConfigSecret(logger, coreV1, runtimeID, secretResourceName)
 	if err != nil {
 		return "", err
 	}
@@ -82,10 +84,10 @@ func getKubeConfigFromSecret(logger *zap.SugaredLogger, clientSet CoreV1, runtim
 }
 
 // getKubeConfigSecret gets the kubeconfig secret from the cluster.
-func getKubeConfigSecret(logger *zap.SugaredLogger, clientSet CoreV1,
-	runtimeID, secretResourceName string) (secret *corev1.Secret, err error) {
-
-	secret, err = clientSet.CoreV1().Secrets("kcp-system").Get(context.Background(), secretResourceName, metav1.GetOptions{})
+func getKubeConfigSecret(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface,
+	runtimeID, secretResourceName string,
+) (secret *corev1.Secret, err error) {
+	secret, err = coreV1.Secrets("kcp-system").Get(context.Background(), secretResourceName, metav1.GetOptions{})
 	if err != nil {
 		if k8serr.IsNotFound(err) { // accepted failure
 			logger.Debugf("Kubeconfig cache cannot find a kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
@@ -99,7 +101,6 @@ func getKubeConfigSecret(logger *zap.SugaredLogger, clientSet CoreV1,
 		logger.Errorf("Kubeconfig cache failed to lookup kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
 			secretResourceName, runtimeID, err)
 		return nil, err
-
 	}
 	return secret, nil
 }
@@ -107,18 +108,18 @@ func getKubeConfigSecret(logger *zap.SugaredLogger, clientSet CoreV1,
 func getTTL() time.Duration {
 	ttl := os.Getenv("KUBECONFIG_CACHE_TTL")
 	if ttl == "" {
-		return 30 * time.Minute
+		return defaultTTL
 	}
 	ttlDuration, err := time.ParseDuration(ttl)
 	if err != nil {
-		return 30 * time.Minute
+		return defaultTTL
 	}
 	return ttlDuration
 }
 
 func getJitterTTL() time.Duration {
 	maxTTL := getTTL()
-	buffer := int64(maxTTL.Minutes() / 3) //we accept TTLS with 1/3 length above maxTTL
+	buffer := int64(maxTTL.Minutes() / 3) // we accept TTLS with 1/3 length above maxTTL
 	jitter := rand.Int63n(buffer) + int64(maxTTL.Minutes())
 	return time.Duration(jitter) * time.Minute
 }

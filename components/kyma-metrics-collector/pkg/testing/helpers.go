@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
@@ -299,7 +299,7 @@ func GenerateRandomAlphaString(length int) string {
 	return string(result)
 }
 
-// secureRandomBytes returns the requested number of bytes using crypto/rand
+// secureRandomBytes returns the requested number of bytes using crypto/rand.
 func secureRandomBytes(length int) []byte {
 	randomBytes := make([]byte, length)
 	_, err := rand.Read(randomBytes)
@@ -447,7 +447,7 @@ func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
+			// "kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
 			"kubeconfig": []byte(kubeconfigVal),
 		},
 	}
@@ -464,7 +464,7 @@ func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 			Namespace: "kcp-system",
 		},
 		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
+			// "kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
 			"config": []byte(kubeconfigVal),
 		},
 	}

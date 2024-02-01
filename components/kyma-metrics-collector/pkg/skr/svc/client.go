@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
+	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
-
-	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 )
 
 type Client struct {
@@ -32,7 +31,6 @@ func (c Config) NewClient(kubeconfig string) (*Client, error) {
 }
 
 func (c Client) List(ctx context.Context) (*corev1.ServiceList, error) {
-
 	skrcommons.TotalCalls.WithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingSVCLabel).Inc()
 	unstructuredSvcList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {

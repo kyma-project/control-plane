@@ -43,14 +43,14 @@ func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	}
 }
 
-func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
+func (c Client) NewRequest(dataTenant string) (*http.Request, error) {
 	edpURL := fmt.Sprintf(edpPathFormat,
-		eClient.Config.URL,
-		eClient.Config.Namespace,
-		eClient.Config.DataStreamName,
-		eClient.Config.DataStreamVersion,
+		c.Config.URL,
+		c.Config.Namespace,
+		c.Config.DataStreamName,
+		c.Config.DataStreamVersion,
 		dataTenant,
-		eClient.Config.DataStreamEnv,
+		c.Config.DataStreamEnv,
 	)
 
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
@@ -60,41 +60,42 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 
 	req.Header.Set(userAgentKeyHeader, userAgentKMC)
 	req.Header.Add(contentTypeKeyHeader, contentType)
-	req.Header.Add(authorizationKeyHeader, fmt.Sprintf("Bearer %s", eClient.Config.Token))
+	req.Header.Add(authorizationKeyHeader, fmt.Sprintf("Bearer %s", c.Config.Token))
 
 	return req, nil
 }
 
-func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
+func (c Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 	customBackoff := wait.Backoff{
-		Steps:    eClient.Config.EventRetry,
-		Duration: eClient.Config.Timeout,
+		Steps:    c.Config.EventRetry,
+		Duration: c.Config.Timeout,
 		Factor:   5.0,
 		Jitter:   0.1,
 	}
 	err = retry.OnError(customBackoff, func(err error) bool {
 		return err != nil
-	}, func() (err error) {
+	}, func() error {
 		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		req.Body = io.NopCloser(bytes.NewReader(payload))
-		resp, err = eClient.HttpClient.Do(req)
+		resp, err = c.HttpClient.Do(req)
 		metricTimer.ObserveDuration()
 		if err != nil {
-			eClient.namedLogger().Debugf("req: %v", req)
-			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+			c.namedLogger().Debugf("req: %v", req)
+			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
-			return
+			return err
 		}
 
 		if resp.StatusCode != http.StatusCreated {
 			non2xxErr := fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
-			eClient.namedLogger().With(log.KeyError, non2xxErr.Error()).With(log.KeyRetry, log.ValueTrue).
+			c.namedLogger().With(log.KeyError, non2xxErr.Error()).With(log.KeyRetry, log.ValueTrue).
 				Warn("send event stream as EDP")
 			err = non2xxErr
+			return err
 		}
-		return
+		return err
 	})
 	if resp != nil {
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
@@ -107,11 +108,11 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			eClient.namedLogger().Warn(err)
+			c.namedLogger().Warn(err)
 		}
 	}()
 
-	eClient.namedLogger().Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
+	c.namedLogger().Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
 	return resp, nil
 }
 

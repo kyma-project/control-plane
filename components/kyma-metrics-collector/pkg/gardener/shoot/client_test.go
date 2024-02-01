@@ -4,14 +4,12 @@ import (
 	"context"
 	"testing"
 
-	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-
-	"github.com/onsi/gomega"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	"github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"

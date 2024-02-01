@@ -14,14 +14,12 @@ const (
 	FailureStatusLabel        = "failure"
 )
 
-var (
-	TotalCalls = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "kmc",
-			Subsystem: "gardener",
-			Name:      "calls_total",
-			Help:      "Total number of calls to Gardener to get the config of the cluster.",
-		},
-		[]string{"status", "shoot", "reason"},
-	)
+var TotalCalls = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: "kmc",
+		Subsystem: "gardener",
+		Name:      "calls_total",
+		Help:      "Total number of calls to Gardener to get the config of the cluster.",
+	},
+	[]string{"status", "shoot", "reason"},
 )

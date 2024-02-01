@@ -9,29 +9,23 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
-
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/workqueue"
 
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
-
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/client-go/util/workqueue"
-
-	"github.com/pkg/errors"
-
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/patrickmn/go-cache"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 type Process struct {
@@ -39,7 +33,7 @@ type Process struct {
 	EDPClient         *edp.Client
 	Queue             workqueue.DelayingInterface
 	ShootClient       *gardenershoot.Client
-	SecretCacheClient kmccache.CoreV1
+	SecretCacheClient v1.CoreV1Interface
 	Cache             *cache.Cache
 	Providers         *Providers
 	ScrapeInterval    time.Duration
@@ -49,10 +43,6 @@ type Process struct {
 	SvcConfig         skrsvc.ConfigInf
 	Logger            *zap.SugaredLogger
 }
-
-const (
-	shootKubeconfigKey = "kubeconfig"
-)
 
 var (
 	errorSubAccountIDNotTrackable = errors.New("subAccountID is not trackable")
@@ -150,7 +140,7 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 	return
 }
 
-// getOldRecordIfMetricExists gets old record from cache if old metric exists
+// getOldRecordIfMetricExists gets old record from cache if old metric exists.
 func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Record, error) {
 	oldRecordObj, found := p.Cache.Get(subAccountID)
 	if !found {
@@ -169,10 +159,9 @@ func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Reco
 	return nil, notFoundErr
 }
 
-// pollKEBForRuntimes polls KEB for runtimes information
+// pollKEBForRuntimes polls KEB for runtimes information.
 func (p *Process) pollKEBForRuntimes() {
 	kebReq, err := p.KEBClient.NewRequest()
-
 	if err != nil {
 		p.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 			Fatal("create a new request for KEB")
@@ -195,9 +184,8 @@ func (p *Process) pollKEBForRuntimes() {
 	}
 }
 
-// Start runs the complete process of collection and sending metrics
+// Start runs the complete process of collection and sending metrics.
 func (p Process) Start() {
-
 	var wg sync.WaitGroup
 	go func() {
 		p.pollKEBForRuntimes()
@@ -214,17 +202,15 @@ func (p Process) Start() {
 	wg.Wait()
 }
 
-// Execute is executed by each worker to process an entry from the queue
+// Execute is executed by each worker to process an entry from the queue.
 func (p *Process) execute(identifier int) {
-
 	for {
-
 		// Pick up a subAccountID to process from queue and mark as Done()
 		subAccountIDObj, _ := p.Queue.Get()
 		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
 
 		// TODO Implement cleanup holistically in #kyma-project/control-plane/issues/512
-		//if isShuttingDown {
+		// if isShuttingDown {
 		//	//p.Cleanup()
 		//	return
 		//}
@@ -314,7 +300,7 @@ func (p Process) processSubAccountID(subAccountID string, identifier int) {
 }
 
 // getRecordWithOldOrNewMetric generates new metric or fetches the old metric along with a bool flag which
-// indicates whether it is an old metric or not(true, when it is old and false when it is new)
+// indicates whether it is an old metric or not(true, when it is old and false when it is new).
 func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
 	record, err := p.generateRecordWithNewMetrics(identifier, subAccountID)
 	if err != nil {
@@ -369,9 +355,8 @@ func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	return false
 }
 
-// populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
+// populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked.
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
-
 	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {
 		if runtime.SubAccountID == "" {

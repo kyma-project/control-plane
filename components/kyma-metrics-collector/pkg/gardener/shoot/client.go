@@ -3,16 +3,15 @@ package shoot
 import (
 	"context"
 
+	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
+	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-
-	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
-	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 )
 
 type Client struct {
