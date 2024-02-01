@@ -1,0 +1,247 @@
+linters:
+  enable-all: true
+  disable:
+    - contextcheck # too many false positives
+    - deadcode # deprecated (since v1.49.0) and replaced by 'unused'
+    - depguard # checks if package imports are whitelisted
+    - exhaustivestruct # deprecated (since v1.46.0) and replaced by 'exhaustruct'
+    - exhaustruct # TODO enable and fix, use regex to exclude certain cases
+    - golint # deprecated (since v1.41.0) and replaced by 'revive'
+    - ifshort # deprecated (since v1.48.0)
+    - interfacer # deprecated (since v1.38.0)
+    - lll
+    - maligned # deprecated (since v1.38.0)
+    - nlreturn # too strict and mostly code is not more readable
+    - nosnakecase  # deprecated (since v1.48.1) and replaced by 'revive'
+    - scopelint # deprecated (since v1.39.0) and replaced by 'exportloopref'
+    - structcheck # deprecated (since v1.49.0) and replaced by 'unused'
+    - sqlclosecheck # not needed for this project
+    - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
+    - wsl # too strict and mostly code is not more readable
+    ### disabled for now... will be enabled 1 by 1
+    - dupl
+    - forcetypeassert
+    - gosec
+    - inamedparam
+    - ireturn
+    - maintidx
+    - nolintlint
+    - paralleltest
+    - prealloc
+    - testpackage
+    - tparallel
+    - unconvert
+    - varnamelen
+    - wrapcheck
+    - importas
+    - gomnd
+    - nonamedreturns
+    - funlen
+    - gomoddirectives
+    - gochecknoglobals
+    - ginkgolinter
+    - goerr113
+    - nakedret
+    - godox
+    - errorlint
+    - errname
+    - gocognit
+    - nestif
+    - stylecheck
+    - bodyclose
+    - perfsprint
+    - cyclop
+    - tagliatelle
+    - noctx
+    - gocritic
+
+linters-settings:
+  stylecheck:
+    dot-import-whitelist:
+      - github.com/onsi/ginkgo/v2
+      - github.com/onsi/gomega
+  revive:
+    enable-all-rules: false
+    severity: error
+    rules:
+      - name: comment-spacings
+        disabled: true
+      - name: dot-imports
+        severity: warning
+        disabled: true
+      - name: line-length-limit
+        severity: warning
+        disabled: true
+        arguments: [ 120 ]
+  funlen:
+    lines: 80
+  cyclop:
+    max-complexity: 20
+  nestif:
+    min-complexity: 6
+  gci:
+    sections:
+      - standard                                             # Standard packages.
+      - default                                              # Imports that could not be matched to another section type.
+      - prefix(github.com/kyma-project/eventing-manager)    # Imports with the specified prefix.
+      - blank                                                # Blank imports.
+      - dot                                                  # Dot imports.
+    custom-order: true
+    skip-generated: true
+  importas:
+    no-unaliased: false
+    no-extra-aliases: true
+    ## kubernetes APIs get the prefix `k`. As an example check `kcorev1`
+
+    alias:
+      - pkg: k8s.io/api/core/v1
+        alias: kcorev1
+      - pkg: k8s.io/api/apps/v1
+        alias: kappsv1
+      - pkg: k8s.io/api/rbac/v1
+        alias: krbacv1
+      - pkg: k8s.io/apimachinery/pkg/runtime/schema
+        alias: kschema
+      - pkg: k8s.io/apimachinery/pkg/labels
+        alias: klabels
+      - pkg: k8s.io/apimachinery/pkg/runtime
+        alias: kruntime
+      - pkg: k8s.io/apimachinery/pkg/types
+        alias: ktypes
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
+        alias: kunstructured
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+        alias: kmetav1
+      - pkg: github.com/kyma-project/eventing-manager/api/eventing/v1alpha1
+        alias: eventingv1alpha1
+      - pkg: github.com/kyma-project/eventing-manager/api/eventing/v1alpha2
+        alias: eventingv1alpha2
+      - pkg: github.com/kyma-project/eventing-manager/api/operator/v1alpha1
+        alias: operatorv1alpha1
+      - pkg: github.com/kyma-project/api-gateway/apis/gateway/v1beta1
+        alias: apigatewayv1beta1
+      - pkg: k8s.io/client-go/dynamic/fake
+        alias: kdynamicfake
+      - pkg: k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
+        alias: kapixclientset
+      - pkg: k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake
+        alias: kapixclientsetfake
+      - pkg: k8s.io/apimachinery/pkg/api/errors
+        alias: kerrors
+      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+        alias: kapiextensionsv1
+      - pkg: github.com/kyma-project/eventing-manager/testing
+        alias: eventingtesting
+      - pkg: sigs.k8s.io/controller-runtime
+        alias: kctrl
+      - pkg: sigs.k8s.io/controller-runtime/pkg/log
+        alias: kctrllog
+      - pkg: sigs.k8s.io/controller-runtime/pkg/client
+        alias: kctrlclient
+      - pkg: k8s.io/api/autoscaling/v1
+        alias: kautoscalingv1
+      - pkg: k8s.io/api/autoscaling/v2
+        alias: kautoscalingv2
+      - pkg: k8s.io/api/admissionregistration/v1
+        alias: kadmissionregistrationv1
+      - pkg: github.com/cloudevents/sdk-go/v2
+        alias: cloudevents
+      - pkg: github.com/cloudevents/sdk-go/protocol/nats/v2
+        alias: cenats
+      - pkg: github.com/cloudevents/sdk-go/v2/binding
+        alias: cebinding
+      - pkg: github.com/cloudevents/sdk-go/v2/client
+        alias: ceclient
+      - pkg: github.com/cloudevents/sdk-go/v2/event
+        alias: ceevent
+      - pkg: github.com/cloudevents/sdk-go/v2/protocol
+        alias: ceprotocol
+      - pkg: github.com/cloudevents/sdk-go/v2/protocol/http
+        alias: cehttp
+      - pkg: github.com/kyma-project/eventing-manager/pkg/backend/(\w+)$
+        alias: backend$1
+      - pkg: github.com/kyma-project/eventing-manager/pkg/backend/(\w+)/(\w+)$
+        alias: backend$1$2
+      - pkg: github.com/kyma-project/eventing-manager/test/(\w+)$
+        alias: test$1
+      - pkg: github.com/kyma-project/eventing-manager/test/(\w+)/(\w+)$
+        alias: test$1$2
+      - pkg: istio.io/client-go/pkg/apis/security/v1beta1
+        alias: istiopkgsecurityv1beta1
+      - pkg: istio.io/api/(\w+)/(v\d+\w*\d*)$
+        alias: istio$1$2
+      - pkg: github.com/nats-io/nats-server/v2/(\w+)$
+        alias: natsio$1
+      - pkg: github.com/kyma-project/eventing-manager/internal/controller/(\w+)$
+        alias: controller$1
+      - pkg: github.com/kyma-project/kyma/common/logging/logger
+        alias: kymalogger
+      - pkg: github.com/kyma-project/nats-manager/api/v1alpha1
+        alias: natsv1alpha1
+      - pkg: github.com/kyma-project/nats-manager/testutils
+        alias: natstestutils
+      - pkg: github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/(\w+)$
+        alias: subscriptioncontroller$1
+      - pkg: github.com/kyma-project/eventing-manager/internal/controller/operator/eventing
+        alias: eventingcontroller
+      - pkg: github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks
+        alias: eventingcontrollermocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/ems/api/events/client/mocks
+        alias: emsclientmocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/ems/api/events/types
+        alias: emstypes
+      - pkg: github.com/onsi/gomega/types
+        alias: gomegatypes
+      - pkg: k8s.io/apimachinery/pkg/util/runtime
+        alias: kutilruntime
+      - pkg: k8s.io/client-go/kubernetes/scheme
+        alias: kkubernetesscheme
+      - pkg: github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager
+        alias: submgrmanager
+      - pkg: github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks
+        alias: submgrmanagermocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks
+        alias: submgrmocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/watcher/mocks
+        alias: watchermocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/k8s/mocks
+        alias: k8smocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/eventing/mocks
+        alias: eventingmocks
+      - pkg: github.com/kyma-project/eventing-manager/pkg/errors
+        alias: emerrors
+      - pkg: github.com/pkg/errors
+        alias: pkgerrors
+      - pkg: github.com/kyma-project/eventing-manager/testing/eventmeshsub
+        alias: eventmeshsubmatchers
+
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - stdlib
+      - Client
+      - client.Object
+      - (or|er)$
+  wrapcheck:
+    ignorePackageGlobs:
+issues:
+  exclude-rules:
+    - path: "_test\\.go"
+      linters:
+        - wrapcheck
+        - gochecknoglobals
+        - funlen # Table driven unit and integration tests exceed function length by design
+        - maintidx # Table driven unit and integration tests exceed maintainability index by design
+    - linters:
+      - importas
+      text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+output:
+  sort-results: true
+run:
+  timeout: 15m
+  skip-files:
+    - zz_generated.deepcopy.go
