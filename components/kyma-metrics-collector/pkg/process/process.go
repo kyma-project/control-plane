@@ -10,14 +10,6 @@ import (
 	"time"
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/util/workqueue"
-
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
@@ -26,6 +18,13 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Process struct {
