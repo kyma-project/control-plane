@@ -123,7 +123,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-			seed:              seedConfig("os-eu1", "eu-central-1", "openstack"),
+			seed:              seedConfig("os-eu1", "region1", "openstack"),
 		},
 	}
 }
@@ -199,7 +199,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			Provider:            "Openstack",
 			TargetSecret:        "secret",
 			Seed:                util.StringPtr("os-eu1"),
-			Region:              "eu-central-1",
+			Region:              "region1",
 			MachineType:         "t3-xlarge",
 			MachineImage:        util.StringPtr("red-hat"),
 			MachineImageVersion: util.StringPtr("8.0"),
