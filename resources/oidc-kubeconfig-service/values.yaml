@@ -7,9 +7,7 @@ global:
   ingress:
     domainName: "override.me.io"
   istio:
-    gateway:
-      name: "kyma-gateway"
-      namespace: "kyma-system"
+    gateway: "kyma-system/kyma-gateway"
   livenessProbe:
     initialDelaySeconds: 180
     timeoutSeconds: 1
