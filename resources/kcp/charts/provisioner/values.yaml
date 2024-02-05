@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20240115-07c053eb"
+      version: "v20240205-a49ece3eĄ"
       dir: "prod"
 serviceMonitor:
   enabled: true
