@@ -10,7 +10,7 @@ spec:
   hosts:
     - {{ .Values.service.hostname }}.{{ .Values.global.ingress.domainName }}
   gateways:
-    - {{ .Values.global.istio.gateway }}
+    - {{ .Values.global.istio.gateway | required "Please specify .global.istio.gateway"}}
     {{- if .Values.global.istio.additionalGateways }}
     {{ toYaml .Values.global.istio.additionalGateways | nindent 4 }}
     {{- end }}
