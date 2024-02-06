@@ -32,7 +32,6 @@ func (c Config) NewClient(kubeconfig string) (*Client, error) {
 }
 
 func (c Client) List(ctx context.Context) (*corev1.ServiceList, error) {
-
 	skrcommons.TotalCalls.WithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingSVCLabel).Inc()
 	unstructuredSvcList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {

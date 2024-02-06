@@ -7,37 +7,25 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gorilla/mux"
+	"github.com/kelseyhightower/envconfig"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
-
-	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
-
-	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
-
 	"k8s.io/client-go/util/workqueue"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/gorilla/mux"
-
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/service"
-
-	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
-	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
-
-	"github.com/kelseyhightower/envconfig"
-	gocache "github.com/patrickmn/go-cache"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
+	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/service"
+	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
+	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
+	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 )
 
 const (
@@ -47,7 +35,6 @@ const (
 )
 
 func main() {
-
 	opts := options.ParseArgs()
 	logger := log.NewLogger(opts.LogLevel)
 	logger.Infof("Starting application with options: %v", opts.String())
@@ -73,10 +60,10 @@ func main() {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Setup secrets client")
 	}
 
-	shootClient, err := gardenershoot.NewClient(opts)
-	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener shoots")
-	}
+	//shootClient, err := gardenershoot.NewClient(opts)
+	//if err != nil {
+	//	logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener shoots")
+	//}
 
 	// Create a client for KEB communication
 	kebConfig := new(keb.Config)
@@ -107,9 +94,9 @@ func main() {
 	queue := workqueue.NewDelayingQueue()
 
 	kmcProcess := kmcprocess.Process{
-		KEBClient:         kebClient,
-		ShootClient:       shootClient,
-		SecretCacheClient: secretCacheClient,
+		KEBClient: kebClient,
+		//ShootClient:       shootClient,
+		SecretCacheClient: secretCacheClient.CoreV1(),
 		EDPClient:         edpClient,
 		Logger:            logger,
 		Providers:         publicCloudSpecs,
@@ -168,7 +155,7 @@ func enableDebugging(debugPort int, log *zap.SugaredLogger) {
 	}()
 }
 
-// getEDPToken read the EDP token from the mounted secret file
+// getEDPToken read the EDP token from the mounted secret file.
 func getEDPToken() (string, error) {
 	token, err := os.ReadFile(edpCredentialsFile)
 	if err != nil {

@@ -24,7 +24,7 @@ const (
 	kebRuntimePage1ResponseFilePath = "../testing/fixtures/runtimes_response_page1.json"
 	kebRuntimePage2ResponseFilePath = "../testing/fixtures/runtimes_response_page2.json"
 
-	// Metrics related variables
+	// Metrics related variables.
 	metricsName   = "kmc_keb_request_total"
 	histogramName = "kmc_keb_request_duration_seconds"
 )

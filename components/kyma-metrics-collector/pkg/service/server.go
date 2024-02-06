@@ -1,17 +1,16 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"go.uber.org/zap"
-
-	"context"
-
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
@@ -31,7 +30,6 @@ type Server struct {
 
 // Start starts the HTTP server and shut it down when stop channel is closed.
 func (s *Server) Start() {
-
 	server := http.Server{
 		Addr:         s.Addr,
 		Handler:      s.Router,
@@ -43,7 +41,7 @@ func (s *Server) Start() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("start server")
 		}
 		s.namedLogger().Info("HTTP server stopped")

@@ -4,10 +4,6 @@ go 1.21
 
 require (
 	github.com/gardener/gardener v1.87.1
-	github.com/gardener/gardener-extension-provider-aws v1.51.1
-	github.com/gardener/gardener-extension-provider-azure v1.40.1
-	github.com/gardener/gardener-extension-provider-gcp v1.33.1
-	github.com/gardener/gardener-extension-provider-openstack v1.38.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jellydator/ttlcache/v3 v3.1.1

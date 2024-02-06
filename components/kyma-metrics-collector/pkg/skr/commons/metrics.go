@@ -16,14 +16,12 @@ const (
 	ListingSVCLabel          = "listing_svc"
 )
 
-var (
-	TotalCalls = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "kmc",
-			Subsystem: "skr",
-			Name:      "calls_total",
-			Help:      "Total number of calls to SKR to get the metrics of the cluster.",
-		},
-		[]string{"status", "reason"},
-	)
+var TotalCalls = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: "kmc",
+		Subsystem: "skr",
+		Name:      "calls_total",
+		Help:      "Total number of calls to SKR to get the metrics of the cluster.",
+	},
+	[]string{"status", "reason"},
 )

@@ -2,16 +2,13 @@ package testing
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
-	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"time"
 
-	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
@@ -19,12 +16,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	providersFile = "static_providers.json"
-	timeout       = 10 * time.Second
+	timeout = 10 * time.Second
 )
 
 type NewRuntimeOpts func(*kebruntime.RuntimeDTO)
@@ -92,136 +87,6 @@ func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega)
 }
 
 type NewShootOpts func(shoot *gardencorev1beta1.Shoot)
-
-func GetShoot(name string, opts ...NewShootOpts) *gardencorev1beta1.Shoot {
-	shoot := &gardencorev1beta1.Shoot{
-		TypeMeta: metaV1.TypeMeta{
-			Kind:       "Shoot",
-			APIVersion: "core.gardener.cloud/v1beta1",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-		},
-		Spec: gardencorev1beta1.ShootSpec{},
-	}
-	for _, opt := range opts {
-		opt(shoot)
-	}
-	return shoot
-}
-
-func WithVMSpecs(shoot *gardencorev1beta1.Shoot) {
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type: "azure",
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_D8_v3",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
-func WithOpenStackProviderAndMachineGC12M48(shoot *gardencorev1beta1.Shoot) {
-	infraConfig := NewOpenStackInfraConfig()
-	byteInfraConfig, err := json.Marshal(infraConfig)
-	if err != nil {
-		log.Fatalf("failed to marshal: %v", err)
-	}
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type: "openstack",
-		InfrastructureConfig: &runtime.RawExtension{
-			Raw: byteInfraConfig,
-		},
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "g_c12_m48",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
-func WithAzureProviderAndStandardD8V3VMs(shoot *gardencorev1beta1.Shoot) {
-	infraConfig := NewInfraConfig()
-	byteInfraConfig, err := json.Marshal(infraConfig)
-	if err != nil {
-		log.Fatalf("failed to marshal: %v", err)
-	}
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type: "azure",
-		InfrastructureConfig: &runtime.RawExtension{
-			Raw: byteInfraConfig,
-		},
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_D8_v3",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
-func NewInfraConfig() *gardenerazurev1alpha1.InfrastructureConfig {
-	name := "foo"
-	cidr := "10.25.0.0/19"
-	return &gardenerazurev1alpha1.InfrastructureConfig{
-		Networks: gardenerazurev1alpha1.NetworkConfig{
-			VNet: gardenerazurev1alpha1.VNet{
-				Name: &name,
-				CIDR: &cidr,
-			},
-			NatGateway:       nil,
-			ServiceEndpoints: nil,
-		},
-	}
-}
-
-func NewOpenStackInfraConfig() *gardeneropenstackv1alpha1.InfrastructureConfig {
-	id := "1234-4567-6789"
-	return &gardeneropenstackv1alpha1.InfrastructureConfig{
-		Networks: gardeneropenstackv1alpha1.Networks{
-			Router: &gardeneropenstackv1alpha1.Router{
-				ID: id,
-			},
-		},
-	}
-}
-
-func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type:                 "azure",
-		ControlPlaneConfig:   nil,
-		InfrastructureConfig: nil,
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_Foo",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
 
 func Get2Nodes() *corev1.NodeList {
 	node1 := GetNode("node1", "Standard_D8_v3")
@@ -299,7 +164,7 @@ func GenerateRandomAlphaString(length int) string {
 	return string(result)
 }
 
-// secureRandomBytes returns the requested number of bytes using crypto/rand
+// secureRandomBytes returns the requested number of bytes using crypto/rand.
 func secureRandomBytes(length int) []byte {
 	randomBytes := make([]byte, length)
 	_, err := rand.Read(randomBytes)
@@ -436,23 +301,6 @@ func WithLoadBalancer(service *corev1.Service) {
 	}
 }
 
-func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metaV1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fmt.Sprintf("%s.kubeconfig", shootName),
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
-			"kubeconfig": []byte(kubeconfigVal),
-		},
-	}
-}
-
 func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metaV1.TypeMeta{
@@ -464,7 +312,7 @@ func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 			Namespace: "kcp-system",
 		},
 		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
+			// "kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
 			"config": []byte(kubeconfigVal),
 		},
 	}

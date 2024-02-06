@@ -54,7 +54,7 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 	return nil
 }
 
-// LoadPublicCloudSpecs loads string data to Providers object from an env var
+// LoadPublicCloudSpecs loads string data to Providers object from an env var.
 func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if cfg.PublicCloudSpecs == "" {
 		return nil, fmt.Errorf("public cloud specification is not configured")
