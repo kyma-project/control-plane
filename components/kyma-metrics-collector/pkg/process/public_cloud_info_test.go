@@ -50,7 +50,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D4s_v5",
+			vmType:        "standard_d4s_v5",
 			expectedFeature: Feature{
 				CpuCores: 4,
 				Memory:   16,
@@ -60,7 +60,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D8s_v5",
+			vmType:        "standard_d8s_v5",
 			expectedFeature: Feature{
 				CpuCores: 8,
 				Memory:   32,
@@ -70,7 +70,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D16s_v5",
+			vmType:        "standard_d16s_v5",
 			expectedFeature: Feature{
 				CpuCores: 16,
 				Memory:   64,
@@ -80,7 +80,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D32s_v5",
+			vmType:        "standard_d32s_v5",
 			expectedFeature: Feature{
 				CpuCores: 32,
 				Memory:   128,
@@ -90,7 +90,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D48s_v5",
+			vmType:        "standard_d48s_v5",
 			expectedFeature: Feature{
 				CpuCores: 48,
 				Memory:   192,
@@ -100,7 +100,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D64s_v5",
+			vmType:        "standard_d64s_v5",
 			expectedFeature: Feature{
 				CpuCores: 64,
 				Memory:   256,
