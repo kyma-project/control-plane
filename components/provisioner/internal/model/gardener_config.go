@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/openstack"
 
 	"github.com/hashicorp/go-version"
