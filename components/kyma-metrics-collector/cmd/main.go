@@ -9,10 +9,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/workqueue"
+
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
-	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
@@ -20,12 +26,6 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
-	gocache "github.com/patrickmn/go-cache"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/workqueue"
 )
 
 const (
@@ -60,10 +60,10 @@ func main() {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Setup secrets client")
 	}
 
-	shootClient, err := gardenershoot.NewClient(opts)
-	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener shoots")
-	}
+	//shootClient, err := gardenershoot.NewClient(opts)
+	//if err != nil {
+	//	logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener shoots")
+	//}
 
 	// Create a client for KEB communication
 	kebConfig := new(keb.Config)
@@ -94,8 +94,8 @@ func main() {
 	queue := workqueue.NewDelayingQueue()
 
 	kmcProcess := kmcprocess.Process{
-		KEBClient:         kebClient,
-		ShootClient:       shootClient,
+		KEBClient: kebClient,
+		//ShootClient:       shootClient,
 		SecretCacheClient: secretCacheClient.CoreV1(),
 		EDPClient:         edpClient,
 		Logger:            logger,

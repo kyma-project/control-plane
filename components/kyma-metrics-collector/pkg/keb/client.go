@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"net/url"
 
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 type Client struct {
@@ -41,7 +42,7 @@ func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	}
 }
 
-func (c Client) NewRequest() (*http.Request, error) {
+func (c *Client) NewRequest() (*http.Request, error) {
 	kebURL, err := url.ParseRequestURI(c.Config.URL)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (c Client) NewRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, error) {
+func (c *Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, error) {
 	morePages := true
 	pageNum := 1
 	recordsSeen := 0
@@ -77,7 +78,7 @@ func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, err
 	return finalRuntimesPage, nil
 }
 
-func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
+func (c *Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
 	c.Logger.Debugf("polling for runtimes with URL: %s", req.URL.String())
 	query := url.Values{
 		"page": []string{fmt.Sprintf("%d", pageNum)},

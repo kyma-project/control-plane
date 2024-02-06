@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 )
 
 type Providers struct {

@@ -6,17 +6,10 @@ import (
 	"strings"
 	"time"
 
-	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
-	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
-	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
-	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 const (
@@ -36,7 +29,8 @@ type EventStream struct {
 }
 
 type Input struct {
-	shoot    *gardencorev1beta1.Shoot
+	provider string
+	//shoot    *gardencorev1beta1.Shoot
 	nodeList *corev1.NodeList
 	pvcList  *corev1.PersistentVolumeClaimList
 	svcList  *corev1.ServiceList
@@ -46,14 +40,14 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	if inp.nodeList == nil {
 		return nil, fmt.Errorf("no nodes data to compute metrics on")
 	}
-	if inp.shoot == nil {
-		return nil, fmt.Errorf("no shoot data to compute metrics on")
-	}
+	//if inp.shoot == nil {
+	//	return nil, fmt.Errorf("no shoot data to compute metrics on")
+	//}
 
 	metric := new(edp.ConsumptionMetrics)
 	provisionedCPUs := 0
 	provisionedMemory := 0.0
-	providerType := inp.shoot.Spec.Provider.Type
+	providerType := inp.provider
 	vmTypes := make(map[string]int)
 
 	pvcStorage := int64(0)
@@ -97,53 +91,53 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		}
 	}
 
-	// Calculate vnets(for Azure) or vpc(for AWS)
-	if inp.shoot.Spec.Provider.InfrastructureConfig != nil {
-		rawExtension := *inp.shoot.Spec.Provider.InfrastructureConfig
-		switch inp.shoot.Spec.Provider.Type {
-		// Raw extensions varies based on the provider type
-		case Azure:
-			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
-			infraConfig := &gardenerazurev1alpha1.InfrastructureConfig{}
-			err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
-			if err != nil {
-				return nil, err
-			}
-			if infraConfig.Networks.VNet.CIDR != nil {
-				vnets += 1
-			}
-		case AWS:
-			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
-			infraConfig := &gardenerawsv1alpha1.InfrastructureConfig{}
-			err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
-			if err != nil {
-				return nil, err
-			}
-			if infraConfig.Networks.VPC.CIDR != nil {
-				vnets += 1
-			}
-		case GCP:
-			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
-			infraConfig := &gardenergcpv1alpha1.InfrastructureConfig{}
-			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
-				return nil, err
-			}
-			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
-				vnets += 1
-			}
-		case OpenStack:
-			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
-			infraConfig := &gardeneropenstackv1alpha1.InfrastructureConfig{}
-			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
-				return nil, err
-			}
-			if infraConfig.Networks.Router != nil {
-				vnets += 1
-			}
-		default:
-			return nil, fmt.Errorf("provider: %s does not match in the system", inp.shoot.Spec.Provider.Type)
-		}
-	}
+	//// Calculate vnets(for Azure) or vpc(for AWS)
+	//if inp.shoot.Spec.Provider.InfrastructureConfig != nil {
+	//	rawExtension := *inp.shoot.Spec.Provider.InfrastructureConfig
+	//	switch inp.shoot.Spec.Provider.Type {
+	//	// Raw extensions varies based on the provider type
+	//	case Azure:
+	//		decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+	//		infraConfig := &gardenerazurev1alpha1.InfrastructureConfig{}
+	//		err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		if infraConfig.Networks.VNet.CIDR != nil {
+	//			vnets += 1
+	//		}
+	//	case AWS:
+	//		decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+	//		infraConfig := &gardenerawsv1alpha1.InfrastructureConfig{}
+	//		err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		if infraConfig.Networks.VPC.CIDR != nil {
+	//			vnets += 1
+	//		}
+	//	case GCP:
+	//		decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+	//		infraConfig := &gardenergcpv1alpha1.InfrastructureConfig{}
+	//		if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+	//			return nil, err
+	//		}
+	//		if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
+	//			vnets += 1
+	//		}
+	//	case OpenStack:
+	//		decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+	//		infraConfig := &gardeneropenstackv1alpha1.InfrastructureConfig{}
+	//		if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+	//			return nil, err
+	//		}
+	//		if infraConfig.Networks.Router != nil {
+	//			vnets += 1
+	//		}
+	//	default:
+	//		return nil, fmt.Errorf("provider: %s does not match in the system", inp.shoot.Spec.Provider.Type)
+	//	}
+	//}
 	metric.Timestamp = getTimestampNow()
 	metric.Compute.ProvisionedCpus = provisionedCPUs
 	metric.Compute.ProvisionedRAMGb = provisionedMemory
@@ -182,6 +176,6 @@ func getSizeInGB(value *resource.Quantity) int64 {
 	gbUnit := math.Pow(2, 30)
 
 	// Converting back from milli to original
-	gVal := int64((float64(milliVal) / float64(gbUnit)) / 1000)
+	gVal := int64((float64(milliVal) / gbUnit) / 1000)
 	return gVal
 }

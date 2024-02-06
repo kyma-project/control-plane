@@ -8,4 +8,5 @@ type Record struct {
 	ShootName    string
 	KubeConfig   string
 	Metric       *edp.ConsumptionMetrics
+	ProviderType string
 }

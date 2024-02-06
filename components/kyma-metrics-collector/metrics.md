@@ -1,7 +1,7 @@
 ### Metrics Emitted by Kyma Metrics Collector:
 
 | Metric                               | Description                                                         |
-| ------------------------------------ | :------------------------------------------------------------------ |
+|--------------------------------------|:--------------------------------------------------------------------|
 | **kmc_edp_request_total**            | Total number of requests to EDP.                                    |
 | **kmc_edp_request_duration_seconds** | Duration of HTTP request to EDP in seconds.                         |
 | **kmc_gardener_calls_total**         | Total number of calls to Gardener to get the config of the cluster. |
