@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/openstack"
 
 	"github.com/hashicorp/go-version"
 
@@ -26,6 +27,8 @@ const (
 	EuAccessAnnotation                   = "support.gardener.cloud/eu-access-for-cluster-nodes"
 	ShootNetworkingFilterExtensionType   = "shoot-networking-filter"
 	ShootNetworkingFilterDisabledDefault = true
+	OpenStackFloatingPoolName            = "FloatingIP-external-kyma-01"
+	OpenStackExposureClassName           = "converged-cloud-internet"
 )
 
 var networkingType = "calico"
@@ -661,11 +664,21 @@ func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, 
 }
 
 func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	var openStackInfra *openstack.InfrastructureConfig
+
 	shoot.Spec.CloudProfileName = c.input.CloudProfileName
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
-	openStackInfra := NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
+	if shoot.Spec.ExposureClassName == nil {
+		shoot.Spec.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
+	}
+
+	if c.input.FloatingPoolName == "" {
+		openStackInfra = NewOpenStackInfrastructure(OpenStackFloatingPoolName, gardenerConfig.WorkerCidr)
+	}
+
+	openStackInfra = NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(openStackInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
