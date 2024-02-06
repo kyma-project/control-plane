@@ -3,6 +3,7 @@ package process
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -36,19 +37,19 @@ type MachineInfo map[string]json.RawMessage
 func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 	switch cloudProvider {
 	case AWS:
-		if feature, ok := p.AWS[vmType]; ok {
+		if feature, ok := p.AWS[strings.ToLower(vmType)]; ok {
 			return &feature
 		}
 	case Azure:
-		if feature, ok := p.Azure[vmType]; ok {
+		if feature, ok := p.Azure[strings.ToLower(vmType)]; ok {
 			return &feature
 		}
 	case GCP:
-		if feature, ok := p.GCP[vmType]; ok {
+		if feature, ok := p.GCP[strings.ToLower(vmType)]; ok {
 			return &feature
 		}
 	case OpenStack:
-		if feature, ok := p.OpenStack[vmType]; ok {
+		if feature, ok := p.OpenStack[strings.ToLower(vmType)]; ok {
 			return &feature
 		}
 	}
