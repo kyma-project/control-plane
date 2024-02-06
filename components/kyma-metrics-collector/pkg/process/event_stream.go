@@ -6,10 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 const (
@@ -30,7 +29,7 @@ type EventStream struct {
 
 type Input struct {
 	provider string
-	//shoot    *gardencorev1beta1.Shoot
+	// shoot    *gardencorev1beta1.Shoot
 	nodeList *corev1.NodeList
 	pvcList  *corev1.PersistentVolumeClaimList
 	svcList  *corev1.ServiceList

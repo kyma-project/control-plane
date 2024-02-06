@@ -10,9 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
-
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
+	"go.uber.org/zap"
 )
 
 const (

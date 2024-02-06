@@ -7,14 +7,13 @@ import (
 	"net/http"
 	"net/url"
 
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
-
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 type Client struct {
