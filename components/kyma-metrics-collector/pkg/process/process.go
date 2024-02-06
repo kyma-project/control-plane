@@ -9,14 +9,6 @@ import (
 	"sync"
 	"time"
 
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/util/workqueue"
-
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
@@ -24,6 +16,13 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Process struct {
@@ -64,7 +63,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	p.namedLogger().With(log.KeyWorkerID, identifier).Debugf("record found from cache: %+v", record)
 
 	runtimeID := record.RuntimeID
-	//shootName := record.ShootName
+	// shootName := record.ShootName
 
 	kubeconfig, err := kmccache.GetKubeConfigFromCache(p.Logger, p.SecretCacheClient, runtimeID)
 	if err != nil {
@@ -115,7 +114,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	// Create input
 	input := Input{
 		provider: record.ProviderType,
-		//shoot:    shoot,
+		// shoot:    shoot,
 		nodeList: nodes,
 		pvcList:  pvcList,
 		svcList:  svcList,

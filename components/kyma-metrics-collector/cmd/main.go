@@ -9,13 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
-	gocache "github.com/patrickmn/go-cache"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/workqueue"
-
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
@@ -26,6 +19,12 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/workqueue"
 )
 
 const (
@@ -95,7 +94,7 @@ func main() {
 
 	kmcProcess := kmcprocess.Process{
 		KEBClient: kebClient,
-		//ShootClient:       shootClient,
+		// ShootClient:       shootClient,
 		SecretCacheClient: secretCacheClient.CoreV1(),
 		EDPClient:         edpClient,
 		Logger:            logger,

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/onsi/gomega"
-
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	"github.com/onsi/gomega"
 )
 
 const (
