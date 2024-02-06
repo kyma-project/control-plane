@@ -3,11 +3,12 @@ package process
 import (
 	"testing"
 
+	"github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-	"github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestParse(t *testing.T) {
@@ -28,7 +29,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure, 2 vm types, 3 pvcs(5,10 and 20Gi) and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get2Nodes(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -50,7 +51,7 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
+					ProvisionedVnets: 0,
 					ProvisionedIPs:   1,
 				},
 			},
@@ -58,7 +59,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -78,7 +79,7 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
+					ProvisionedVnets: 0,
 					ProvisionedIPs:   0,
 				},
 			},
@@ -86,7 +87,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -105,7 +106,7 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
+					ProvisionedVnets: 0,
 					ProvisionedIPs:   0,
 				},
 			},
@@ -113,7 +114,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure and vm type missing from the list of vmtypes",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndFooVMType),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithFooVMType(),
 			},
 			providers:   *providers,
@@ -122,7 +123,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with OpenStack, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithOpenStackProviderAndMachineGC12M48),
+				provider: OpenStack,
 				nodeList: kmctesting.Get2NodesOpenStack(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -143,7 +144,7 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
+					ProvisionedVnets: 0,
 					ProvisionedIPs:   1,
 				},
 			},

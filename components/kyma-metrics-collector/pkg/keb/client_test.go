@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
-	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 )
 
 const (

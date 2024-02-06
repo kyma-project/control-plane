@@ -35,9 +35,6 @@ const (
 	// KeyRequeue is used as named key for a log message which indicates that it will be requeued.
 	KeyRequeue = "requeue"
 
-	// KeyShoot is used as a named key for a log message with shoot.
-	KeyShoot = "shoot"
-
 	// ValueFail is used as a value for a log message with failure.
 	ValueFail = "fail"
 
@@ -84,9 +81,4 @@ func newLogger(logLevel zapcore.Level) *zap.Logger {
 		),
 		zap.AddCaller(),
 		zap.ErrorOutput(os.Stderr))
-}
-
-// SetOutputFormat sets the log output format.
-func SetOutputFormat(of OutputFormat) {
-	outputFormat = of
 }

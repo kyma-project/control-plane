@@ -38,7 +38,7 @@ func GetKubeConfigFromCache(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface
 		logger.Debugf("Kubeconfig cache found kubeconfig for cluster (runtimeID: %s) in cache", runtimeID)
 		cacheEntry := kubeConfigCache.Get(runtimeID)
 		if cacheEntry.Value() == "" {
-			return "", fmt.Errorf("Kubeconfig cache failed to find valid kubeconfig for cluster (runtimeID: %s), will retry the kubeconfig retrieval after %s",
+			return "", fmt.Errorf("kubeconfig cache failed to find valid kubeconfig for cluster (runtimeID: %s), will retry the kubeconfig retrieval after %s",
 				runtimeID, cacheEntry.ExpiresAt())
 		}
 		return cacheEntry.Value(), nil
@@ -46,12 +46,12 @@ func GetKubeConfigFromCache(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface
 
 	kubeConfig, err := getKubeConfigFromSecret(logger, coreV1, runtimeID)
 	if err == nil {
-		logger.Debugf("Kubeconfig cache retrieved kubeconfig for cluster (runtimeID: %s) from secret: caching it now",
+		logger.Debugf("kubeconfig cache retrieved kubeconfig for cluster (runtimeID: %s) from secret: caching it now",
 			runtimeID)
 		kubeConfigCache.Set(runtimeID, kubeConfig, ttl)
 	} else {
 		// HACK: workaround to avoid that too many non-existing clusters lead to peformance issues
-		logger.Debugf("Kubeconfig cache failed to get kubeconfig for cluster (runtimeID: %s) from secret - will cache empty string: %s",
+		logger.Debugf("kubeconfig cache failed to get kubeconfig for cluster (runtimeID: %s) from secret - will cache empty string: %s",
 			runtimeID, err)
 		kubeConfigCache.Set(runtimeID, "", getJitterTTL())
 	}
@@ -71,12 +71,12 @@ func getKubeConfigFromSecret(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interfac
 
 	kubeconfig, found := secret.Data["config"]
 	if !found {
-		return "", fmt.Errorf("Kubeconfig cache found kubeconfig-secret '%s' for runtime '%s' which does not include the data-key 'config'",
+		return "", fmt.Errorf("kubeconfig cache found kubeconfig-secret '%s' for runtime '%s' which does not include the data-key 'config'",
 			secretResourceName, runtimeID)
 	}
 
 	if len(kubeconfig) == 0 {
-		return "", fmt.Errorf("Kubeconfig cache found kubeconfig-secret '%s' for runtime '%s' which includes an empty kubeconfig string",
+		return "", fmt.Errorf("kubeconfig cache found kubeconfig-secret '%s' for runtime '%s' which includes an empty kubeconfig string",
 			secretResourceName, runtimeID)
 	}
 
@@ -90,15 +90,15 @@ func getKubeConfigSecret(logger *zap.SugaredLogger, coreV1 v1.CoreV1Interface,
 	secret, err = coreV1.Secrets("kcp-system").Get(context.Background(), secretResourceName, metav1.GetOptions{})
 	if err != nil {
 		if k8serr.IsNotFound(err) { // accepted failure
-			logger.Debugf("Kubeconfig cache cannot find a kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
+			logger.Debugf("kubeconfig cache cannot find a kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
 				secretResourceName, runtimeID, err)
 			return nil, err
 		} else if k8serr.IsForbidden(err) { // configuration failure
-			logger.Errorf("Kubeconfig cache is not allowed to lookup kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
+			logger.Errorf("kubeconfig cache is not allowed to lookup kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
 				secretResourceName, runtimeID, err)
 			return nil, err
 		}
-		logger.Errorf("Kubeconfig cache failed to lookup kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
+		logger.Errorf("kubeconfig cache failed to lookup kubeconfig-secret '%s' for cluster with runtimeID %s: %s",
 			secretResourceName, runtimeID, err)
 		return nil, err
 	}

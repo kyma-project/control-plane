@@ -8,29 +8,24 @@ import (
 	"testing"
 	"time"
 
-	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/google/uuid"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/util/workqueue"
+
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
-	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	kmckeb "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
-	"github.com/onsi/gomega"
-	gocache "github.com/patrickmn/go-cache"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	"go.uber.org/zap/zapcore"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/util/workqueue"
 )
 
 const (
@@ -385,6 +380,7 @@ func TestExecute(t *testing.T) {
 		RuntimeID:    runtimeID,
 		ShootName:    shootName,
 		KubeConfig:   "",
+		ProviderType: Azure,
 		Metric:       nil,
 	}
 	expectedRecord := newRecord
@@ -401,8 +397,6 @@ func TestExecute(t *testing.T) {
 	queue := workqueue.NewDelayingQueue()
 	queue.Add(subAccID)
 
-	shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
-	shootClient, err := NewFakeShootClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
 	secretCacheClient := fake.NewSimpleClientset(secretKCPStored)
 
@@ -418,7 +412,6 @@ func TestExecute(t *testing.T) {
 	newProcess := &Process{
 		EDPClient:         edpClient,
 		Queue:             queue,
-		ShootClient:       shootClient,
 		SecretCacheClient: secretCacheClient.CoreV1(),
 		Cache:             cache,
 		Providers:         providers,
@@ -488,24 +481,6 @@ func TestExecute(t *testing.T) {
 	g.Expect(timesVisited).To(gomega.Equal(oldEventsSentCount))
 	// the queue should be empty.
 	g.Eventually(newProcess.Queue.Len()).Should(gomega.Equal(0))
-}
-
-func NewFakeShootClient(shoot *gardenerv1beta1.Shoot) (*gardenershoot.Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
-	if err != nil {
-		return nil, err
-	}
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(shoot)
-	if err != nil {
-		return nil, err
-	}
-	shootUnstructured := &unstructured.Unstructured{Object: unstructuredMap}
-	shootUnstructured.SetGroupVersionKind(gardenershoot.GroupVersionKind())
-
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, shootUnstructured)
-	nsResourceClient := dynamicClient.Resource(gardenershoot.GroupVersionResource()).Namespace("default")
-
-	return &gardenershoot.Client{ResourceClient: nsResourceClient}, nil
 }
 
 func NewRecord(subAccId, shootName, kubeconfig string) kmccache.Record {
@@ -590,7 +565,7 @@ func NewMetric() *edp.ConsumptionMetrics {
 			},
 		},
 		Networking: edp.Networking{
-			ProvisionedVnets: 1,
+			ProvisionedVnets: 0,
 			ProvisionedIPs:   2,
 		},
 	}

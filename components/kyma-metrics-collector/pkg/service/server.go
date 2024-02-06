@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -9,8 +10,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"go.uber.org/zap"
+
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 const (
@@ -39,7 +41,7 @@ func (s *Server) Start() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("start server")
 		}
 		s.namedLogger().Info("HTTP server stopped")

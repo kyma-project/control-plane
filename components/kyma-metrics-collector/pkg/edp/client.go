@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 type Client struct {
@@ -42,7 +43,7 @@ func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	}
 }
 
-func (c Client) NewRequest(dataTenant string) (*http.Request, error) {
+func (c *Client) NewRequest(dataTenant string) (*http.Request, error) {
 	edpURL := fmt.Sprintf(edpPathFormat,
 		c.Config.URL,
 		c.Config.Namespace,
@@ -64,7 +65,7 @@ func (c Client) NewRequest(dataTenant string) (*http.Request, error) {
 	return req, nil
 }
 
-func (c Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
+func (c *Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 	customBackoff := wait.Backoff{
