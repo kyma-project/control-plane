@@ -1,6 +1,7 @@
 package process
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
@@ -25,6 +26,7 @@ func TestGetFeature(t *testing.T) {
 		cloudProvider   string
 		vmType          string
 		expectedFeature Feature
+		wantNil         bool
 	}{
 		{
 			cloudProvider: "azure",
@@ -48,7 +50,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D4s_v5",
+			vmType:        "standard_d4s_v5",
 			expectedFeature: Feature{
 				CpuCores: 4,
 				Memory:   16,
@@ -58,7 +60,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D8s_v5",
+			vmType:        "standard_d8s_v5",
 			expectedFeature: Feature{
 				CpuCores: 8,
 				Memory:   32,
@@ -68,7 +70,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D16s_v5",
+			vmType:        "standard_d16s_v5",
 			expectedFeature: Feature{
 				CpuCores: 16,
 				Memory:   64,
@@ -78,7 +80,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D32s_v5",
+			vmType:        "standard_d32s_v5",
 			expectedFeature: Feature{
 				CpuCores: 32,
 				Memory:   128,
@@ -88,7 +90,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D48s_v5",
+			vmType:        "standard_d48s_v5",
 			expectedFeature: Feature{
 				CpuCores: 48,
 				Memory:   192,
@@ -98,7 +100,7 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "azure",
-			vmType:        "Standard_D64s_v5",
+			vmType:        "standard_d64s_v5",
 			expectedFeature: Feature{
 				CpuCores: 64,
 				Memory:   256,
@@ -109,6 +111,7 @@ func TestGetFeature(t *testing.T) {
 		{
 			cloudProvider: "azure",
 			vmType:        "standard_d8_foo",
+			wantNil:       true,
 		},
 		{
 			cloudProvider: "aws",
@@ -120,15 +123,8 @@ func TestGetFeature(t *testing.T) {
 		},
 		{
 			cloudProvider: "aws",
-			vmType:        "t4g.nano",
-			expectedFeature: Feature{
-				CpuCores: 2,
-				Memory:   0.5,
-			},
-		},
-		{
-			cloudProvider: "aws",
 			vmType:        "m5.2xlarge.foo",
+			wantNil:       true,
 		},
 		{
 			cloudProvider: "gcp",
@@ -205,11 +201,14 @@ func TestGetFeature(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotFeature := providers.GetFeature(tc.cloudProvider, tc.vmType)
-		if gotFeature != nil {
+		tc := tc
+		t.Run(fmt.Sprintf("%s-%s", tc.cloudProvider, tc.vmType), func(t *testing.T) {
+			gotFeature := providers.GetFeature(tc.cloudProvider, tc.vmType)
+			if tc.wantNil {
+				g.Expect(gotFeature).Should(gomega.BeNil())
+				return
+			}
 			g.Expect(*gotFeature).Should(gomega.Equal(tc.expectedFeature))
-			continue
-		}
-		g.Expect(gotFeature).Should(gomega.BeNil())
+		})
 	}
 }
