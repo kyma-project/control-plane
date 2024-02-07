@@ -650,7 +650,7 @@ func (c OpenStackGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string 
 func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.OpenStackProviderConfig{
 		Zones:                c.input.Zones,
-		FloatingPoolName:     c.input.FloatingPoolName,
+		FloatingPoolName:     util.UnwrapStr(c.input.FloatingPoolName),
 		CloudProfileName:     c.input.CloudProfileName,
 		LoadBalancerProvider: c.input.LoadBalancerProvider,
 	}
@@ -675,11 +675,11 @@ func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig
 		shoot.Spec.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
 	}
 
-	if c.input.FloatingPoolName == "" {
+	if c.input.FloatingPoolName == nil {
 		openStackInfra = NewOpenStackInfrastructure(OpenStackFloatingPoolName, gardenerConfig.WorkerCidr)
 	}
 
-	openStackInfra = NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
+	openStackInfra = NewOpenStackInfrastructure(util.UnwrapStr(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(openStackInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
