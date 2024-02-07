@@ -677,9 +677,10 @@ func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig
 
 	if c.input.FloatingPoolName == nil {
 		openStackInfra = NewOpenStackInfrastructure(OpenStackFloatingPoolName, gardenerConfig.WorkerCidr)
+	} else {
+		openStackInfra = NewOpenStackInfrastructure(util.UnwrapStr(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
 	}
 
-	openStackInfra = NewOpenStackInfrastructure(util.UnwrapStr(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(openStackInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
