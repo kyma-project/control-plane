@@ -20,8 +20,8 @@ github.com/emicklei/go-restful/v3 v3.11.0 h1:rAQeMHw1c7zTmncogyy8VvRZwtkmkZ4FxER
 github.com/emicklei/go-restful/v3 v3.11.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
-github.com/gardener/gardener v1.87.1 h1:TZ8I13CF7vZ0Z+9xD2504G/HjIn6k0aq+29xoNCojRY=
-github.com/gardener/gardener v1.87.1/go.mod h1:MNqPkSxLD2w+HeIP56JnZbZtaqPnDb4hSRl3JWEZTWU=
+github.com/gardener/gardener v1.87.2 h1:YYOry8Mi6BW2IpD2VjQVEIguKBc6UaQbUWs/76RCca0=
+github.com/gardener/gardener v1.87.2/go.mod h1:MNqPkSxLD2w+HeIP56JnZbZtaqPnDb4hSRl3JWEZTWU=
 github.com/gardener/gardener-extension-provider-aws v1.51.1 h1:mdowAUtua280va02xKjbnnY0C6otpIVROFHLVb27EHU=
 github.com/gardener/gardener-extension-provider-aws v1.51.1/go.mod h1:94R8wwp//yNbc/bLgHl4pE2xe2d/9BCiCziJXPaeTsQ=
 github.com/gardener/gardener-extension-provider-azure v1.40.1 h1:GHRx32/wty79ELYS48z3eBNfCgMBv0pDb3RH/eVqj/8=
