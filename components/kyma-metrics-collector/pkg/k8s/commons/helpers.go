@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func SetupSchemeOrDie() (*runtime.Scheme, error) {
+func SetupScheme() (*runtime.Scheme, error) {
 	scheme := runtime.NewScheme()
 	if err := corev1.AddToScheme(scheme); err != nil {
 		return nil, err
