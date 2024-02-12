@@ -360,10 +360,12 @@ func isSuccess(status int) bool {
 	return false
 }
 
-func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
+func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	if runtime.Status.Provisioning != nil &&
 		runtime.Status.Provisioning.State == "succeeded" &&
 		runtime.Status.Deprovisioning == nil {
+		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+			Infof("Tracked cluster of state: %s or status: %s", runtime.Status.State, runtime.Status.Provisioning)
 		return true
 	}
 	return false
@@ -379,7 +381,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 		}
 		validSubAccounts[runtime.SubAccountID] = true
 		recordObj, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
-		if isClusterTrackable(&runtime) {
+		if p.isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
 				RuntimeID:    runtime.RuntimeID,
