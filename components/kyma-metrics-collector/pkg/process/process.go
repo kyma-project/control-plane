@@ -361,9 +361,12 @@ func isSuccess(status int) bool {
 }
 
 func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
-	if runtime.Status.Provisioning != nil &&
-		runtime.Status.Provisioning.State == "succeeded" &&
-		runtime.Status.Deprovisioning == nil {
+	if runtime.Status.State == "succeeded" ||
+		runtime.Status.State == "error" ||
+		runtime.Status.State == "upgrading" ||
+		runtime.Status.State == "updating" ||
+		runtime.Status.Provisioning != nil && runtime.Status.Provisioning.State == "succeeded" &&
+			runtime.Status.Deprovisioning == nil {
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 			Infof("Tracked cluster of state: %s or status: %s", runtime.Status.State, runtime.Status.Provisioning)
 		return true
