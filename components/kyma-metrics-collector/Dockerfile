@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/external/golang:1.20.3-alpine3.17 as builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/golang:1.21.5-alpine3.19 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kyma-metrics-collector
 WORKDIR ${BASE_APP_DIR}

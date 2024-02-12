@@ -2,7 +2,7 @@ global:
   images:
     kyma_metrics_collector:
       dir:
-      version: "v20230411-94ab3da5"
+      version: "" # Set the image in kcp/values.yaml
 
 nameOverride: ""
 fullnameOverride: ""

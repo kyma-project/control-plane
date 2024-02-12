@@ -11,9 +11,6 @@ dependencies:
 - name: provisioner
   condition: global.provisioning.enabled
   version: 0.1.0
-- name: kyma-environment-broker
-  condition: global.kyma_environment_broker.enabled
-  version: 0.1.0
 - name: kyma-metrics-collector
   condition: global.kyma_metrics_collector.enabled
   version: 0.1.0

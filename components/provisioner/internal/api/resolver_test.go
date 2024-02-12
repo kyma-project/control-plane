@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	validatorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/api/mocks"
+	kubeconfigprovidermock "github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue/mocks"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -23,6 +24,8 @@ const (
 	operationID = "ec781980-0533-4098-aab7-96b535569732"
 	runtimeID   = "1100bb59-9c40-4ebb-b846-7477c4dc5bbb"
 )
+
+var kubeconfigProviderMock = kubeconfigprovidermock.KubeconfigProvider{}
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
@@ -445,7 +448,7 @@ func oidcInput() *gqlschema.OIDCConfigInput {
 func dnsInput() *gqlschema.DNSConfigInput {
 	return &gqlschema.DNSConfigInput{
 		Providers: []*gqlschema.DNSProviderInput{
-			&gqlschema.DNSProviderInput{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_inresolver",

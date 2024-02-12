@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
+	"github.com/kyma-project/kyma-environment-broker/common/director"
+	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -128,7 +128,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	directorClient := director.NewDirectorClient(ctx, cfg.Director, log.WithField("service", "director_client"))
 
-	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, cli, log.WithField("service", "runtime_client"))
 
 	suite := &Suite{
 		t:   t,

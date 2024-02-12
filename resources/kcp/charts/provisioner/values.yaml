@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20231121-fee25d8e"
+      version: "v20240205-a49ece3e"
       dir: "prod"
 serviceMonitor:
   enabled: true
@@ -30,6 +30,9 @@ serviceAccount:
 
 security:
   skipTLSCertificateVeryfication: false
+
+openStackConfig:
+  regions: ~
 
 gardener:
   helmAnnotation: false

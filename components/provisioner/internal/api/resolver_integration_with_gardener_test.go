@@ -142,7 +142,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	kubeconfigProviderMock := &kubeconfigprovidermock.KubeconfigProvider{}
 	kubeconfigProviderMock.On("FetchFromRequest", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
-	kubeconfigProviderMock.On("FetchFromShoot", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
 
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
@@ -209,9 +208,21 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(
+				inputConverter,
+				graphQLConverter,
+				directorServiceMock,
+				dbsFactory,
+				provisioner,
+				uuidGenerator,
+				gardener.NewShootProvider(shootInterface),
+				provisioningQueue,
+				deprovisioningQueue,
+				shootUpgradeQueue,
+				kubeconfigProviderMock)
 
-			validator := api.NewValidator()
+			supportedOpenStackRegions := []string{"region1", "region2"}
+			validator := api.NewValidator(supportedOpenStackRegions)
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
@@ -386,12 +397,13 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvision,
-		State:     gqlschema.OperationStateSucceeded,
-		RuntimeID: runtimeId,
-		Message:   util.StringPtr("Operation succeeded"),
-		LastError: &gqlschema.LastError{},
+		ID:               operationId,
+		Operation:        gqlschema.OperationTypeProvision,
+		State:            gqlschema.OperationStateSucceeded,
+		RuntimeID:        runtimeId,
+		CompassRuntimeID: runtimeId,
+		Message:          util.StringPtr("Operation succeeded"),
+		LastError:        &gqlschema.LastError{},
 	}
 }
 
@@ -444,7 +456,7 @@ func simulateShootUpgrade(t *testing.T, f gardener_apis.ShootInterface, shootNam
 	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
 	require.NoError(t, err)
 
-	s.Status.ObservedGeneration = s.ObjectMeta.Generation + 1
+	s.Status.ObservedGeneration = s.Generation + 1
 
 	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)

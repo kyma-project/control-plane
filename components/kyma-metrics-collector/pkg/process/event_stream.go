@@ -6,19 +6,18 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
-
-	"k8s.io/apimachinery/pkg/runtime"
-
 	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 )
 
 const (
@@ -26,14 +25,15 @@ const (
 	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64
 	storageRoundingFactor = 32
 
-	Azure = "azure"
-	AWS   = "aws"
-	GCP   = "gcp"
+	Azure     = "azure"
+	AWS       = "aws"
+	GCP       = "gcp"
+	OpenStack = "openstack"
 )
 
 type EventStream struct {
-	Metric     edp.ConsumptionMetrics
 	KubeConfig string
+	Metric     edp.ConsumptionMetrics
 }
 
 type Input struct {
@@ -43,13 +43,7 @@ type Input struct {
 	svcList  *corev1.ServiceList
 }
 
-type NodeInfo struct {
-	cpu    int
-	memory int
-}
-
 func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
-
 	if inp.nodeList == nil {
 		return nil, fmt.Errorf("no nodes data to compute metrics on")
 	}
@@ -137,6 +131,15 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 				return nil, err
 			}
 			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
+				vnets += 1
+			}
+		case OpenStack:
+			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+			infraConfig := &gardeneropenstackv1alpha1.InfrastructureConfig{}
+			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+				return nil, err
+			}
+			if infraConfig.Networks.Router != nil {
 				vnets += 1
 			}
 		default:

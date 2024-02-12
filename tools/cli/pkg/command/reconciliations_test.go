@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	msmock "github.com/kyma-project/control-plane/components/reconciler/pkg/automock"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command/automock"

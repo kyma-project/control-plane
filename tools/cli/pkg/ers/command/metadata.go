@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/metadata"

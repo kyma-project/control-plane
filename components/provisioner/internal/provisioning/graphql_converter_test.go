@@ -39,11 +39,12 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
 
 		expectedOperationStatus := &gqlschema.OperationStatus{
-			ID:        &operationID,
-			Operation: gqlschema.OperationTypeUpgrade,
-			State:     gqlschema.OperationStateInProgress,
-			Message:   &message,
-			RuntimeID: &runtimeID,
+			ID:               &operationID,
+			Operation:        gqlschema.OperationTypeUpgrade,
+			State:            gqlschema.OperationStateInProgress,
+			Message:          &message,
+			RuntimeID:        &runtimeID,
+			CompassRuntimeID: &runtimeID,
 			LastError: &gqlschema.LastError{
 				ErrMessage: "error msg",
 				Reason:     "ERR_INFRA_QUOTA_EXCEEDED",
@@ -152,12 +153,13 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeDeprovision,
-				State:     gqlschema.OperationStateFailed,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-				LastError: &gqlschema.LastError{},
+				ID:               &operationID,
+				Operation:        gqlschema.OperationTypeDeprovision,
+				State:            gqlschema.OperationStateFailed,
+				Message:          &message,
+				RuntimeID:        &runtimeID,
+				CompassRuntimeID: &runtimeID,
+				LastError:        &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -312,12 +314,13 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeDeprovisionNoInstall,
-				State:     gqlschema.OperationStateFailed,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-				LastError: &gqlschema.LastError{},
+				ID:               &operationID,
+				Operation:        gqlschema.OperationTypeDeprovisionNoInstall,
+				State:            gqlschema.OperationStateFailed,
+				Message:          &message,
+				RuntimeID:        &runtimeID,
+				CompassRuntimeID: &runtimeID,
+				LastError:        &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -460,12 +463,13 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeDeprovision,
-				State:     gqlschema.OperationStateFailed,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-				LastError: &gqlschema.LastError{},
+				ID:               &operationID,
+				Operation:        gqlschema.OperationTypeDeprovision,
+				State:            gqlschema.OperationStateFailed,
+				Message:          &message,
+				RuntimeID:        &runtimeID,
+				CompassRuntimeID: &runtimeID,
+				LastError:        &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -522,7 +526,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 			{
 				Component:     clusterEssentialsComponent,
 				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+				Configuration: make([]*gqlschema.ConfigEntry, 0),
 			},
 			{
 				Component: coreComponent,
@@ -536,7 +540,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 				Component:     rafterComponent,
 				Namespace:     kymaSystemNamespace,
 				SourceURL:     util.StringPtr(rafterSourceURL),
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+				Configuration: make([]*gqlschema.ConfigEntry, 0),
 			},
 			{
 				Component: applicationConnectorComponent,
@@ -590,7 +594,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			KymaConfigID:   "id",
 			Component:      clusterEssentialsComponent,
 			Namespace:      kymaSystemNamespace,
-			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0)},
 			ComponentOrder: 1,
 		},
 		{
@@ -612,7 +616,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			Component:      rafterComponent,
 			Namespace:      kymaSystemNamespace,
 			SourceURL:      util.StringPtr(rafterSourceURL),
-			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0)},
 			ComponentOrder: 3,
 		},
 		{

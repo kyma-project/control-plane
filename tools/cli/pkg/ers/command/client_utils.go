@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
 )
 

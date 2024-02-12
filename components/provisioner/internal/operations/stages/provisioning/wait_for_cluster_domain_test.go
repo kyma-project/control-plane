@@ -69,7 +69,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 	}{
 		{
 			description: "should continue waiting if domain name is not set",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, _ *directormock.DirectorClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
 			},
 			expectedStage: model.WaitingForClusterDomain,
@@ -149,7 +149,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 	}{
 		{
 			description: "should return error if failed to read Shoot",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, _ *directormock.DirectorClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, apperrors.Internal("some error"))
 			},
 			unrecoverableError: false,

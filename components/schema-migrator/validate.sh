@@ -98,5 +98,4 @@ function migrationProcess() {
     migrationDOWN "${path}" "${db}"
 }
 
-migrationProcess "kyma-environment-broker" "broker"
 migrationProcess "provisioner" "provisioner"

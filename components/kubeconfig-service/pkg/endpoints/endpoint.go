@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
-	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
 	run "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/runtime"
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
 	log "github.com/sirupsen/logrus"
@@ -72,18 +71,9 @@ func (ec EndpointClient) GetHealthStatus(w http.ResponseWriter, req *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
-func (ec EndpointClient) callGQL(tenantID, runtimeID string) (string, error) {
-	c := caller.NewCaller(ec.gqlURL, tenantID)
-	status, err := c.RuntimeStatus(runtimeID)
-	if err != nil {
-		return "", err
-	}
-	return *status.RuntimeConfiguration.Kubeconfig, nil
-}
-
 func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo authn.UserInfo) ([]byte, error) {
-	rawConfig, err := ec.callGQL(tenant, runtime)
-	if err != nil || rawConfig == "" {
+	rawConfig, err := run.GetRawConfig(runtime)
+	if err != nil || rawConfig == nil {
 		return nil, err
 	}
 
@@ -92,7 +82,7 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 		return nil, err
 	}
 
-	runtimeClient, err := run.NewRuntimeClient([]byte(rawConfig), userInfo.ID, userInfo.Role, tenant)
+	runtimeClient, err := run.NewRuntimeClient(rawConfig, userInfo.ID, userInfo.Role, tenant)
 	if err != nil {
 		return nil, err
 	}

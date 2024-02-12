@@ -8,10 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"k8s.io/client-go/kubernetes/fake"
+
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,9 +24,10 @@ import (
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	corev1 "k8s.io/api/core/v1"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
+
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 
 	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 
@@ -44,7 +47,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 	"k8s.io/client-go/util/workqueue"
 
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 )
 
 const (
@@ -372,7 +375,7 @@ func TestExecute(t *testing.T) {
 	tenant := subAccID
 	expectedKubeconfig := "eyJmb28iOiAiYmFyIn0="
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStream, testDataStreamVersion, tenant, testEnv)
-	log := logger.NewLogger(zapcore.InfoLevel)
+	log := logger.NewLogger(zapcore.DebugLevel)
 
 	timesVisited := 0
 	// Set up EDP Test Server handler
@@ -391,7 +394,7 @@ func TestExecute(t *testing.T) {
 	edpConfig := newEDPConfig(srv.URL)
 	edpClient := edp.NewClient(edpConfig, log)
 	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-	secret := kmctesting.NewSecret(shootName, expectedKubeconfig)
+	secretKCPStored := kmctesting.NewKCPStoredSecret(runtimeID, expectedKubeconfig)
 
 	// Populate cache
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -419,8 +422,7 @@ func TestExecute(t *testing.T) {
 	shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
 	shootClient, err := NewFakeShootClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
-	secretClient, err := NewFakeSecretClient(secret)
-	g.Expect(err).Should(gomega.BeNil())
+	secretCacheClient := fake.NewSimpleClientset(secretKCPStored)
 
 	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
 	g.Expect(err).Should(gomega.BeNil())
@@ -432,17 +434,17 @@ func TestExecute(t *testing.T) {
 	fakeSvcClient := skrsvc.FakeSvcClient{}
 
 	newProcess := &Process{
-		EDPClient:      edpClient,
-		Queue:          queue,
-		ShootClient:    shootClient,
-		SecretClient:   secretClient,
-		Cache:          cache,
-		Providers:      providers,
-		ScrapeInterval: 3 * time.Second,
-		Logger:         log,
-		NodeConfig:     fakeNodeClient,
-		PVCConfig:      fakePVCClient,
-		SvcConfig:      fakeSvcClient,
+		EDPClient:         edpClient,
+		Queue:             queue,
+		ShootClient:       shootClient,
+		SecretCacheClient: secretCacheClient,
+		Cache:             cache,
+		Providers:         providers,
+		ScrapeInterval:    3 * time.Second,
+		Logger:            log,
+		NodeConfig:        fakeNodeClient,
+		PVCConfig:         fakePVCClient,
+		SvcConfig:         fakeSvcClient,
 	}
 
 	go func() {
@@ -483,18 +485,26 @@ func TestExecute(t *testing.T) {
 		return nil
 	}, bigTimeout).Should(gomega.BeNil())
 
-	// Test queue state
-	g.Eventually(func() string {
-		item, _ := newProcess.Queue.Get()
-		subAccountID := fmt.Sprintf("%v", item)
-		return subAccountID
-	}, timeout).Should(gomega.Equal(subAccID))
+	// The process should keep on publishing events for this subaccount to EDP.
+	// We confirm this by check if the count of published events is getting increased.
+	oldEventsSentCount := timesVisited
+	g.Eventually(func() bool {
+		// With a ScrapeInterval of 3 secs in an interval of 10 seconds, expected timesVisited should have at least
+		// increased by 2.
+		return timesVisited >= oldEventsSentCount+2
+	}, bigTimeout).Should(gomega.BeTrue())
 
 	// Clean it from the cache once SKR is deprovisioned
 	newProcess.Cache.Delete(subAccID)
 	go func() {
 		newProcess.execute(1)
 	}()
+	// The process should not publish more events for this subaccount to EDP.
+	// We confirm this by check if the count of published events remains the same after some time.
+	oldEventsSentCount = timesVisited
+	time.Sleep(timeout)
+	g.Expect(timesVisited).To(gomega.Equal(oldEventsSentCount))
+	// the queue should be empty.
 	g.Eventually(newProcess.Queue.Len()).Should(gomega.Equal(0))
 }
 
