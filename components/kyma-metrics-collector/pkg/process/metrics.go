@@ -15,4 +15,13 @@ var (
 		},
 		[]string{"requestURI"},
 	)
+	numberClusters = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "kmc",
+			Subsystem: "process",
+			Name:      "number_clusters",
+			Help:      "Number of all clusters.",
+		},
+		[]string{"status", "shoot", "instanceid", "runtimeid", "subaccountid", "globalaccountid"},
+	)
 )
