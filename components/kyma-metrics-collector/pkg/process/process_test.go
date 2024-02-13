@@ -192,9 +192,9 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		// Ensure metric exists
 		metricName := "kmc_keb_number_clusters_scraped"
 		numberOfRuntimes := 4
-		g.Eventually(testutil.CollectAndCount(clustersScraped, metricName)).Should(gomega.Equal(1))
+		g.Eventually(testutil.CollectAndCount(kebActiveClustersCount, metricName)).Should(gomega.Equal(1))
 		g.Eventually(func() int {
-			counter, err := clustersScraped.GetMetricWithLabelValues("")
+			counter, err := kebActiveClustersCount.GetMetricWithLabelValues("")
 			g.Expect(err).Should(gomega.BeNil())
 			return int(testutil.ToFloat64(counter))
 		}).Should(gomega.Equal(numberOfRuntimes))

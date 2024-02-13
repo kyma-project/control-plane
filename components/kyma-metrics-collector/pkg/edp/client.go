@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -77,10 +77,16 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	err = retry.OnError(customBackoff, func(err error) bool {
 		return err != nil
 	}, func() (err error) {
-		metricTimer := prometheus.NewTimer(sentRequestDuration)
+		reqStartTime := time.Now()
+		// send request.
 		req.Body = io.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
-		metricTimer.ObserveDuration()
+		// record metric.
+		if resp != nil {
+			duration := time.Since(reqStartTime)
+			recordEDPLatency(duration, resp.StatusCode, req.URL.String())
+		}
+		// check result.
 		if err != nil {
 			eClient.namedLogger().Debugf("req: %v", req)
 			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
@@ -96,9 +102,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 		return
 	})
-	if resp != nil {
-		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-	}
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to POST event to EDP")
