@@ -372,6 +372,7 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 			Infof("Tracked cluster of state: %s or status: %s", runtime.Status.State, runtime.Status.Provisioning)
 		return true
 	}
+	numberClusters.WithLabelValues(string(runtime.Status.State), runtime.ShootName, runtime.InstanceID, runtime.RuntimeID, runtime.SubAccountID, runtime.GlobalAccountID).Inc()
 	return false
 }
 
