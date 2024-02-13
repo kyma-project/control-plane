@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -468,4 +470,30 @@ func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 			"config": []byte(kubeconfigVal),
 		},
 	}
+}
+
+func PrometheusGatherAndReturn(c prometheus.Collector, metricName string) (*dto.MetricFamily, error) {
+	reg := prometheus.NewPedanticRegistry()
+	if err := reg.Register(c); err != nil {
+		return nil, err
+	}
+	mf, err := reg.Gather()
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range mf {
+		if m.GetName() == metricName {
+			return m, nil
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+func PrometheusFilterLabelPair(pairs []*dto.LabelPair, name string) *dto.LabelPair {
+	for _, p := range pairs {
+		if p.GetName() == name {
+			return p
+		}
+	}
+	return nil
 }

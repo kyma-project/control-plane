@@ -8,23 +8,29 @@ import (
 )
 
 const (
-	Namespace = "kmc"
-	Subsystem = "edp"
+	namespace = "kmc"
+	subSystem = "edp"
+	// responseCodeLabel name of the status code labels used by multiple metrics.
+	responseCodeLabel = "status"
+	// destSvcLabel name of the destination service label used by multiple metrics.
+	requestURLLabel = "request_url"
+	// metrics names.
+	latencyMetricName = "request_duration_seconds"
 )
 
 var (
-	sentRequestDuration = promauto.NewHistogramVec(
+	latencyMetric = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: Namespace,
-			Subsystem: Subsystem,
-			Name:      "request_duration_seconds",
+			Namespace: namespace,
+			Subsystem: subSystem,
+			Name:      latencyMetricName,
 			Help:      "Duration of HTTP request to EDP in seconds.",
 			Buckets:   []float64{0.1, 0.25, 0.5, 1, 2.5, 5, 10},
 		},
-		[]string{"status", "destination_service"},
+		[]string{responseCodeLabel, requestURLLabel},
 	)
 )
 
 func recordEDPLatency(duration time.Duration, statusCode int, destSvc string) {
-	sentRequestDuration.WithLabelValues(fmt.Sprint(statusCode), destSvc).Observe(duration.Seconds())
+	latencyMetric.WithLabelValues(fmt.Sprint(statusCode), destSvc).Observe(duration.Seconds())
 }
