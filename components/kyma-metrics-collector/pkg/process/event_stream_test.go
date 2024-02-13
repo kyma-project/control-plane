@@ -30,7 +30,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure, 2 vm types, 3 pvcs(5,10 and 20Gi) and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get2Nodes(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -52,15 +52,14 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   1,
+					ProvisionedIPs: 1,
 				},
 			},
 		},
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -79,16 +78,12 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 0,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   0,
-				},
 			},
 		},
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -107,15 +102,14 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   0,
+					ProvisionedIPs: 0,
 				},
 			},
 		},
 		{
 			name: "with Azure and vm type missing from the list of vmtypes",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndFooVMType),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithFooVMType(),
 			},
 			providers:   *providers,
@@ -124,7 +118,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with OpenStack, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithOpenStackProviderAndMachineGC12M48),
+				provider: OpenStack,
 				nodeList: kmctesting.Get2NodesOpenStack(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -145,8 +139,7 @@ func TestParse(t *testing.T) {
 					},
 				},
 				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   1,
+					ProvisionedIPs: 1,
 				},
 			},
 		},

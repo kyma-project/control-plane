@@ -5,7 +5,7 @@ import "github.com/kyma-project/control-plane/components/kyma-metrics-collector/
 type Record struct {
 	SubAccountID string
 	RuntimeID    string
-	ShootName    string
+	ProviderType string
 	KubeConfig   string
 	Metric       *edp.ConsumptionMetrics
 }
