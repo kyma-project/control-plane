@@ -63,7 +63,6 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	p.namedLogger().With(log.KeyWorkerID, identifier).Debugf("record found from cache: %+v", record)
 
 	runtimeID := record.RuntimeID
-	// shootName := record.ShootName
 
 	kubeconfig, err := kmccache.GetKubeConfigFromCache(p.Logger, p.SecretCacheClient, runtimeID)
 	if err != nil {
@@ -114,7 +113,6 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	// Create input
 	input := Input{
 		provider: record.ProviderType,
-		// shoot:    shoot,
 		nodeList: nodes,
 		pvcList:  pvcList,
 		svcList:  svcList,
@@ -125,7 +123,6 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	}
 	metric.RuntimeId = record.RuntimeID
 	metric.SubAccountId = record.SubAccountID
-	metric.ShootName = record.ShootName
 	record.Metric = metric
 	return record, nil
 }

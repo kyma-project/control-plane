@@ -3,10 +3,10 @@ package edp
 type ConsumptionMetrics struct {
 	RuntimeId    string     `json:"runtime_id"     validate:"required"`
 	SubAccountId string     `json:"sub_account_id" validate:"required"`
-	ShootName    string     `json:"shoot_name"     validate:"required"`
+	ShootName    string     `json:"shoot_name"     validate:"omitempty"`
 	Timestamp    string     `json:"timestamp"      validate:"required"`
 	Compute      Compute    `json:"compute"        validate:"required"`
-	Networking   Networking `json:"networking"     validate:"required"`
+	Networking   Networking `json:"networking"     validate:"omitempty"`
 }
 type Networking struct {
 	ProvisionedVnets int `json:"provisioned_vnets" validate:"numeric"`
