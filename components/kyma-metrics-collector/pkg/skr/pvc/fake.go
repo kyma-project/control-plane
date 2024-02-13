@@ -1,6 +1,7 @@
 package pvc
 
 import (
+	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -9,7 +10,7 @@ import (
 
 type FakePVCClient struct{}
 
-func (fakePVCClient FakePVCClient) NewClient(string) (*Client, error) {
+func (fakePVCClient FakePVCClient) NewClient(kmccache.Record) (*Client, error) {
 	pvcList := kmctesting.GetPVCs()
 	scheme, err := commons.SetupSchemeOrDie()
 	if err != nil {

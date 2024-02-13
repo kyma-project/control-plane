@@ -36,10 +36,10 @@ func (c Config) NewClient(shootInfo kmccache.Record) (*Client, error) {
 func (c Client) List(ctx context.Context) (*corev1.PersistentVolumeClaimList, error) {
 	unstructuredPVCList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
-		skrcommons.RecordSKRQuery(false, skrcommons.ListingPVCAction, c.ShootInfo)
+		skrcommons.RecordSKRQuery(false, skrcommons.ListingPVCsAction, c.ShootInfo)
 		return nil, err
 	}
-	skrcommons.RecordSKRQuery(true, skrcommons.ListingPVCAction, c.ShootInfo)
+	skrcommons.RecordSKRQuery(true, skrcommons.ListingPVCsAction, c.ShootInfo)
 	return convertUnstructuredListToPVCList(unstructuredPVCList)
 }
 

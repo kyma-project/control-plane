@@ -36,10 +36,10 @@ func (c Config) NewClient(shootInfo kmccache.Record) (*Client, error) {
 func (c Client) List(ctx context.Context) (*corev1.ServiceList, error) {
 	unstructuredSvcList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
-		skrcommons.RecordSKRQuery(false, skrcommons.ListingSVCAction, c.ShootInfo)
+		skrcommons.RecordSKRQuery(false, skrcommons.ListingSVCsAction, c.ShootInfo)
 		return nil, err
 	}
-	skrcommons.RecordSKRQuery(true, skrcommons.ListingSVCAction, c.ShootInfo)
+	skrcommons.RecordSKRQuery(true, skrcommons.ListingSVCsAction, c.ShootInfo)
 	return convertUnstructuredListToSVCList(unstructuredSvcList)
 }
 

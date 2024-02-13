@@ -8,22 +8,20 @@ import (
 )
 
 const (
-	SuccessListingSVCLabel   = "success_listing_svc"
-	SuccessListingPVCLabel   = "success_listing_pvc"
-	SuccessListingNodesLabel = "success_listing_nodes"
-	SuccessStatusLabel       = "success"
-	TotalQueriesLabel        = "query_total"
-	ListingNodesAction       = "listing_nodes"
-	ListingPVCAction         = "listing_pvc"
-	ListingSVCAction         = "listing_svc"
+	namespace              = "kmc"
+	subSystem              = "edp"
+	TotalQueriesMetricName = "query_total"
+	ListingNodesAction     = "listing_nodes"
+	ListingPVCsAction      = "listing_pvc"
+	ListingSVCsAction      = "listing_svc"
 )
 
 var (
-	TotalQueries = promauto.NewCounterVec(
+	TotalQueriesMetric = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "kmc",
-			Subsystem: "skr",
-			Name:      TotalQueriesLabel,
+			Namespace: namespace,
+			Subsystem: subSystem,
+			Name:      TotalQueriesMetricName,
 			Help:      "Total number of queries to SKR to get the metrics of the cluster.",
 		},
 		[]string{"action", "success", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
@@ -31,7 +29,7 @@ var (
 )
 
 func RecordSKRQuery(success bool, action string, shootInfo kmccache.Record) {
-	TotalQueries.WithLabelValues(
+	TotalQueriesMetric.WithLabelValues(
 		strconv.FormatBool(success),
 		action,
 		shootInfo.ShootName,

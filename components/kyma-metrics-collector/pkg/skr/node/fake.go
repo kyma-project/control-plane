@@ -1,6 +1,7 @@
 package node
 
 import (
+	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -9,7 +10,7 @@ import (
 
 type FakeNodeClient struct{}
 
-func (fakeNodeClient FakeNodeClient) NewClient(string) (*Client, error) {
+func (fakeNodeClient FakeNodeClient) NewClient(kmccache.Record) (*Client, error) {
 	nodeList := kmctesting.Get3NodesWithStandardD8v3VMType()
 	scheme, err := commons.SetupSchemeOrDie()
 	if err != nil {
