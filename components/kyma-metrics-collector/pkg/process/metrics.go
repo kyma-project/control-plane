@@ -15,13 +15,13 @@ var (
 		},
 		[]string{"requestURI"},
 	)
-	numberClusters = promauto.NewGaugeVec(
+	kebAllClustersCount = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "kmc",
-			Subsystem: "process",
-			Name:      "number_clusters",
-			Help:      "Number of all clusters.",
+			Subsystem: "keb",
+			Name:      "all_clusters_count",
+			Help:      "Number of all clusters got from KEB.",
 		},
-		[]string{"status", "shoot", "instanceid", "runtimeid", "subaccountid", "globalaccountid"},
+		[]string{"status", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )

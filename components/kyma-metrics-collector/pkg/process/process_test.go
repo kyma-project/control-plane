@@ -231,6 +231,19 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 4
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(1))
+		}
+		kebAllClustersCount.Reset()
 	})
 
 	t.Run("runtimes with both provisioned and deprovisioned status", func(t *testing.T) {
@@ -259,6 +272,19 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 4
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(1))
+		}
+		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
@@ -291,6 +317,19 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 1
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(1))
+		}
+		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
@@ -318,6 +357,19 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPageWithNoRuntimes)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedEmptyCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedEmptyQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 0
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPageWithNoRuntimes.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(0))
+		}
+		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache, then shoot is deprovisioned and provisioned again", func(t *testing.T) {
@@ -365,6 +417,19 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		gotSubAccID, _ := p.Queue.Get()
 		g.Expect(gotSubAccID).To(gomega.Equal(subAccID))
+
+		// Ensure metric exists
+		metricName := "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 2
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(1))
+		}
+		kebAllClustersCount.Reset()
 	})
 }
 
