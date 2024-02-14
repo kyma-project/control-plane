@@ -25,3 +25,8 @@ var (
 		[]string{"state", "provisioning", "deprovisioning", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )
+
+func recordKEBAllClustersCount(state, provisioning, deprovisioning, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
+	// the order if the values should be same as defined in the metric declaration.
+	kebAllClustersCount.WithLabelValues(state, provisioning, deprovisioning, shootName, instanceID, runtimeID, subAccountID, globalAccountID).Inc()
+}

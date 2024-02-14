@@ -361,13 +361,21 @@ func isSuccess(status int) bool {
 }
 
 func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
-	if runtime.Status.State == "succeeded" ||
-		runtime.Status.State == "error" ||
-		runtime.Status.State == "upgrading" ||
-		runtime.Status.State == "updating" ||
-		runtime.Status.Provisioning != nil && runtime.Status.Provisioning.State == "succeeded" &&
-			runtime.Status.Deprovisioning == nil {
-		kebAllClustersCount.WithLabelValues(
+	// Check if the cluster is in a trackable state
+	trackableStates := map[kebruntime.State]bool{
+		"succeeded": true,
+		"error":     true,
+		"upgrading": true,
+		"updating":  true,
+	}
+
+	if trackableStates[runtime.Status.State] ||
+		(runtime.Status.Provisioning != nil &&
+			runtime.Status.Provisioning.State == "succeeded" &&
+			runtime.Status.Deprovisioning == nil) {
+
+		// record kebAllClustersCount metric
+		recordKEBAllClustersCount(
 			string(runtime.Status.State),
 			runtime.Status.Provisioning.State,
 			"",
@@ -375,23 +383,20 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 			runtime.InstanceID,
 			runtime.RuntimeID,
 			runtime.SubAccountID,
-			runtime.GlobalAccountID).Inc()
+			runtime.GlobalAccountID)
+
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 			Infof("Tracked cluster of state: %s, provisioning state: %s, no deprovisioning state.",
 				runtime.Status.State, runtime.Status.Provisioning.State)
 		return true
 	}
 
-	provisioning := ""
-	deprovisioning := ""
-	if runtime.Status.Provisioning != nil {
-		provisioning = runtime.Status.Provisioning.State
-	}
-	if runtime.Status.Deprovisioning != nil {
-		deprovisioning = runtime.Status.Deprovisioning.State
-	}
+	// Set provisioning and deprovisioning states if available
+	provisioning := getOrDefault(runtime.Status.Provisioning, "")
+	deprovisioning := getOrDefault(runtime.Status.Deprovisioning, "")
 
-	kebAllClustersCount.WithLabelValues(
+	// record kebAllClustersCount metric
+	recordKEBAllClustersCount(
 		string(runtime.Status.State),
 		provisioning,
 		deprovisioning,
@@ -399,11 +404,20 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 		runtime.InstanceID,
 		runtime.RuntimeID,
 		runtime.SubAccountID,
-		runtime.GlobalAccountID).Inc()
+		runtime.GlobalAccountID)
+
 	p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 		Infof("Not tracking cluster of state: %s, provisioning state: %s, deprovisioning state: %s",
 			runtime.Status.State, provisioning, deprovisioning)
 	return false
+}
+
+// Helper function to get state or default value if nil
+func getOrDefault(runtimeStatus *kebruntime.Operation, defaultValue string) string {
+	if runtimeStatus != nil {
+		return runtimeStatus.State
+	}
+	return defaultValue
 }
 
 // populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
