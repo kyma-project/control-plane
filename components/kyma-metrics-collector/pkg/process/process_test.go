@@ -208,7 +208,17 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range expectedRuntimes.Data {
 			g.Eventually(func() int {
-				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", "", "", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				provisioning := ""
+				deprovisioning := ""
+
+				if runtimeData.Status.Provisioning != nil {
+					provisioning = runtimeData.Status.Provisioning.State
+				}
+				if runtimeData.Status.Deprovisioning != nil {
+					deprovisioning = runtimeData.Status.Deprovisioning.State
+				}
+
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", provisioning, deprovisioning, runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
 				// check the occurrence of the metric with above labels
 				return testutil.CollectAndCount(counter, metricName)
@@ -216,7 +226,17 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		}
 		for _, runtimeData := range expectedRuntimes.Data {
 			g.Eventually(func() int {
-				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", "", "", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				provisioning := ""
+				deprovisioning := ""
+
+				if runtimeData.Status.Provisioning != nil {
+					provisioning = runtimeData.Status.Provisioning.State
+				}
+				if runtimeData.Status.Deprovisioning != nil {
+					deprovisioning = runtimeData.Status.Deprovisioning.State
+				}
+
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", provisioning, deprovisioning, runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
 				// check the value of the metric
 				return int(testutil.ToFloat64(counter))
