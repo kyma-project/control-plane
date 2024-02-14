@@ -712,6 +712,7 @@ func NewMetric() *edp.ConsumptionMetrics {
 	}
 }
 
+// Helper function to check the value of the `kmc_keb_all_clusters_count` metric using `ToFloat64`
 func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
 	return g.Eventually(func() int {
 		provisioning := getOrDefault(runtimeData.Status.Provisioning, "")
@@ -724,6 +725,7 @@ func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, ru
 	}).Should(gomega.Equal(expectedValue))
 }
 
+// Helper function to check the occurrence of the `kmc_keb_all_clusters_count` metric using `CollectAndCount`
 func verifyKEBAllClustersCountMetricOccurrence(metricName string, expectedOccurrence int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
 	return g.Eventually(func() int {
 
