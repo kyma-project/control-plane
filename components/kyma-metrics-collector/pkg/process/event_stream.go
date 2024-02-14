@@ -154,8 +154,8 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	metric.Compute.ProvisionedVolumes.SizeGbRounded = pvcStorageRounded
 	metric.Compute.ProvisionedVolumes.Count = volumeCount
 
-	metric.Networking.ProvisionedIPs = provisionedIPs
-	metric.Networking.ProvisionedVnets = vnets
+	metric.Networking.ProvisionedIPs = 1
+	metric.Networking.ProvisionedVnets = 1
 
 	for vmType, count := range vmTypes {
 		metric.Compute.VMTypes = append(metric.Compute.VMTypes, edp.VMType{
