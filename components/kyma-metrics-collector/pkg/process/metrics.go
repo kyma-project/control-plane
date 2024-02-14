@@ -7,20 +7,27 @@ import (
 	"strconv"
 )
 
+const (
+	namespace = "kmc"
+	subsystem = "process"
+	// requestURLLabel name of the request URL label used by multiple metrics.
+	requestURLLabel = "request_url"
+)
+
 var (
 	kebActiveClustersCount = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "kmc",
-			Subsystem: "keb",
+			Namespace: namespace,
+			Subsystem: subsystem,
 			Name:      "active_clusters_count",
 			Help:      "Number of active clusters got from KEB.",
 		},
-		[]string{},
+		[]string{requestURLLabel},
 	)
 	subAccountProcessed = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "kmc",
-			Subsystem: "process",
+			Namespace: namespace,
+			Subsystem: subsystem,
 			Name:      "sub_account_total",
 			Help:      "Number of sub-accounts processed.",
 		},
@@ -28,8 +35,8 @@ var (
 	)
 	subAccountProcessedTimeStamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "kmc",
-			Subsystem: "process",
+			Namespace: namespace,
+			Subsystem: subsystem,
 			Name:      "sub_account_processed_timestamp_seconds",
 			Help:      "Unix timestamp (in seconds) of last successful processing of sub-account.",
 		},
@@ -37,8 +44,8 @@ var (
 	)
 	oldMetricsPublishedGauge = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "kmc",
-			Subsystem: "keb",
+			Namespace: namespace,
+			Subsystem: subsystem,
 			Name:      "old_metric_publish_gauge",
 			Help:      "Number of consecutive re-sends of old metrics to edp per cluster. It Will be reset to 0 when new metric is published.",
 		},
@@ -69,7 +76,7 @@ func recordSubAccountProcessedTimeStamp(withOldMetric bool, shootInfo kmccache.R
 }
 
 func recordOldMetricsPublishedGauge(shootInfo kmccache.Record) {
-	subAccountProcessedTimeStamp.WithLabelValues(
+	oldMetricsPublishedGauge.WithLabelValues(
 		shootInfo.ShootName,
 		shootInfo.InstanceID,
 		shootInfo.RuntimeID,
@@ -79,7 +86,8 @@ func recordOldMetricsPublishedGauge(shootInfo kmccache.Record) {
 }
 
 func resetOldMetricsPublishedGauge(shootInfo kmccache.Record) {
-	subAccountProcessedTimeStamp.WithLabelValues(
+	// []string{"shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+	oldMetricsPublishedGauge.WithLabelValues(
 		shootInfo.ShootName,
 		shootInfo.InstanceID,
 		shootInfo.RuntimeID,

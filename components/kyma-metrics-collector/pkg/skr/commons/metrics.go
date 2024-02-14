@@ -9,7 +9,7 @@ import (
 
 const (
 	namespace              = "kmc"
-	subSystem              = "edp"
+	subsystem              = "skr"
 	TotalQueriesMetricName = "query_total"
 	ListingNodesAction     = "listing_nodes"
 	ListingPVCsAction      = "listing_pvc"
@@ -20,7 +20,7 @@ var (
 	TotalQueriesMetric = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
-			Subsystem: subSystem,
+			Subsystem: subsystem,
 			Name:      TotalQueriesMetricName,
 			Help:      "Total number of queries to SKR to get the metrics of the cluster.",
 		},
@@ -30,8 +30,8 @@ var (
 
 func RecordSKRQuery(success bool, action string, shootInfo kmccache.Record) {
 	TotalQueriesMetric.WithLabelValues(
-		strconv.FormatBool(success),
 		action,
+		strconv.FormatBool(success),
 		shootInfo.ShootName,
 		shootInfo.InstanceID,
 		shootInfo.RuntimeID,

@@ -52,8 +52,8 @@ func TestList(t *testing.T) {
 	g.Expect(*gotSvcList).To(gomega.Equal(*svcList))
 	// ensure metrics.
 	gotMetrics, err := skrcommons.TotalQueriesMetric.GetMetricWithLabelValues(
-		strconv.FormatBool(true),
 		skrcommons.ListingSVCsAction,
+		strconv.FormatBool(true),
 		givenShootInfo.ShootName,
 		givenShootInfo.InstanceID,
 		givenShootInfo.RuntimeID,
@@ -78,8 +78,8 @@ func TestList(t *testing.T) {
 	g.Expect(len(gotSvcList.Items)).To(gomega.Equal(0))
 	// ensure metrics.
 	gotMetrics, err = skrcommons.TotalQueriesMetric.GetMetricWithLabelValues(
-		strconv.FormatBool(true),
 		skrcommons.ListingSVCsAction,
+		strconv.FormatBool(true),
 		givenShootInfo.ShootName,
 		givenShootInfo.InstanceID,
 		givenShootInfo.RuntimeID,

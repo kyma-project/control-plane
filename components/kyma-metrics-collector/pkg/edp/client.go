@@ -29,6 +29,7 @@ const (
 	contentTypeKeyHeader   = "Content-Type"
 	authorizationKeyHeader = "Authorization"
 	clientName             = "edp-client"
+	tenantIdPlaceholder    = "<subAccountId>"
 )
 
 func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
@@ -44,14 +45,7 @@ func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 }
 
 func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
-	edpURL := fmt.Sprintf(edpPathFormat,
-		eClient.Config.URL,
-		eClient.Config.Namespace,
-		eClient.Config.DataStreamName,
-		eClient.Config.DataStreamVersion,
-		dataTenant,
-		eClient.Config.DataStreamEnv,
-	)
+	edpURL := eClient.getEDPURL(dataTenant)
 
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
 	if err != nil {
@@ -63,6 +57,17 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 	req.Header.Add(authorizationKeyHeader, fmt.Sprintf("Bearer %s", eClient.Config.Token))
 
 	return req, nil
+}
+
+func (eClient Client) getEDPURL(dataTenant string) string {
+	return fmt.Sprintf(edpPathFormat,
+		eClient.Config.URL,
+		eClient.Config.Namespace,
+		eClient.Config.DataStreamName,
+		eClient.Config.DataStreamVersion,
+		dataTenant,
+		eClient.Config.DataStreamEnv,
+	)
 }
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
@@ -84,7 +89,8 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		// record metric.
 		if resp != nil {
 			duration := time.Since(reqStartTime)
-			recordEDPLatency(duration, resp.StatusCode, req.URL.String())
+			// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
+			recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
 		}
 		// check result.
 		if err != nil {

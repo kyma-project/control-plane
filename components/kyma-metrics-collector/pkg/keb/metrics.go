@@ -12,7 +12,7 @@ const (
 	Subsystem = "keb"
 	// responseCodeLabel name of the status code labels used by multiple metrics.
 	responseCodeLabel = "status"
-	// destSvcLabel name of the destination service label used by multiple metrics.
+	// requestURLLabel name of the request URL label used by multiple metrics.
 	requestURLLabel = "request_url"
 	// metrics names.
 	latencyMetricName = "request_duration_seconds"

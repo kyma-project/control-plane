@@ -47,8 +47,8 @@ func TestList(t *testing.T) {
 
 	// ensure metrics.
 	gotMetrics, err := skrcommons.TotalQueriesMetric.GetMetricWithLabelValues(
-		strconv.FormatBool(true),
 		skrcommons.ListingNodesAction,
+		strconv.FormatBool(true),
 		givenShootInfo.ShootName,
 		givenShootInfo.InstanceID,
 		givenShootInfo.RuntimeID,
@@ -73,8 +73,8 @@ func TestList(t *testing.T) {
 	g.Expect(len(gotNodeList.Items)).To(gomega.Equal(0))
 	// check if the required labels exists in the metric.
 	gotMetrics, err = skrcommons.TotalQueriesMetric.GetMetricWithLabelValues(
-		strconv.FormatBool(true),
 		skrcommons.ListingNodesAction,
+		strconv.FormatBool(true),
 		givenShootInfo.ShootName,
 		givenShootInfo.InstanceID,
 		givenShootInfo.RuntimeID,

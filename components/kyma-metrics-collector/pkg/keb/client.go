@@ -101,7 +101,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		// record metric.
 		if resp != nil {
 			duration := time.Since(reqStartTime)
-			recordKEBLatency(duration, resp.StatusCode, req.URL.String())
+			recordKEBLatency(duration, resp.StatusCode, c.Config.URL)
 		}
 		if err != nil {
 			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
