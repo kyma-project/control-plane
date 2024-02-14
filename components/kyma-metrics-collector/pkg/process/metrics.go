@@ -22,6 +22,6 @@ var (
 			Name:      "all_clusters_count",
 			Help:      "Number of all clusters got from KEB.",
 		},
-		[]string{"status", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{"state", "provisioning", "deprovisioning", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )

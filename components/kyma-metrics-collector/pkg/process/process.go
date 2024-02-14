@@ -367,12 +367,32 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 		runtime.Status.State == "updating" ||
 		runtime.Status.Provisioning != nil && runtime.Status.Provisioning.State == "succeeded" &&
 			runtime.Status.Deprovisioning == nil {
-		kebAllClustersCount.WithLabelValues(string(runtime.Status.State), runtime.ShootName, runtime.InstanceID, runtime.RuntimeID, runtime.SubAccountID, runtime.GlobalAccountID).Inc()
+		kebAllClustersCount.WithLabelValues(
+			fmt.Sprint(runtime.Status.State),
+			fmt.Sprint(runtime.Status.Provisioning.State),
+			fmt.Sprint(runtime.Status.Deprovisioning.State),
+			runtime.ShootName,
+			runtime.InstanceID,
+			runtime.RuntimeID,
+			runtime.SubAccountID,
+			runtime.GlobalAccountID).Inc()
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
-			Infof("Tracked cluster of state: %s or status: %s", runtime.Status.State, runtime.Status.Provisioning)
+			Infof("Tracked cluster of state: %s, provisioning state: %s, deprovisioning state: %s",
+				runtime.Status.State, runtime.Status.Provisioning.State, runtime.Status.Deprovisioning.State)
 		return true
 	}
-	kebAllClustersCount.WithLabelValues(string(runtime.Status.State), runtime.ShootName, runtime.InstanceID, runtime.RuntimeID, runtime.SubAccountID, runtime.GlobalAccountID).Inc()
+	kebAllClustersCount.WithLabelValues(
+		fmt.Sprint(runtime.Status.State),
+		fmt.Sprint(runtime.Status.Provisioning.State),
+		fmt.Sprint(runtime.Status.Deprovisioning.State),
+		runtime.ShootName,
+		runtime.InstanceID,
+		runtime.RuntimeID,
+		runtime.SubAccountID,
+		runtime.GlobalAccountID).Inc()
+	p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+		Infof("Not tracking cluster of state: %s, provisioning state: %s, deprovisioning state: %s",
+			runtime.Status.State, runtime.Status.Provisioning.State, runtime.Status.Deprovisioning.State)
 	return false
 }
 
