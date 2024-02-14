@@ -6,7 +6,7 @@ type ConsumptionMetrics struct {
 	ShootName    string     `json:"shoot_name" validate:"required"`
 	Timestamp    string     `json:"timestamp" validate:"required"`
 	Compute      Compute    `json:"compute" validate:"required"`
-	Networking   Networking `json:"networking" validate:"required"`
+	Networking   Networking `json:"networking,omitempty"`
 }
 type Networking struct {
 	ProvisionedVnets int `json:"provisioned_vnets" validate:"numeric"`
