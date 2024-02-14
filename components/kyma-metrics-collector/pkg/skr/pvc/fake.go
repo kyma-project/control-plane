@@ -1,6 +1,7 @@
 package pvc
 
 import (
+	"fmt"
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
@@ -10,7 +11,13 @@ import (
 
 type FakePVCClient struct{}
 
-func (fakePVCClient FakePVCClient) NewClient(kmccache.Record) (*Client, error) {
+func (fakePVCClient FakePVCClient) NewClient(record kmccache.Record) (*Client, error) {
+	// define failure scenario.
+	if record.KubeConfig == "invalid" {
+		return nil, fmt.Errorf("failed to create client")
+	}
+
+	// setup fake client with PVCs.
 	pvcList := kmctesting.GetPVCs()
 	scheme, err := commons.SetupSchemeOrDie()
 	if err != nil {
