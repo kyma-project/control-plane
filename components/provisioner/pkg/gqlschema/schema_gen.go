@@ -164,6 +164,7 @@ type ComplexityRoot struct {
 		ClientID       func(childComplexity int) int
 		GroupsClaim    func(childComplexity int) int
 		IssuerURL      func(childComplexity int) int
+		RequiredClaims func(childComplexity int) int
 		SigningAlgs    func(childComplexity int) int
 		UsernameClaim  func(childComplexity int) int
 		UsernamePrefix func(childComplexity int) int
@@ -189,6 +190,12 @@ type ComplexityRoot struct {
 	Query struct {
 		RuntimeOperationStatus func(childComplexity int, id string) int
 		RuntimeStatus          func(childComplexity int, id string) int
+	}
+
+	RequiredClaims struct {
+		Ref        func(childComplexity int) int
+		Repository func(childComplexity int) int
+		Workflow   func(childComplexity int) int
 	}
 
 	RuntimeConfig struct {
@@ -806,6 +813,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OIDCConfig.IssuerURL(childComplexity), true
 
+	case "OIDCConfig.requiredClaims":
+		if e.complexity.OIDCConfig.RequiredClaims == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.RequiredClaims(childComplexity), true
+
 	case "OIDCConfig.signingAlgs":
 		if e.complexity.OIDCConfig.SigningAlgs == nil {
 			break
@@ -927,6 +941,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.RuntimeStatus(childComplexity, args["id"].(string)), true
+
+	case "RequiredClaims.ref":
+		if e.complexity.RequiredClaims.Ref == nil {
+			break
+		}
+
+		return e.complexity.RequiredClaims.Ref(childComplexity), true
+
+	case "RequiredClaims.repository":
+		if e.complexity.RequiredClaims.Repository == nil {
+			break
+		}
+
+		return e.complexity.RequiredClaims.Repository(childComplexity), true
+
+	case "RequiredClaims.workflow":
+		if e.complexity.RequiredClaims.Workflow == nil {
+			break
+		}
+
+		return e.complexity.RequiredClaims.Workflow(childComplexity), true
 
 	case "RuntimeConfig.clusterConfig":
 		if e.complexity.RuntimeConfig.ClusterConfig == nil {
@@ -1152,6 +1187,13 @@ type OIDCConfig {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+    requiredClaims: RequiredClaims
+}
+
+type RequiredClaims {
+    repository: String!
+    workflow: String!
+    ref: String!
 }
 
 type ConfigEntry {
@@ -1307,6 +1349,13 @@ input OIDCConfigInput {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+    requiredClaims: RequiredClaimsInput
+}
+
+input RequiredClaimsInput {
+    repository: String!
+    workflow: String!
+    ref: String!
 }
 
 input ProviderSpecificInput {
@@ -4211,6 +4260,37 @@ func (ec *executionContext) _OIDCConfig_usernamePrefix(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OIDCConfig_requiredClaims(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequiredClaims, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RequiredClaims)
+	fc.Result = res
+	return ec.marshalORequiredClaims2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaims(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OpenStackProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *OpenStackProviderConfig) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4713,6 +4793,108 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RequiredClaims_repository(ctx context.Context, field graphql.CollectedField, obj *RequiredClaims) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RequiredClaims",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Repository, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RequiredClaims_workflow(ctx context.Context, field graphql.CollectedField, obj *RequiredClaims) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RequiredClaims",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Workflow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RequiredClaims_ref(ctx context.Context, field graphql.CollectedField, obj *RequiredClaims) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RequiredClaims",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ref, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
@@ -6736,6 +6918,12 @@ func (ec *executionContext) unmarshalInputOIDCConfigInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "requiredClaims":
+			var err error
+			it.RequiredClaims, err = ec.unmarshalORequiredClaimsInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaimsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6835,6 +7023,36 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 		case "kymaConfig":
 			var err error
 			it.KymaConfig, err = ec.unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRequiredClaimsInput(ctx context.Context, obj interface{}) (RequiredClaimsInput, error) {
+	var it RequiredClaimsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "repository":
+			var err error
+			it.Repository, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "workflow":
+			var err error
+			it.Workflow, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ref":
+			var err error
+			it.Ref, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7536,6 +7754,8 @@ func (ec *executionContext) _OIDCConfig(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "requiredClaims":
+			out.Values[i] = ec._OIDCConfig_requiredClaims(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7672,6 +7892,43 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var requiredClaimsImplementors = []string{"RequiredClaims"}
+
+func (ec *executionContext) _RequiredClaims(ctx context.Context, sel ast.SelectionSet, obj *RequiredClaims) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, requiredClaimsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RequiredClaims")
+		case "repository":
+			out.Values[i] = ec._RequiredClaims_repository(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "workflow":
+			out.Values[i] = ec._RequiredClaims_workflow(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ref":
+			out.Values[i] = ec._RequiredClaims_ref(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9178,6 +9435,29 @@ func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋky
 		return nil, nil
 	}
 	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalORequiredClaims2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaims(ctx context.Context, sel ast.SelectionSet, v RequiredClaims) graphql.Marshaler {
+	return ec._RequiredClaims(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalORequiredClaims2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaims(ctx context.Context, sel ast.SelectionSet, v *RequiredClaims) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RequiredClaims(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORequiredClaimsInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaimsInput(ctx context.Context, v interface{}) (RequiredClaimsInput, error) {
+	return ec.unmarshalInputRequiredClaimsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalORequiredClaimsInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaimsInput(ctx context.Context, v interface{}) (*RequiredClaimsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalORequiredClaimsInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRequiredClaimsInput(ctx, v)
 	return &res, err
 }
 

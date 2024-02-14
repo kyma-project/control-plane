@@ -491,6 +491,11 @@ func oidcConfig() *model.OIDCConfig {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+		RequiredClaims: &model.RequiredClaims{
+			Repository: "test-repository",
+			Workflow:   "test-workflow",
+			Ref:        "test-ref",
+		},
 	}
 }
 

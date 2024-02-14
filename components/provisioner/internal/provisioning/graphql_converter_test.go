@@ -198,6 +198,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						SigningAlgs:    []string{"RS256"},
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
+						RequiredClaims: &gqlschema.RequiredClaims{
+							Repository: "test-repo",
+							Workflow:   "test-workflow",
+							Ref:        "test-ref",
+						},
 					},
 					DNSConfig: &gqlschema.DNSConfig{
 						Domain: "verylon.devtest.kyma.ondemand.com",

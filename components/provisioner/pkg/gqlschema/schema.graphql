@@ -95,6 +95,13 @@ type OIDCConfig {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+    requiredClaims: RequiredClaims
+}
+
+type RequiredClaims {
+    repository: String!
+    workflow: String!
+    ref: String!
 }
 
 type ConfigEntry {
@@ -250,6 +257,13 @@ input OIDCConfigInput {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+    requiredClaims: RequiredClaimsInput
+}
+
+input RequiredClaimsInput {
+    repository: String!
+    workflow: String!
+    ref: String!
 }
 
 input ProviderSpecificInput {

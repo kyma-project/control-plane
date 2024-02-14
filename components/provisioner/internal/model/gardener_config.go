@@ -31,12 +31,19 @@ const (
 var networkingType = "calico"
 
 type OIDCConfig struct {
-	ClientID       string   `json:"clientID"`
-	GroupsClaim    string   `json:"groupsClaim"`
-	IssuerURL      string   `json:"issuerURL"`
-	SigningAlgs    []string `json:"signingAlgs"`
-	UsernameClaim  string   `json:"usernameClaim"`
-	UsernamePrefix string   `json:"usernamePrefix"`
+	ClientID       string          `json:"clientID"`
+	GroupsClaim    string          `json:"groupsClaim"`
+	IssuerURL      string          `json:"issuerURL"`
+	SigningAlgs    []string        `json:"signingAlgs"`
+	UsernameClaim  string          `json:"usernameClaim"`
+	UsernamePrefix string          `json:"usernamePrefix"`
+	RequiredClaims *RequiredClaims `json:"requiredClaims"`
+}
+
+type RequiredClaims struct {
+	Repository string `json:"repository"`
+	Workflow   string `json:"workflow"`
+	Ref        string `json:"ref"`
 }
 
 type DNSConfig struct {
@@ -225,17 +232,28 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 }
 
 func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
-	if oidcConfig != nil {
-		return &gardener_types.OIDCConfig{
-			ClientID:       &oidcConfig.ClientID,
-			GroupsClaim:    &oidcConfig.GroupsClaim,
-			IssuerURL:      &oidcConfig.IssuerURL,
-			SigningAlgs:    oidcConfig.SigningAlgs,
-			UsernameClaim:  &oidcConfig.UsernameClaim,
-			UsernamePrefix: &oidcConfig.UsernamePrefix,
+	if oidcConfig == nil {
+		return nil
+	}
+
+	config := &gardener_types.OIDCConfig{
+		ClientID:       &oidcConfig.ClientID,
+		GroupsClaim:    &oidcConfig.GroupsClaim,
+		IssuerURL:      &oidcConfig.IssuerURL,
+		SigningAlgs:    oidcConfig.SigningAlgs,
+		UsernameClaim:  &oidcConfig.UsernameClaim,
+		UsernamePrefix: &oidcConfig.UsernamePrefix,
+	}
+
+	if oidcConfig.RequiredClaims != nil {
+		config.RequiredClaims = map[string]string{
+			"repository": oidcConfig.RequiredClaims.Repository,
+			"workflow":   oidcConfig.RequiredClaims.Workflow,
+			"ref":        oidcConfig.RequiredClaims.Ref,
 		}
 	}
-	return nil
+
+	return config
 }
 
 func gardenerDnsConfig(dnsConfig *DNSConfig) *gardener_types.DNS {
@@ -759,6 +777,14 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 			SigningAlgs:    upgradeConfig.OIDCConfig.SigningAlgs,
 			UsernameClaim:  &upgradeConfig.OIDCConfig.UsernameClaim,
 			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
+		}
+
+		if upgradeConfig.OIDCConfig.RequiredClaims != nil {
+			shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims = map[string]string{
+				"repository": upgradeConfig.OIDCConfig.RequiredClaims.Repository,
+				"workflow":   upgradeConfig.OIDCConfig.RequiredClaims.Workflow,
+				"ref":        upgradeConfig.OIDCConfig.RequiredClaims.Ref,
+			}
 		}
 	}
 	if util.NotNilOrEmpty(upgradeConfig.ExposureClassName) {

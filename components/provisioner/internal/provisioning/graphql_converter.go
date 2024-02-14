@@ -112,7 +112,8 @@ func (c graphQLConverter) oidcConfigToGraphQLConfig(config *model.OIDCConfig) *g
 	if config == nil {
 		return nil
 	}
-	return &gqlschema.OIDCConfig{
+
+	iodcConfig := &gqlschema.OIDCConfig{
 		ClientID:       config.ClientID,
 		GroupsClaim:    config.GroupsClaim,
 		IssuerURL:      config.IssuerURL,
@@ -120,6 +121,16 @@ func (c graphQLConverter) oidcConfigToGraphQLConfig(config *model.OIDCConfig) *g
 		UsernameClaim:  config.UsernameClaim,
 		UsernamePrefix: config.UsernamePrefix,
 	}
+
+	if config.RequiredClaims != nil {
+		iodcConfig.RequiredClaims = &gqlschema.RequiredClaims{
+			Repository: config.RequiredClaims.Repository,
+			Workflow:   config.RequiredClaims.Workflow,
+			Ref:        config.RequiredClaims.Ref,
+		}
+	}
+
+	return iodcConfig
 }
 
 func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gqlschema.KymaConfig {

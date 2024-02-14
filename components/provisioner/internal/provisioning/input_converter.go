@@ -123,17 +123,27 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 }
 
 func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
-	if config != nil {
-		return &model.OIDCConfig{
-			ClientID:       config.ClientID,
-			GroupsClaim:    config.GroupsClaim,
-			IssuerURL:      config.IssuerURL,
-			SigningAlgs:    config.SigningAlgs,
-			UsernameClaim:  config.UsernameClaim,
-			UsernamePrefix: config.UsernamePrefix,
+	if config == nil {
+		return nil
+	}
+	oidcConfig := &model.OIDCConfig{
+		ClientID:       config.ClientID,
+		GroupsClaim:    config.GroupsClaim,
+		IssuerURL:      config.IssuerURL,
+		SigningAlgs:    config.SigningAlgs,
+		UsernameClaim:  config.UsernameClaim,
+		UsernamePrefix: config.UsernamePrefix,
+	}
+
+	if config.RequiredClaims != nil {
+		oidcConfig.RequiredClaims = &model.RequiredClaims{
+			Repository: config.RequiredClaims.Repository,
+			Workflow:   config.RequiredClaims.Workflow,
+			Ref:        config.RequiredClaims.Ref,
 		}
 	}
-	return nil
+
+	return oidcConfig
 }
 
 func dnsConfigFromInput(input *gqlschema.DNSConfigInput) *model.DNSConfig {

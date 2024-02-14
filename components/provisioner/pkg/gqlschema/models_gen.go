@@ -247,21 +247,23 @@ type LastError struct {
 }
 
 type OIDCConfig struct {
-	ClientID       string   `json:"clientID"`
-	GroupsClaim    string   `json:"groupsClaim"`
-	IssuerURL      string   `json:"issuerURL"`
-	SigningAlgs    []string `json:"signingAlgs"`
-	UsernameClaim  string   `json:"usernameClaim"`
-	UsernamePrefix string   `json:"usernamePrefix"`
+	ClientID       string          `json:"clientID"`
+	GroupsClaim    string          `json:"groupsClaim"`
+	IssuerURL      string          `json:"issuerURL"`
+	SigningAlgs    []string        `json:"signingAlgs"`
+	UsernameClaim  string          `json:"usernameClaim"`
+	UsernamePrefix string          `json:"usernamePrefix"`
+	RequiredClaims *RequiredClaims `json:"requiredClaims"`
 }
 
 type OIDCConfigInput struct {
-	ClientID       string   `json:"clientID"`
-	GroupsClaim    string   `json:"groupsClaim"`
-	IssuerURL      string   `json:"issuerURL"`
-	SigningAlgs    []string `json:"signingAlgs"`
-	UsernameClaim  string   `json:"usernameClaim"`
-	UsernamePrefix string   `json:"usernamePrefix"`
+	ClientID       string               `json:"clientID"`
+	GroupsClaim    string               `json:"groupsClaim"`
+	IssuerURL      string               `json:"issuerURL"`
+	SigningAlgs    []string             `json:"signingAlgs"`
+	UsernameClaim  string               `json:"usernameClaim"`
+	UsernamePrefix string               `json:"usernamePrefix"`
+	RequiredClaims *RequiredClaimsInput `json:"requiredClaims"`
 }
 
 type OpenStackProviderConfig struct {
@@ -301,6 +303,18 @@ type ProvisionRuntimeInput struct {
 	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
+}
+
+type RequiredClaims struct {
+	Repository string `json:"repository"`
+	Workflow   string `json:"workflow"`
+	Ref        string `json:"ref"`
+}
+
+type RequiredClaimsInput struct {
+	Repository string `json:"repository"`
+	Workflow   string `json:"workflow"`
+	Ref        string `json:"ref"`
 }
 
 type RuntimeConfig struct {
