@@ -378,6 +378,8 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 
 // populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
+	// clear the gauge to fill it with the new data
+	kebAllClustersCount.Reset()
 
 	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {

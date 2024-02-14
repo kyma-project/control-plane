@@ -182,6 +182,9 @@ func TestPollKEBForRuntimes(t *testing.T) {
 			Logger:         logger.NewLogger(zapcore.InfoLevel),
 		}
 
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		go func() {
 			newProcess.pollKEBForRuntimes()
 		}()
@@ -196,8 +199,29 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		g.Eventually(func() int {
 			counter, err := clustersScraped.GetMetricWithLabelValues("")
 			g.Expect(err).Should(gomega.BeNil())
+			// check the value of the metric
 			return int(testutil.ToFloat64(counter))
 		}).Should(gomega.Equal(numberOfRuntimes))
+
+		metricName = "kmc_keb_all_clusters_count"
+		numberOfAllClusters := 4
+		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range expectedRuntimes.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				// check the occurrence of the metric with above labels
+				return testutil.CollectAndCount(counter, metricName)
+			}).Should(gomega.Equal(1))
+		}
+		for _, runtimeData := range expectedRuntimes.Data {
+			g.Eventually(func() int {
+				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+				g.Expect(err).Should(gomega.BeNil())
+				// check the value of the metric
+				return int(testutil.ToFloat64(counter))
+			}).Should(gomega.Equal(1))
+		}
 	})
 }
 
@@ -205,6 +229,9 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	t.Run("runtimes with only provisioned status and other statuses with failures", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedFailedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -240,13 +267,15 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 			g.Eventually(func() int {
 				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
-				return int(testutil.ToFloat64(counter))
+				return testutil.CollectAndCount(counter, metricName)
 			}).Should(gomega.Equal(1))
 		}
-		kebAllClustersCount.Reset()
 	})
 
 	t.Run("runtimes with both provisioned and deprovisioned status", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedAndDeprovisionedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -281,13 +310,15 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 			g.Eventually(func() int {
 				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
-				return int(testutil.ToFloat64(counter))
+				return testutil.CollectAndCount(counter, metricName)
 			}).Should(gomega.Equal(1))
 		}
-		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -326,13 +357,15 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 			g.Eventually(func() int {
 				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
-				return int(testutil.ToFloat64(counter))
+				return testutil.CollectAndCount(counter, metricName)
 			}).Should(gomega.Equal(1))
 		}
-		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -366,13 +399,15 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 			g.Eventually(func() int {
 				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
-				return int(testutil.ToFloat64(counter))
+				return testutil.CollectAndCount(counter, metricName)
 			}).Should(gomega.Equal(0))
 		}
-		kebAllClustersCount.Reset()
 	})
 
 	t.Run("with loaded cache, then shoot is deprovisioned and provisioned again", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebAllClustersCount.Reset()
+
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -420,16 +455,17 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 		// Ensure metric exists
 		metricName := "kmc_keb_all_clusters_count"
-		numberOfAllClusters := 2
+		// expecting number of all clusters to be 1, as deprovisioned shoot is removed
+		// only counting the new shoot
+		numberOfAllClusters := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
 			g.Eventually(func() int {
 				counter, err := kebAllClustersCount.GetMetricWithLabelValues("", runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
 				g.Expect(err).Should(gomega.BeNil())
-				return int(testutil.ToFloat64(counter))
+				return testutil.CollectAndCount(counter, metricName)
 			}).Should(gomega.Equal(1))
 		}
-		kebAllClustersCount.Reset()
 	})
 }
 
