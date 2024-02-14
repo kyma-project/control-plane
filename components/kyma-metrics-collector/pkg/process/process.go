@@ -355,7 +355,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
 				RuntimeID:    runtime.RuntimeID,
-				ProviderType: runtime.Provider,
+				ProviderType: strings.ToLower(runtime.Provider),
 				KubeConfig:   "",
 				Metric:       nil,
 			}
