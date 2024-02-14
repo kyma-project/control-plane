@@ -15,15 +15,6 @@ const (
 )
 
 var (
-	kebActiveClustersCount = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "active_clusters_count",
-			Help:      "Number of active clusters got from KEB.",
-		},
-		[]string{requestURLLabel},
-	)
 	subAccountProcessed = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
@@ -86,7 +77,6 @@ func recordOldMetricsPublishedGauge(shootInfo kmccache.Record) {
 }
 
 func resetOldMetricsPublishedGauge(shootInfo kmccache.Record) {
-	// []string{"shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	oldMetricsPublishedGauge.WithLabelValues(
 		shootInfo.ShootName,
 		shootInfo.InstanceID,

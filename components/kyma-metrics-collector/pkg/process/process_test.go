@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"k8s.io/client-go/kubernetes/fake"
 
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
@@ -60,7 +59,6 @@ const (
 	expectedPathPrefix         = "/runtimes"
 
 	// EDP related variables
-	//testTenant            = "testTenant"
 	testDataStream        = "dataStream"
 	testNamespace         = "namespace"
 	testDataStreamVersion = "v1"
@@ -188,16 +186,6 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		g.Eventually(func() int {
 			return timesVisited
 		}, 10*time.Second).Should(gomega.Equal(expectedTimesVisited))
-
-		// Ensure metric exists
-		metricName := "kmc_keb_number_clusters_scraped"
-		numberOfRuntimes := 4
-		g.Eventually(testutil.CollectAndCount(kebActiveClustersCount, metricName)).Should(gomega.Equal(1))
-		g.Eventually(func() int {
-			counter, err := kebActiveClustersCount.GetMetricWithLabelValues("")
-			g.Expect(err).Should(gomega.BeNil())
-			return int(testutil.ToFloat64(counter))
-		}).Should(gomega.Equal(numberOfRuntimes))
 	})
 }
 

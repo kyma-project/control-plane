@@ -104,13 +104,12 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// ensure metric exists.
-		// the count should be 2 because it queries for 2 pages separately.
-		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(2))
+		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 
 		// check if the required labels exists in the metric.
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(pMetric.Metric).Should(gomega.HaveLen(2))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(1))
 		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(2))
 		// response status label.
 		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
