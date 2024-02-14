@@ -25,8 +25,8 @@ github.com/gardener/gardener v1.88.0 h1:rswlezvHGqAcReLZRovPJdSEPWEOc67lHMWQqZQG
 github.com/gardener/gardener v1.88.0/go.mod h1:HaefCVQWgYinwiZi4z8vEGu534/ql+bW9EEKy1bEsHY=
 github.com/gardener/gardener-extension-provider-aws v1.51.1 h1:mdowAUtua280va02xKjbnnY0C6otpIVROFHLVb27EHU=
 github.com/gardener/gardener-extension-provider-aws v1.51.1/go.mod h1:94R8wwp//yNbc/bLgHl4pE2xe2d/9BCiCziJXPaeTsQ=
-github.com/gardener/gardener-extension-provider-azure v1.40.1 h1:GHRx32/wty79ELYS48z3eBNfCgMBv0pDb3RH/eVqj/8=
-github.com/gardener/gardener-extension-provider-azure v1.40.1/go.mod h1:j7LCLcLtRHXC8QXQDykKfqROFcaSiWhYcMmeYjaB+Fk=
+github.com/gardener/gardener-extension-provider-azure v1.41.0 h1:qDRIcGAz70mtWi9TYqDLrSkfspvTddaGZ2kFhPVEj+E=
+github.com/gardener/gardener-extension-provider-azure v1.41.0/go.mod h1:KDUStm1lOCFJ9EgFgQBU2pKTlbTII7KgLFW92WLZSF0=
 github.com/gardener/gardener-extension-provider-gcp v1.34.0 h1:jgrWilXDFlct3RYdV7LHlvWNHsYElr2sn71FOzDTBiA=
 github.com/gardener/gardener-extension-provider-gcp v1.34.0/go.mod h1:V4pRzniOUJDKwBxt2IxgICThYIANjIzr5WjM+O4FezA=
 github.com/gardener/gardener-extension-provider-openstack v1.38.2 h1:XRescnJMWBaCP+1Uam4GoBXBvWj+Q4DQT/begQ5SuyE=
