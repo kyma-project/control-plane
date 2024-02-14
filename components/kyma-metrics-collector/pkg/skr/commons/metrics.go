@@ -29,6 +29,7 @@ var (
 )
 
 func RecordSKRQuery(success bool, action string, shootInfo kmccache.Record) {
+	// the order if the values should be same as defined in the metric declaration.
 	TotalQueriesMetric.WithLabelValues(
 		action,
 		strconv.FormatBool(success),

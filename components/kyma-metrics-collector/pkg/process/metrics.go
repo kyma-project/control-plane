@@ -20,7 +20,7 @@ var (
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "sub_account_total",
-			Help:      "Number of sub-accounts processed.",
+			Help:      "Number of sub-accounts processed including successful and failed.",
 		},
 		[]string{"success", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
@@ -38,13 +38,14 @@ var (
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "old_metric_publish_gauge",
-			Help:      "Number of consecutive re-sends of old metrics to edp per cluster. It Will be reset to 0 when new metric is published.",
+			Help:      "Number of consecutive re-sends of old metrics to edp per cluster. It Will be reset to 0 when new metric data is published.",
 		},
 		[]string{"shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )
 
 func recordSubAccountProcessed(success bool, shootInfo kmccache.Record) {
+	// the order if the values should be same as defined in the metric declaration.
 	subAccountProcessed.WithLabelValues(
 		strconv.FormatBool(success),
 		shootInfo.ShootName,
@@ -56,6 +57,7 @@ func recordSubAccountProcessed(success bool, shootInfo kmccache.Record) {
 }
 
 func recordSubAccountProcessedTimeStamp(withOldMetric bool, shootInfo kmccache.Record) {
+	// the order if the values should be same as defined in the metric declaration.
 	subAccountProcessedTimeStamp.WithLabelValues(
 		strconv.FormatBool(withOldMetric),
 		shootInfo.ShootName,
@@ -67,6 +69,7 @@ func recordSubAccountProcessedTimeStamp(withOldMetric bool, shootInfo kmccache.R
 }
 
 func recordOldMetricsPublishedGauge(shootInfo kmccache.Record) {
+	// the order if the values should be same as defined in the metric declaration.
 	oldMetricsPublishedGauge.WithLabelValues(
 		shootInfo.ShootName,
 		shootInfo.InstanceID,
@@ -77,6 +80,7 @@ func recordOldMetricsPublishedGauge(shootInfo kmccache.Record) {
 }
 
 func resetOldMetricsPublishedGauge(shootInfo kmccache.Record) {
+	// the order if the values should be same as defined in the metric declaration.
 	oldMetricsPublishedGauge.WithLabelValues(
 		shootInfo.ShootName,
 		shootInfo.InstanceID,

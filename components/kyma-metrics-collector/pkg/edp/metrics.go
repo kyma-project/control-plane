@@ -32,5 +32,6 @@ var (
 )
 
 func recordEDPLatency(duration time.Duration, statusCode int, destSvc string) {
+	// the order if the values should be same as defined in the metric declaration.
 	latencyMetric.WithLabelValues(fmt.Sprint(statusCode), destSvc).Observe(duration.Seconds())
 }

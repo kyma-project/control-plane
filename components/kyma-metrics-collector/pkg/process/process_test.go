@@ -415,6 +415,8 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 		},
 		{
 			name: "should have correct metrics when it processes subAccount with old data",
+			// the method (which is being tested) will use old data,
+			// when it fails to query to k8s cluster for information.
 			givenShoot: kmccache.Record{
 				SubAccountID:    edpAllowedSubAccountID,
 				InstanceID:      uuid.New().String(),
@@ -442,6 +444,9 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 		},
 		{
 			name: "should have correct metrics when it fails to process subAccount",
+			// the method (which is being tested) will use old data,
+			// when it fails to query to k8s cluster for information and
+			// the old data in cache is invalid (e.g. `Metric: nil`).
 			givenShoot: kmccache.Record{
 				SubAccountID:    edpAllowedSubAccountID,
 				InstanceID:      uuid.New().String(),
@@ -513,6 +518,8 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				tc.givenShoot.GlobalAccountID,
 			)
 			g.Expect(err).Should(gomega.BeNil())
+			// the metric will be incremented even in case of failure, so that is why
+			// it should be equal to the number of time the `processSubAccountID` is called.
 			g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(givenMethodRecalls)))
 
 			// metric: oldMetricsPublishedGauge
@@ -528,6 +535,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				// it should have kept increasing to track consecutive number of re-use.
 				g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(givenMethodRecalls)))
 			} else {
+				// the metric will be reset to zero when a subAccount is successfully processed.
 				g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(0)))
 			}
 
@@ -542,6 +550,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 			)
 			g.Expect(err).Should(gomega.BeNil())
 			// check if the last published time has correct value.
+			// the timestamp will only be updated when the subAccount is successfully processed.
 			utcTime := testutil.ToFloat64(gotMetrics)
 			isPublishedAfterTestStartTime := int64(utcTime) >= testStartTimeUnix
 			g.Expect(isPublishedAfterTestStartTime).Should(
