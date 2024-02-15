@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 )
@@ -62,7 +61,7 @@ func TestList(t *testing.T) {
 }
 
 func NewFakeClient(pvcList *corev1.PersistentVolumeClaimList) (*Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}

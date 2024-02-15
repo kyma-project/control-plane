@@ -9,37 +9,27 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
-
-	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
-	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
-
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/client-go/util/workqueue"
-
-	"github.com/pkg/errors"
-
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/patrickmn/go-cache"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Process struct {
 	KEBClient         *keb.Client
 	EDPClient         *edp.Client
 	Queue             workqueue.DelayingInterface
-	ShootClient       *gardenershoot.Client
-	SecretCacheClient kmccache.CoreV1
+	SecretCacheClient v1.CoreV1Interface
 	Cache             *cache.Cache
 	Providers         *Providers
 	ScrapeInterval    time.Duration
@@ -50,108 +40,96 @@ type Process struct {
 	Logger            *zap.SugaredLogger
 }
 
-const (
-	shootKubeconfigKey = "kubeconfig"
-)
-
 var (
 	errorSubAccountIDNotTrackable = errors.New("subAccountID is not trackable")
 	ErrLoadingFailed              = errors.New("could not load resource")
 )
 
-func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
+func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID string) (kmccache.Record, error) {
 	ctx := context.Background()
 	var ok bool
 
 	obj, isFound := p.Cache.Get(subAccountID)
 	if !isFound {
-		err = errorSubAccountIDNotTrackable
-		return
+		err := errorSubAccountIDNotTrackable
+		return kmccache.Record{}, err
 	}
 
+	var record kmccache.Record
 	if record, ok = obj.(kmccache.Record); !ok {
-		err = fmt.Errorf("bad item from cache, could not cast to a record obj")
-		return
+		err := fmt.Errorf("bad item from cache, could not cast to a record obj")
+		return kmccache.Record{}, err
 	}
 	p.namedLogger().With(log.KeyWorkerID, identifier).Debugf("record found from cache: %+v", record)
 
 	runtimeID := record.RuntimeID
-	shootName := record.ShootName
 
 	kubeconfig, err := kmccache.GetKubeConfigFromCache(p.Logger, p.SecretCacheClient, runtimeID)
 	if err != nil {
-		return record, fmt.Errorf("Loading Kubeconfig for %s failed: %w", ErrLoadingFailed, err)
+		return record, fmt.Errorf("loading Kubeconfig for %s failed: %w", ErrLoadingFailed, err)
 	}
 	record.KubeConfig = kubeconfig
-
-	// Get shoot CR
-	var shoot *gardenerv1beta1.Shoot
-	shoot, err = p.ShootClient.Get(ctx, shootName)
-	if err != nil {
-		p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, shootName).Error("Failed to get shoot")
-		return
-	}
 
 	// Get nodes dynamic client
 	nodesClient, err := p.NodeConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		return
+		return record, err
 	}
 
 	// Get nodes
 	var nodes *corev1.NodeList
 	nodes, err = nodesClient.List(ctx)
 	if err != nil {
-		return
+		return record, err
 	}
 
 	if len(nodes.Items) == 0 {
 		err = fmt.Errorf("no nodes to process")
-		return
+		return record, err
 	}
 
 	// Get PVCs
 	pvcClient, err := p.PVCConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		return
+		return record, err
 	}
 	var pvcList *corev1.PersistentVolumeClaimList
 	pvcList, err = pvcClient.List(ctx)
 	if err != nil {
-		return
+		return record, err
 	}
 
 	// Get Svcs
 	var svcList *corev1.ServiceList
 	svcClient, err := p.SvcConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		return
+		return record, err
 	}
 	svcList, err = svcClient.List(ctx)
 	if err != nil {
-		return
+		return record, err
 	}
 
 	// Create input
 	input := Input{
-		shoot:    shoot,
+		provider: record.ProviderType,
 		nodeList: nodes,
 		pvcList:  pvcList,
 		svcList:  svcList,
 	}
 	metric, err := input.Parse(p.Providers)
 	if err != nil {
-		return
+		return record, err
 	}
 	metric.RuntimeId = record.RuntimeID
 	metric.SubAccountId = record.SubAccountID
 	metric.ShootName = record.ShootName
 	record.Metric = metric
-	return
+	return record, nil
 }
 
-// getOldRecordIfMetricExists gets old record from cache if old metric exists
-func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Record, error) {
+// getOldRecordIfMetricExists gets old record from cache if old metric exists.
+func (p *Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Record, error) {
 	oldRecordObj, found := p.Cache.Get(subAccountID)
 	if !found {
 		notFoundErr := fmt.Errorf("subAccountID: %s not found", subAccountID)
@@ -169,10 +147,9 @@ func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Reco
 	return nil, notFoundErr
 }
 
-// pollKEBForRuntimes polls KEB for runtimes information
+// pollKEBForRuntimes polls KEB for runtimes information.
 func (p *Process) pollKEBForRuntimes() {
 	kebReq, err := p.KEBClient.NewRequest()
-
 	if err != nil {
 		p.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 			Fatal("create a new request for KEB")
@@ -195,9 +172,8 @@ func (p *Process) pollKEBForRuntimes() {
 	}
 }
 
-// Start runs the complete process of collection and sending metrics
-func (p Process) Start() {
-
+// Start runs the complete process of collection and sending metrics.
+func (p *Process) Start() {
 	var wg sync.WaitGroup
 	go func() {
 		p.pollKEBForRuntimes()
@@ -214,17 +190,15 @@ func (p Process) Start() {
 	wg.Wait()
 }
 
-// Execute is executed by each worker to process an entry from the queue
+// Execute is executed by each worker to process an entry from the queue.
 func (p *Process) execute(identifier int) {
-
 	for {
-
 		// Pick up a subAccountID to process from queue and mark as Done()
 		subAccountIDObj, _ := p.Queue.Get()
 		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
 
 		// TODO Implement cleanup holistically in #kyma-project/control-plane/issues/512
-		//if isShuttingDown {
+		// if isShuttingDown {
 		//	//p.Cleanup()
 		//	return
 		//}
@@ -234,7 +208,7 @@ func (p *Process) execute(identifier int) {
 	}
 }
 
-func (p Process) processSubAccountID(subAccountID string, identifier int) {
+func (p *Process) processSubAccountID(subAccountID string, identifier int) {
 	var payload []byte
 	if strings.TrimSpace(subAccountID) == "" {
 		p.namedLogger().With(log.KeyWorkerID, identifier).Warn("cannot work with empty subAccountID")
@@ -314,8 +288,8 @@ func (p Process) processSubAccountID(subAccountID string, identifier int) {
 }
 
 // getRecordWithOldOrNewMetric generates new metric or fetches the old metric along with a bool flag which
-// indicates whether it is an old metric or not(true, when it is old and false when it is new)
-func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
+// indicates whether it is an old metric or not(true, when it is old and false when it is new).
+func (p *Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
 	record, err := p.generateRecordWithNewMetrics(identifier, subAccountID)
 	if err != nil {
 		if errors.Is(err, errorSubAccountIDNotTrackable) {
@@ -336,7 +310,7 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 	return &record, false, nil
 }
 
-func (p Process) sendEventStreamToEDP(tenant string, payload []byte) error {
+func (p *Process) sendEventStreamToEDP(tenant string, payload []byte) error {
 	edpRequest, err := p.EDPClient.NewRequest(tenant)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create a new request for EDP")
@@ -362,16 +336,15 @@ func isSuccess(status int) bool {
 
 func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	if runtime.Status.Provisioning != nil &&
-		runtime.Status.Provisioning.State == "succeeded" &&
+		runtime.Status.Provisioning.State == string(kebruntime.StateSucceeded) &&
 		runtime.Status.Deprovisioning == nil {
 		return true
 	}
 	return false
 }
 
-// populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
+// populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked.
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
-
 	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {
 		if runtime.SubAccountID == "" {
@@ -384,9 +357,12 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				SubAccountID: runtime.SubAccountID,
 				RuntimeID:    runtime.RuntimeID,
 				ShootName:    runtime.ShootName,
+				ProviderType: strings.ToLower(runtime.Provider),
 				KubeConfig:   "",
 				Metric:       nil,
 			}
+
+			// Cluster is trackable but does not exist in the cache
 			if !isFoundInCache {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
 				if err != nil {

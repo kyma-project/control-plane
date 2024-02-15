@@ -143,7 +143,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c12_m48",
 			expectedFeature: Feature{
 				CpuCores: 12,
@@ -151,7 +151,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c16_m64",
 			expectedFeature: Feature{
 				CpuCores: 16,
@@ -159,7 +159,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c32_m128",
 			expectedFeature: Feature{
 				CpuCores: 32,
@@ -167,7 +167,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c4_m16",
 			expectedFeature: Feature{
 				CpuCores: 4,
@@ -175,7 +175,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c64_m256",
 			expectedFeature: Feature{
 				CpuCores: 64,
@@ -183,7 +183,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c6_m24",
 			expectedFeature: Feature{
 				CpuCores: 6,
@@ -191,7 +191,7 @@ func TestGetFeature(t *testing.T) {
 			},
 		},
 		{
-			cloudProvider: "openstack",
+			cloudProvider: "sapconvergedcloud",
 			vmType:        "g_c8_m32",
 			expectedFeature: Feature{
 				CpuCores: 8,

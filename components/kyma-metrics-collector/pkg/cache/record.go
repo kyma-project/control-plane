@@ -6,6 +6,7 @@ type Record struct {
 	SubAccountID string
 	RuntimeID    string
 	ShootName    string
+	ProviderType string
 	KubeConfig   string
 	Metric       *edp.ConsumptionMetrics
 }

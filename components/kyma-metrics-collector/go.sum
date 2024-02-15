@@ -23,14 +23,6 @@ github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCv
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/gardener/gardener v1.88.0 h1:rswlezvHGqAcReLZRovPJdSEPWEOc67lHMWQqZQGICc=
 github.com/gardener/gardener v1.88.0/go.mod h1:HaefCVQWgYinwiZi4z8vEGu534/ql+bW9EEKy1bEsHY=
-github.com/gardener/gardener-extension-provider-aws v1.52.0 h1:KE99jxCCnyxLYPMm48+AouI1iUE/BBegWCyzd+nSfKQ=
-github.com/gardener/gardener-extension-provider-aws v1.52.0/go.mod h1:1/0FNqr6Pw8olozqHZ1Cmxf6O8J9UtdAOLUiy2sVn5E=
-github.com/gardener/gardener-extension-provider-azure v1.41.0 h1:qDRIcGAz70mtWi9TYqDLrSkfspvTddaGZ2kFhPVEj+E=
-github.com/gardener/gardener-extension-provider-azure v1.41.0/go.mod h1:KDUStm1lOCFJ9EgFgQBU2pKTlbTII7KgLFW92WLZSF0=
-github.com/gardener/gardener-extension-provider-gcp v1.34.1 h1:ujSrHqB1MQxQrEOcWuIvewprabA63EIMrsD2h/e5xLw=
-github.com/gardener/gardener-extension-provider-gcp v1.34.1/go.mod h1:V4pRzniOUJDKwBxt2IxgICThYIANjIzr5WjM+O4FezA=
-github.com/gardener/gardener-extension-provider-openstack v1.39.0 h1:7e5RpTyaox73lxnYXlEEBywWAZB3/t9EVZWK3z6jM0w=
-github.com/gardener/gardener-extension-provider-openstack v1.39.0/go.mod h1:uLc3FaABRhQxtFTUm8gG/e9VQxfiRIGioyRzxy+xfi4=
 github.com/go-logr/logr v1.3.0 h1:2y3SDp0ZXuc6/cjLSZ+Q3ir+QB9T/iG5yYRXqsagWSY=
 github.com/go-logr/logr v1.3.0/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-openapi/jsonpointer v0.19.6/go.mod h1:osyAmYz/mB/C3I+WsTTSgw1ONzaLJoLCyoi6/zppojs=
