@@ -58,10 +58,6 @@ serviceAccount:
   ## Name of an already existing service account. Setting this value disables the automatic service account creation.
   # name:
 
-gardener:
-  secretName: "gardener-credentials"
-  namespace: "garden-kyma-dev"
-
 edp:
   namespace: "TBD"
   datastream:
