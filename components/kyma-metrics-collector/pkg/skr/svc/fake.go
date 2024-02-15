@@ -2,7 +2,7 @@ package svc
 
 import (
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
+	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
@@ -12,7 +12,7 @@ type FakeSvcClient struct{}
 
 func (fakeSvcClient FakeSvcClient) NewClient(kmccache.Record) (*Client, error) {
 	nodeList := kmctesting.GetSvcsWithLoadBalancers()
-	scheme, err := commons.SetupSchemeOrDie()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
@@ -86,7 +85,7 @@ func TestList(t *testing.T) {
 }
 
 func NewFakeClient(nodeList *corev1.NodeList, shootInfo kmccache.Record) (*Client, error) {
-	scheme, err := gardenercommons.SetupSchemeOrDie()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}

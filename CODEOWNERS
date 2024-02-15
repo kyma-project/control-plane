@@ -24,7 +24,7 @@
 /tests/provisioner-tests @kyma-project/Framefrog
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr
+/resources/kcp/charts/component-reconcilers @tobiscr @kyma-project/Jellyfish
 /resources/kcp/charts/mothership-reconciler @tobiscr @kyma-project/Jellyfish
 /tools/reconciler @tobiscr @kyma-project/Jellyfish
 

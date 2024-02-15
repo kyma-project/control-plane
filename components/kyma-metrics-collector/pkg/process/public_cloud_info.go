@@ -46,7 +46,7 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 		if feature, ok := p.GCP[vmType]; ok {
 			return &feature
 		}
-	case OpenStack:
+	case CCEE:
 		if feature, ok := p.OpenStack[vmType]; ok {
 			return &feature
 		}
@@ -91,13 +91,13 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if err = json.Unmarshal(gcpMachinesData, gcpMachines); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal GCP machines data")
 	}
-	openStackMachinesData, err := machineInfo[OpenStack].MarshalJSON()
+	openStackMachinesData, err := machineInfo[CCEE].MarshalJSON()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal OpenStack info")
+		return nil, errors.Wrapf(err, "failed to marshal sapconvergedcloud info")
 	}
 	openStackMachines := &OpenStackMachines{}
 	if err = json.Unmarshal(openStackMachinesData, openStackMachines); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal OpenStack machines data")
+		return nil, errors.Wrapf(err, "failed to unmarshal sapconvergedcloud machines data")
 	}
 
 	providers := Providers{

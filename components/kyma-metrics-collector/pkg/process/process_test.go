@@ -3,6 +3,7 @@ package process
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"net/http"
@@ -17,51 +18,30 @@ import (
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
-
-	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
-
-	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
-	corev1 "k8s.io/api/core/v1"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
-
-	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
-
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
-
-	"github.com/google/uuid"
-
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	kmckeb "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-
-	"github.com/onsi/gomega"
-
-	"go.uber.org/zap/zapcore"
-
-	gocache "github.com/patrickmn/go-cache"
-	"k8s.io/client-go/util/workqueue"
-
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
+	gocache "github.com/patrickmn/go-cache"
+	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/util/workqueue"
 )
 
 const (
-	// General
+	// General.
 	timeout    = 5 * time.Second
 	bigTimeout = 10 * time.Second
 
-	// KEB related variables
+	// KEB related variables.
 	kebRuntimeResponseFilePath = "../testing/fixtures/runtimes_response.json"
 	expectedPathPrefix         = "/runtimes"
 
-	// EDP related variables
+	// EDP related variables.
+
 	testDataStream        = "dataStream"
 	testNamespace         = "namespace"
 	testDataStreamVersion = "v1"
@@ -128,7 +108,6 @@ func TestPollKEBForRuntimes(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	t.Run("execute KEB poller for 2 times", func(t *testing.T) {
-
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
@@ -246,38 +225,6 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 			rntme := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedState)
 			runtimesPage.Data = append(runtimesPage.Data, rntme)
 		}
-
-		p.populateCacheAndQueue(runtimesPage)
-		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
-		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
-	})
-
-	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
-		subAccID := uuid.New().String()
-		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
-		queue := workqueue.NewDelayingQueue()
-		oldShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-		newShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-
-		p := Process{
-			Queue:  queue,
-			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.InfoLevel),
-		}
-		oldRecord := NewRecord(subAccID, oldShootName, "foo")
-		newRecord := NewRecord(subAccID, newShootName, "")
-
-		err := p.Cache.Add(subAccID, oldRecord, gocache.NoExpiration)
-		g.Expect(err).Should(gomega.BeNil())
-
-		runtimesPage := new(kebruntime.RuntimesPage)
-		expectedQueue := workqueue.NewDelayingQueue()
-		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
-		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
-		g.Expect(err).Should(gomega.BeNil())
-
-		rntme := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState)
-		runtimesPage.Data = append(runtimesPage.Data, rntme)
 
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
@@ -408,6 +355,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				RuntimeID:       uuid.New().String(),
 				GlobalAccountID: uuid.New().String(),
 				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
 				KubeConfig:      givenKubeConfig,
 			},
 			wantSuccess:         true,
@@ -423,6 +371,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				RuntimeID:       uuid.New().String(),
 				GlobalAccountID: uuid.New().String(),
 				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
 				Metric:          NewMetric(),
 				KubeConfig:      "invalid",
 			},
@@ -437,6 +386,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				RuntimeID:       uuid.New().String(),
 				GlobalAccountID: uuid.New().String(),
 				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
 				KubeConfig:      givenKubeConfig,
 			},
 			wantSuccess:         false,
@@ -453,6 +403,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 				RuntimeID:       uuid.New().String(),
 				GlobalAccountID: uuid.New().String(),
 				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
 				KubeConfig:      "invalid",
 				Metric:          nil,
 			},
@@ -476,8 +427,6 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 			g.Expect(err).Should(gomega.BeNil())
 
 			// k8s fake clients.
-			shoot := kmctesting.GetShoot(tc.givenShoot.ShootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
-			shootClient, err := NewFakeShootClient(shoot)
 			g.Expect(err).Should(gomega.BeNil())
 			secretKCPStored := kmctesting.NewKCPStoredSecret(tc.givenShoot.RuntimeID, tc.givenShoot.KubeConfig)
 			secretCacheClient := fake.NewSimpleClientset(secretKCPStored)
@@ -489,8 +438,7 @@ func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 			givenProcess := &Process{
 				EDPClient:         edpClient,
 				Queue:             workqueue.NewDelayingQueue(),
-				ShootClient:       shootClient,
-				SecretCacheClient: secretCacheClient,
+				SecretCacheClient: secretCacheClient.CoreV1(),
 				Cache:             cache,
 				Providers:         givenProviders,
 				ScrapeInterval:    3 * time.Second,
@@ -595,6 +543,7 @@ func TestExecute(t *testing.T) {
 		RuntimeID:    runtimeID,
 		ShootName:    shootName,
 		KubeConfig:   "",
+		ProviderType: Azure,
 		Metric:       nil,
 	}
 	expectedRecord := newRecord
@@ -611,8 +560,6 @@ func TestExecute(t *testing.T) {
 	queue := workqueue.NewDelayingQueue()
 	queue.Add(subAccID)
 
-	shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
-	shootClient, err := NewFakeShootClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
 	secretCacheClient := fake.NewSimpleClientset(secretKCPStored)
 
@@ -628,8 +575,7 @@ func TestExecute(t *testing.T) {
 	newProcess := &Process{
 		EDPClient:         edpClient,
 		Queue:             queue,
-		ShootClient:       shootClient,
-		SecretCacheClient: secretCacheClient,
+		SecretCacheClient: secretCacheClient.CoreV1(),
 		Cache:             cache,
 		Providers:         providers,
 		ScrapeInterval:    3 * time.Second,
@@ -698,42 +644,6 @@ func TestExecute(t *testing.T) {
 	g.Expect(timesVisited).To(gomega.Equal(oldEventsSentCount))
 	// the queue should be empty.
 	g.Eventually(newProcess.Queue.Len()).Should(gomega.Equal(0))
-}
-
-func NewFakeShootClient(shoot *gardenerv1beta1.Shoot) (*gardenershoot.Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
-	if err != nil {
-		return nil, err
-	}
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(shoot)
-	if err != nil {
-		return nil, err
-	}
-	shootUnstructured := &unstructured.Unstructured{Object: unstructuredMap}
-	shootUnstructured.SetGroupVersionKind(gardenershoot.GroupVersionKind())
-
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, shootUnstructured)
-	nsResourceClient := dynamicClient.Resource(gardenershoot.GroupVersionResource()).Namespace("default")
-
-	return &gardenershoot.Client{ResourceClient: nsResourceClient}, nil
-}
-
-func NewFakeSecretClient(secret *corev1.Secret) (*gardenersecret.Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
-	if err != nil {
-		return nil, err
-	}
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(secret)
-	if err != nil {
-		return nil, err
-	}
-	secretUnstructured := &unstructured.Unstructured{Object: unstructuredMap}
-	secretUnstructured.SetGroupVersionKind(gardenersecret.GroupVersionKind())
-
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, secretUnstructured)
-	nsResourceClient := dynamicClient.Resource(gardenersecret.GroupVersionResource()).Namespace("default")
-
-	return &gardenersecret.Client{ResourceClient: nsResourceClient}, nil
 }
 
 func NewRecord(subAccId, shootName, kubeconfig string) kmccache.Record {
@@ -816,10 +726,6 @@ func NewMetric() *edp.ConsumptionMetrics {
 				Count:         2,
 				SizeGbRounded: 64,
 			},
-		},
-		Networking: edp.Networking{
-			ProvisionedVnets: 1,
-			ProvisionedIPs:   2,
 		},
 	}
 }

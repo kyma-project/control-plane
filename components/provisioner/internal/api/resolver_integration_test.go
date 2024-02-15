@@ -211,7 +211,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                []string{"eu-de-1a"},
-					FloatingPoolName:     "FloatingIP-external-cp",
+					FloatingPoolName:     util.StringPtr("FloatingIP-external-cp"),
 					CloudProfileName:     "converged-cloud-cp",
 					LoadBalancerProvider: "f5",
 				},

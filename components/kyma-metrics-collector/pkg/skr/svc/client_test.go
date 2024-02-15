@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
@@ -91,7 +90,7 @@ func TestList(t *testing.T) {
 }
 
 func NewFakeClient(svcList *corev1.ServiceList, shootInfo kmccache.Record) (*Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}
