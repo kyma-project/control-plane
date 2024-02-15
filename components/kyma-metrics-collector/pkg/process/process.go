@@ -376,9 +376,7 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 
 		// record kebAllClustersCount metric
 		recordKEBAllClustersCount(
-			string(runtime.Status.State),
-			runtime.Status.Provisioning.State,
-			"",
+			true,
 			runtime.ShootName,
 			runtime.InstanceID,
 			runtime.RuntimeID,
@@ -397,9 +395,7 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 
 	// record kebAllClustersCount metric
 	recordKEBAllClustersCount(
-		string(runtime.Status.State),
-		provisioning,
-		deprovisioning,
+		false,
 		runtime.ShootName,
 		runtime.InstanceID,
 		runtime.RuntimeID,

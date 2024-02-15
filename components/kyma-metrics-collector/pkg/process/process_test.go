@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -205,16 +206,11 @@ func TestPollKEBForRuntimes(t *testing.T) {
 
 		metricName = "kmc_keb_all_clusters_count"
 		numberOfAllClusters := 4
-		expectedMetricOccurence := 1
-		expectedValue := 1
+		expectedMetricValue := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
-		// check each metric with labels has the expected occurrence
-		for _, runtimeData := range expectedRuntimes.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurence, g, runtimeData)
-		}
 		// check each metric with labels has the expected value
 		for _, runtimeData := range expectedRuntimes.Data {
-			verifyKEBAllClustersCountMetricValue(expectedValue, g, runtimeData)
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 }
@@ -256,10 +252,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// Ensure metric exists
 		metricName := "kmc_keb_all_clusters_count"
 		numberOfAllClusters := 4
-		expectedMetricOccurence := 1
+		expectedMetricValue := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurence, g, runtimeData)
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 
@@ -296,10 +292,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// Ensure metric exists
 		metricName := "kmc_keb_all_clusters_count"
 		numberOfAllClusters := 4
-		expectedMetricOccurrence := 1
+		expectedMetricValue := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurrence, g, runtimeData)
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 
@@ -340,10 +336,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// Ensure metric exists
 		metricName := "kmc_keb_all_clusters_count"
 		numberOfAllClusters := 1
-		expectedMetricOccurrence := 1
+		expectedMetricValue := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurrence, g, runtimeData)
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 
@@ -379,10 +375,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// Ensure metric exists
 		metricName := "kmc_keb_all_clusters_count"
 		numberOfAllClusters := 0
-		expectedMetricOccurrence := 0
+		expectedMetricValue := 0
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPageWithNoRuntimes.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurrence, g, runtimeData)
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 
@@ -440,10 +436,18 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// expecting number of all clusters to be 1, as deprovisioned shoot is removed
 		// only counting the new shoot
 		numberOfAllClusters := 1
-		expectedMetricOccurrence := 1
 		g.Eventually(testutil.CollectAndCount(kebAllClustersCount, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		// old shoot should not be present in the metric
 		for _, runtimeData := range runtimesPage.Data {
-			verifyKEBAllClustersCountMetricOccurrence(metricName, expectedMetricOccurrence, g, runtimeData)
+			expectedMetricValue := 0
+			switch shootName := runtimeData.ShootName; shootName {
+			case oldShootName:
+				expectedMetricValue = 0
+			case newShootName:
+				expectedMetricValue = 1
+			}
+
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
 	})
 }
@@ -712,13 +716,39 @@ func NewMetric() *edp.ConsumptionMetrics {
 	}
 }
 
+// Helper function to check if a cluster is trackable
+func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
+	// Check if the cluster is in a trackable state
+	trackableStates := map[kebruntime.State]bool{
+		"succeeded": true,
+		"error":     true,
+		"upgrading": true,
+		"updating":  true,
+	}
+
+	if trackableStates[runtime.Status.State] ||
+		(runtime.Status.Provisioning != nil &&
+			runtime.Status.Provisioning.State == "succeeded" &&
+			runtime.Status.Deprovisioning == nil) {
+		return true
+	}
+	return false
+}
+
 // Helper function to check the value of the `kmc_keb_all_clusters_count` metric using `ToFloat64`
 func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
 	return g.Eventually(func() int {
-		provisioning := getOrDefault(runtimeData.Status.Provisioning, "")
-		deprovisioning := getOrDefault(runtimeData.Status.Deprovisioning, "")
 
-		counter, err := kebAllClustersCount.GetMetricWithLabelValues("", provisioning, deprovisioning, runtimeData.ShootName, runtimeData.InstanceID, runtimeData.RuntimeID, runtimeData.SubAccountID, runtimeData.GlobalAccountID)
+		trackable := isClusterTrackable(&runtimeData)
+
+		counter, err := kebAllClustersCount.GetMetricWithLabelValues(
+			strconv.FormatBool(trackable),
+			runtimeData.ShootName,
+			runtimeData.InstanceID,
+			runtimeData.RuntimeID,
+			runtimeData.SubAccountID,
+			runtimeData.GlobalAccountID)
+
 		g.Expect(err).Should(gomega.BeNil())
 		// check the value of the metric
 		return int(testutil.ToFloat64(counter))
@@ -729,13 +759,8 @@ func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, ru
 func verifyKEBAllClustersCountMetricOccurrence(metricName string, expectedOccurrence int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
 	return g.Eventually(func() int {
 
-		provisioning := getOrDefault(runtimeData.Status.Provisioning, "")
-		deprovisioning := getOrDefault(runtimeData.Status.Deprovisioning, "")
-
 		counter, err := kebAllClustersCount.GetMetricWithLabelValues(
 			"",
-			provisioning,
-			deprovisioning,
 			runtimeData.ShootName,
 			runtimeData.InstanceID,
 			runtimeData.RuntimeID,

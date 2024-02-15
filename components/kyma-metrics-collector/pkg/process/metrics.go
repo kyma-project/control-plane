@@ -1,6 +1,8 @@
 package process
 
 import (
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -22,11 +24,11 @@ var (
 			Name:      "all_clusters_count",
 			Help:      "Number of all clusters got from KEB.",
 		},
-		[]string{"state", "provisioning", "deprovisioning", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{"trackable", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )
 
-func recordKEBAllClustersCount(state, provisioning, deprovisioning, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
+func recordKEBAllClustersCount(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
 	// the order if the values should be same as defined in the metric declaration.
-	kebAllClustersCount.WithLabelValues(state, provisioning, deprovisioning, shootName, instanceID, runtimeID, subAccountID, globalAccountID).Inc()
+	kebAllClustersCount.WithLabelValues(strconv.FormatBool(trackable), shootName, instanceID, runtimeID, subAccountID, globalAccountID).Inc()
 }
