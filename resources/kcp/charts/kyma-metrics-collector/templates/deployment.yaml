@@ -90,18 +90,12 @@ spec:
           securityContext: {{ toYaml . | trim | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: /gardener
-              name: gardener-kubeconfig
-              readOnly: true
             - mountPath: /edp-credentials
               name: edp
               readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
-      - name: gardener-kubeconfig
-        secret:
-          secretName: {{ .Values.gardener.secretName }}
       - name: edp
         secret:
           secretName: {{ template "kyma-metrics-collector.fullname" . }}
