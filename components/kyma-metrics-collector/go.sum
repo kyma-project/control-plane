@@ -29,8 +29,8 @@ github.com/gardener/gardener-extension-provider-azure v1.41.0 h1:qDRIcGAz70mtWi9
 github.com/gardener/gardener-extension-provider-azure v1.41.0/go.mod h1:KDUStm1lOCFJ9EgFgQBU2pKTlbTII7KgLFW92WLZSF0=
 github.com/gardener/gardener-extension-provider-gcp v1.33.1 h1:CYOEFjMtl6yIc3D1aaQJUdnwVr/4HW78ttiVwjIa6dk=
 github.com/gardener/gardener-extension-provider-gcp v1.33.1/go.mod h1:O4eVttQJUm3oudEmP9zwn/uZBzWw+YwLFPAG/fgReIY=
-github.com/gardener/gardener-extension-provider-openstack v1.38.2 h1:XRescnJMWBaCP+1Uam4GoBXBvWj+Q4DQT/begQ5SuyE=
-github.com/gardener/gardener-extension-provider-openstack v1.38.2/go.mod h1:/LLq3jdUo/KfHBDnuedhZLH0KGbtQH0iKc9yMBEKBXo=
+github.com/gardener/gardener-extension-provider-openstack v1.39.0 h1:7e5RpTyaox73lxnYXlEEBywWAZB3/t9EVZWK3z6jM0w=
+github.com/gardener/gardener-extension-provider-openstack v1.39.0/go.mod h1:uLc3FaABRhQxtFTUm8gG/e9VQxfiRIGioyRzxy+xfi4=
 github.com/go-logr/logr v1.3.0 h1:2y3SDp0ZXuc6/cjLSZ+Q3ir+QB9T/iG5yYRXqsagWSY=
 github.com/go-logr/logr v1.3.0/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-openapi/jsonpointer v0.19.6/go.mod h1:osyAmYz/mB/C3I+WsTTSgw1ONzaLJoLCyoi6/zppojs=
