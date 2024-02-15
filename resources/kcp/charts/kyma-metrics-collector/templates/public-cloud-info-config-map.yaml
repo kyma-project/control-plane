@@ -393,7 +393,7 @@ data:
          "memory": 320
        }
      },
-      "openstack": {
+      "sapconvergedcloud": {
        "g_c12_m48": {
          "cpu_cores": 12,
          "memory": 48

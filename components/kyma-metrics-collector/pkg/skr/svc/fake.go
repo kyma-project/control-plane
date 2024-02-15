@@ -1,7 +1,7 @@
 package svc
 
 import (
-	k8scommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/k8s/commons"
+	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
@@ -11,7 +11,7 @@ type FakeSvcClient struct{}
 
 func (fakeSvcClient FakeSvcClient) NewClient(string) (*Client, error) {
 	nodeList := kmctesting.GetSvcsWithLoadBalancers()
-	scheme, err := k8scommons.SetupScheme()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}
