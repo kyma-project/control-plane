@@ -6,14 +6,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	corev1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	corev1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
@@ -59,7 +57,7 @@ func TestList(t *testing.T) {
 }
 
 func NewFakeClient(nodeList *corev1.NodeList) (*Client, error) {
-	scheme, err := gardenercommons.SetupSchemeOrDie()
+	scheme, err := skrcommons.SetupScheme()
 	if err != nil {
 		return nil, err
 	}

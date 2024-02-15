@@ -316,7 +316,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	openstackGardenerProvider := &gqlschema.OpenStackProviderConfigInput{
 		Zones:                []string{"eu-de-1a"},
-		FloatingPoolName:     "FloatingIP-external-cp",
+		FloatingPoolName:     util.StringPtr("FloatingIP-external-cp"),
 		CloudProfileName:     "converged-cloud-cp",
 		LoadBalancerProvider: "f5",
 	}

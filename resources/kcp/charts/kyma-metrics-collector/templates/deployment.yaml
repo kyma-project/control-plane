@@ -36,7 +36,6 @@ spec:
             - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
             - "--log-level={{ .Values.config.logLevel }}"
             - "--listen-addr={{ .Values.config.port }}"
-            - "--gardener-namespace={{ .Values.gardener.namespace }}"
             {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}
@@ -90,18 +89,12 @@ spec:
           securityContext: {{ toYaml . | trim | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: /gardener
-              name: gardener-kubeconfig
-              readOnly: true
             - mountPath: /edp-credentials
               name: edp
               readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
-      - name: gardener-kubeconfig
-        secret:
-          secretName: {{ .Values.gardener.secretName }}
       - name: edp
         secret:
           secretName: {{ template "kyma-metrics-collector.fullname" . }}
