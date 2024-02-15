@@ -4,27 +4,22 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	gardeneropenstackv1alpha1 "github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/onsi/gomega"
-
 	"github.com/gorilla/mux"
-
-	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
+	"github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -55,6 +50,7 @@ func NewRuntimesDTO(subAccountID string, shootName string, opts ...NewRuntimeOpt
 func WithSucceededState(runtime *kebruntime.RuntimeDTO) {
 	runtime.Status.Provisioning.State = "succeeded"
 }
+
 func WithFailedState(runtime *kebruntime.RuntimeDTO) {
 	runtime.Status.Provisioning.State = "failed"
 }
@@ -71,7 +67,7 @@ func WithProvisionedAndDeprovisionedState(runtime *kebruntime.RuntimeDTO) {
 }
 
 func LoadFixtureFromFile(filePath string) ([]byte, error) {
-	return ioutil.ReadFile(filePath)
+	return os.ReadFile(filePath)
 }
 
 func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega) *httptest.Server {
@@ -132,6 +128,31 @@ func WithVMSpecs(shoot *gardencorev1beta1.Shoot) {
 	}
 }
 
+func WithOpenStackProviderAndMachineGC12M48(shoot *gardencorev1beta1.Shoot) {
+	infraConfig := NewOpenStackInfraConfig()
+	byteInfraConfig, err := json.Marshal(infraConfig)
+	if err != nil {
+		log.Fatalf("failed to marshal: %v", err)
+	}
+	shoot.Spec.Provider = gardencorev1beta1.Provider{
+		Type: "openstack",
+		InfrastructureConfig: &runtime.RawExtension{
+			Raw: byteInfraConfig,
+		},
+		Workers: []gardencorev1beta1.Worker{
+			{
+				Name: "cpu-worker-0",
+				Machine: gardencorev1beta1.Machine{
+					Type: "g_c12_m48",
+					Image: &gardencorev1beta1.ShootMachineImage{
+						Name: "gardenlinux",
+					},
+				},
+			},
+		},
+	}
+}
+
 func WithAzureProviderAndStandardD8V3VMs(shoot *gardencorev1beta1.Shoot) {
 	infraConfig := NewInfraConfig()
 	byteInfraConfig, err := json.Marshal(infraConfig)
@@ -172,6 +193,17 @@ func NewInfraConfig() *gardenerazurev1alpha1.InfrastructureConfig {
 	}
 }
 
+func NewOpenStackInfraConfig() *gardeneropenstackv1alpha1.InfrastructureConfig {
+	id := "1234-4567-6789"
+	return &gardeneropenstackv1alpha1.InfrastructureConfig{
+		Networks: gardeneropenstackv1alpha1.Networks{
+			Router: &gardeneropenstackv1alpha1.Router{
+				ID: id,
+			},
+		},
+	}
+}
+
 func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
 	shoot.Spec.Provider = gardencorev1beta1.Provider{
 		Type:                 "azure",
@@ -194,6 +226,14 @@ func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
 func Get2Nodes() *corev1.NodeList {
 	node1 := GetNode("node1", "Standard_D8_v3")
 	node2 := GetNode("node2", "Standard_D8_v3")
+	return &corev1.NodeList{
+		Items: []corev1.Node{node1, node2},
+	}
+}
+
+func Get2NodesOpenStack() *corev1.NodeList {
+	node1 := GetNode("node1", "g_c12_m48")
+	node2 := GetNode("node2", "g_c12_m48")
 	return &corev1.NodeList{
 		Items: []corev1.Node{node1, node2},
 	}
@@ -261,7 +301,7 @@ func GenerateRandomAlphaString(length int) string {
 
 // secureRandomBytes returns the requested number of bytes using crypto/rand
 func secureRandomBytes(length int) []byte {
-	var randomBytes = make([]byte, length)
+	randomBytes := make([]byte, length)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		log.Fatal("Unable to generate random bytes")
@@ -408,7 +448,24 @@ func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
-			"kubeconfig": []byte(fmt.Sprintf("%s", kubeconfigVal)),
+			"kubeconfig": []byte(kubeconfigVal),
+		},
+	}
+}
+
+func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fmt.Sprintf("kubeconfig-%s", shootName),
+			Namespace: "kcp-system",
+		},
+		Data: map[string][]byte{
+			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
+			"config": []byte(kubeconfigVal),
 		},
 	}
 }

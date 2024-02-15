@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/openstack"
+
+	"github.com/hashicorp/go-version"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
@@ -24,6 +28,8 @@ const (
 	EuAccessAnnotation                   = "support.gardener.cloud/eu-access-for-cluster-nodes"
 	ShootNetworkingFilterExtensionType   = "shoot-networking-filter"
 	ShootNetworkingFilterDisabledDefault = true
+	OpenStackFloatingPoolName            = "FloatingIP-external-kyma-01"
+	OpenStackExposureClassName           = "converged-cloud-internet"
 )
 
 var networkingType = "calico"
@@ -188,7 +194,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
-				EnableStaticTokenKubeconfig: util.BoolPtr(true),
+				EnableStaticTokenKubeconfig: util.BoolPtr(false),
 			},
 			Networking: &gardener_types.Networking{
 				Type:     &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
@@ -644,7 +650,7 @@ func (c OpenStackGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string 
 func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.OpenStackProviderConfig{
 		Zones:                c.input.Zones,
-		FloatingPoolName:     c.input.FloatingPoolName,
+		FloatingPoolName:     util.UnwrapStr(c.input.FloatingPoolName),
 		CloudProfileName:     c.input.CloudProfileName,
 		LoadBalancerProvider: c.input.LoadBalancerProvider,
 	}
@@ -659,11 +665,22 @@ func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, 
 }
 
 func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	var openStackInfra *openstack.InfrastructureConfig
+
 	shoot.Spec.CloudProfileName = c.input.CloudProfileName
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
-	openStackInfra := NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
+	if shoot.Spec.ExposureClassName == nil {
+		shoot.Spec.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
+	}
+
+	if c.input.FloatingPoolName == nil {
+		openStackInfra = NewOpenStackInfrastructure(OpenStackFloatingPoolName, gardenerConfig.WorkerCidr)
+	} else {
+		openStackInfra = NewOpenStackInfrastructure(util.UnwrapStr(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
+	}
+
 	jsonData, err := json.Marshal(openStackInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
@@ -710,6 +727,8 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 
 	if upgradeConfig.KubernetesVersion != "" {
 		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+
+		adjustStaticKubeconfigFlag(upgradeConfig, shoot)
 	}
 
 	if util.NotNilOrEmpty(upgradeConfig.Purpose) {
@@ -787,6 +806,16 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins = append(shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, podSecurityPolicyPlugin)
 
 	return nil
+}
+
+func adjustStaticKubeconfigFlag(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) {
+	if upgradeConfig.KubernetesVersion != "" {
+		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
+		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
+		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
+			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
+		}
+	}
 }
 
 func getMachineConfig(config GardenerConfig) gardener_types.Machine {

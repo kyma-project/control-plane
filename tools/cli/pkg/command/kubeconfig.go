@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"

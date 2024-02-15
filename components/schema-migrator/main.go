@@ -174,7 +174,11 @@ func invokeMigration() error {
 	oldMigrationsSrc := fmt.Sprintf("migrations/%s", migrationEnvPath)
 	err = ms.copyDir(oldMigrationsSrc, migrationExecPath)
 	if err != nil {
-		return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
+		if os.IsNotExist(err) {
+			log.Printf("# COULD NOT COPY OLD MIGRATION FILES: %s\n", err)
+		} else {
+			return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
+		}
 	}
 
 	log.Println("# STARTING MIGRATION #")

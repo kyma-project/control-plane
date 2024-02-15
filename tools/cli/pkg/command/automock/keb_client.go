@@ -6,7 +6,7 @@ package automock
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	runtime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	runtime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	reflect "reflect"
 )
 

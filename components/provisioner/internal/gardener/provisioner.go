@@ -9,7 +9,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
@@ -166,12 +165,11 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		return model.Operation{}, appError.Append("error updating Shoot")
 	}
 
-	message := fmt.Sprintf("Deprovisioning started")
-
+	message := "Deprovisioning started"
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 }
 
-func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
+func annotateWithConfirmDeletion(shoot *v1beta1.Shoot) {
 	if shoot.Annotations == nil {
 		shoot.Annotations = map[string]string{}
 	}
@@ -195,19 +193,19 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 	}
 }
 
-func (g *GardenerProvisioner) applyAuditConfig(template *gardener_types.Shoot) {
+func (g *GardenerProvisioner) applyAuditConfig(template *v1beta1.Shoot) {
 	if template.Spec.Kubernetes.KubeAPIServer == nil {
-		template.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+		template.Spec.Kubernetes.KubeAPIServer = &v1beta1.KubeAPIServerConfig{}
 	}
 
-	template.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
-		AuditPolicy: &gardener_types.AuditPolicy{
+	template.Spec.Kubernetes.KubeAPIServer.AuditConfig = &v1beta1.AuditConfig{
+		AuditPolicy: &v1beta1.AuditPolicy{
 			ConfigMapRef: &v12.ObjectReference{Name: g.policyConfigMapName},
 		},
 	}
 }
 
-func (g *GardenerProvisioner) setMaintenanceWindow(template *gardener_types.Shoot, region string) apperrors.AppError {
+func (g *GardenerProvisioner) setMaintenanceWindow(template *v1beta1.Shoot, region string) apperrors.AppError {
 	window, err := g.getWindowByRegion(region)
 
 	if err != nil {
@@ -229,8 +227,8 @@ func setObjectFields(shoot *v1beta1.Shoot) {
 	shoot.ManagedFields = nil
 }
 
-func setMaintenanceWindow(window TimeWindow, template *gardener_types.Shoot) {
-	template.Spec.Maintenance.TimeWindow = &gardener_types.MaintenanceTimeWindow{Begin: window.Begin, End: window.End}
+func setMaintenanceWindow(window TimeWindow, template *v1beta1.Shoot) {
+	template.Spec.Maintenance.TimeWindow = &v1beta1.MaintenanceTimeWindow{Begin: window.Begin, End: window.End}
 }
 
 func (g *GardenerProvisioner) getWindowByRegion(region string) (TimeWindow, apperrors.AppError) {

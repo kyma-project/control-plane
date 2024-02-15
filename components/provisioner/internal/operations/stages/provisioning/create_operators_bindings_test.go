@@ -137,7 +137,7 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 	t.Run("should return error when failed to create cluster role binding", func(t *testing.T) {
 		// given
 		k8sClient := fake.NewSimpleClientset()
-		k8sClient.Fake.PrependReactor(
+		k8sClient.PrependReactor(
 			"*",
 			"*",
 			func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {

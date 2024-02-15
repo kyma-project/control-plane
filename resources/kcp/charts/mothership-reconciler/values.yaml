@@ -1,7 +1,7 @@
 global:
   images:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
-    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20231205-713186d0"
+    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20240214-54d08540"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
@@ -34,9 +34,6 @@ db:
   maxIdleConns: 20 # If n <= 0, no idle connections are retained. The default max idle connections is currently 2. This may change in a future release.
   connMaxLifetime: 10m # If d <= 0, connections are not closed due to a connection's age.
   connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
-
-preComponents:
-  - [certificates]
 
 options:
   verbose: false
@@ -179,3 +176,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: applicationconnector
+  connectivity-proxy:
+    group: connectivityproxy.sap.com
+    version: v1
+    kind: connectivityproxies

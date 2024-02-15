@@ -12,48 +12,7 @@
   "kymaConfig": {
     "version": "main",
     "profile": "Evaluation",
-    "components": [
-      {
-        "component": "certificates",
-        "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "eventing",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "ory",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "api-gateway",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      }
-    ],
+    "components": [],
     "administrators": [
       "test2@test.pl"
     ]

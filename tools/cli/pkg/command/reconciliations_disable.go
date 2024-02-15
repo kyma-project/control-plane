@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	client "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"

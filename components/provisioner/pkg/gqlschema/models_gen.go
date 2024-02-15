@@ -275,18 +275,19 @@ func (OpenStackProviderConfig) IsProviderSpecificConfig() {}
 
 type OpenStackProviderConfigInput struct {
 	Zones                []string `json:"zones"`
-	FloatingPoolName     string   `json:"floatingPoolName"`
+	FloatingPoolName     *string  `json:"floatingPoolName"`
 	CloudProfileName     string   `json:"cloudProfileName"`
 	LoadBalancerProvider string   `json:"loadBalancerProvider"`
 }
 
 type OperationStatus struct {
-	ID        *string        `json:"id"`
-	Operation OperationType  `json:"operation"`
-	State     OperationState `json:"state"`
-	Message   *string        `json:"message"`
-	RuntimeID *string        `json:"runtimeID"`
-	LastError *LastError     `json:"lastError"`
+	ID               *string        `json:"id"`
+	Operation        OperationType  `json:"operation"`
+	State            OperationState `json:"state"`
+	Message          *string        `json:"message"`
+	RuntimeID        *string        `json:"runtimeID"`
+	CompassRuntimeID *string        `json:"compassRuntimeID"`
+	LastError        *LastError     `json:"lastError"`
 }
 
 type ProviderSpecificInput struct {

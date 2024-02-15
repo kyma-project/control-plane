@@ -121,12 +121,42 @@ func TestParse(t *testing.T) {
 			providers:   *providers,
 			expectedErr: true,
 		},
+		{
+			name: "with OpenStack, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
+			input: Input{
+				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithOpenStackProviderAndMachineGC12M48),
+				nodeList: kmctesting.Get2NodesOpenStack(),
+				pvcList:  kmctesting.Get3PVCs(),
+				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
+			},
+			providers: *providers,
+			expectedMetrics: edp.ConsumptionMetrics{
+				Compute: edp.Compute{
+					VMTypes: []edp.VMType{{
+						Name:  "g_c12_m48",
+						Count: 2,
+					}},
+					ProvisionedCpus:  24,
+					ProvisionedRAMGb: 96,
+					ProvisionedVolumes: edp.ProvisionedVolumes{
+						SizeGbTotal:   35,
+						Count:         3,
+						SizeGbRounded: 96,
+					},
+				},
+				Networking: edp.Networking{
+					ProvisionedVnets: 1,
+					ProvisionedIPs:   1,
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			gotMetrics, err := tc.input.Parse(&tc.providers)
-			if err == nil {
+			if !tc.expectedErr {
 				g.Expect(err).Should(gomega.BeNil())
 				g.Expect(gotMetrics.Compute).To(gomega.Equal(tc.expectedMetrics.Compute))
 				g.Expect(gotMetrics.Networking).To(gomega.Equal(tc.expectedMetrics.Networking))

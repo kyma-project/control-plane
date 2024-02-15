@@ -212,7 +212,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -294,7 +294,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -376,7 +376,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -458,7 +458,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -540,7 +540,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
-						EnableStaticTokenKubeconfig: util.BoolPtr(true),
+						EnableStaticTokenKubeconfig: util.BoolPtr(false),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -590,6 +590,35 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			assert.Equal(t, testCase.expectedShootTemplate, template)
 		})
 	}
+}
+
+func TestAdjustStaticKubeconfigFlagK8s126(t *testing.T) {
+	//given old (1.26) shoot and request to upgrade not relevant to k8s version
+	config := GardenerConfig{}
+	shoot := testkit.NewTestShoot("shoot").WithKubernetesVersion("1.26.8")
+	shoot.ToShoot().Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(true)
+
+	//when
+	adjustStaticKubeconfigFlag(config, shoot.ToShoot())
+
+	//then
+	assert.Equal(t, util.BoolPtr(true), shoot.ToShoot().Spec.Kubernetes.EnableStaticTokenKubeconfig)
+}
+
+func TestAdjustStaticKubeconfigFlagForK8s127(t *testing.T) {
+	//given old shoot config being 1.26 and upgrade requesting updating to 1.27 version
+	config := GardenerConfig{
+		KubernetesVersion: "1.27.8",
+	}
+
+	shoot := testkit.NewTestShoot("shoot").WithKubernetesVersion("1.26.8")
+	shoot.ToShoot().Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(true)
+
+	//when
+	adjustStaticKubeconfigFlag(config, shoot.ToShoot())
+
+	//then
+	assert.Equal(t, util.BoolPtr(false), shoot.ToShoot().Spec.Kubernetes.EnableStaticTokenKubeconfig)
 }
 
 func TestEditShootConfig(t *testing.T) {

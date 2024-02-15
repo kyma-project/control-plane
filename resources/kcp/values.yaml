@@ -3,22 +3,22 @@ global:
   images:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     containerRegistry:
-      path: europe-docker.pkg.dev/kyma-project/prod/control-plane
+      path: europe-docker.pkg.dev/kyma-project/prod
     schema_migrator:
-      dir:
+      dir: control-plane/
       version: "v20230120-865831c1"
-    kyma_environments_subscription_cleanup_job:
+    subscription_cleanup_job:
       dir:
-      version: "v20230522-605f31f1"
+      version: "v20240129-70857389"
     kyma_metrics_collector:
-      dir:
-      version: "v20230629-a4c63495"
+      dir: control-plane/
+      version: v20240206-6aa21a1e
     tests:
       provisioner:
-        dir:
+        dir: control-plane/
         version: "v20230426-ad965fac"
       e2e_provisioning:
-        dir:
+        dir: control-plane/
         version: "v20230614-bcb66b55"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
@@ -37,7 +37,7 @@ global:
     - cleaner
     - connectivity-proxy
     - eventing
-    - serverless
+    - warden
   provisioning:
     enabled: false
   kyma_environment_broker:
@@ -65,9 +65,7 @@ global:
     mtls:
       host: compass-gateway-mtls
   istio:
-    gateway:
-      name: "kyma-gateway"
-      namespace: "kyma-system"
+    gateway: "kyma-system/kyma-gateway"
     proxy:
       port: 15020
   database:
@@ -117,6 +115,8 @@ global:
     expose: true
     authentication: true
     serviceAccountName: "mothership-reconciler"
+    roleName: "mothership-reconciler-role"
+    roleBindingName: "mothership-reconciler-rolebinding"
     auditlog:
       enabled: true
       logPath: "/var/log/auditlog"

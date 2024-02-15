@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
@@ -43,6 +42,13 @@ type StatusResp struct {
 			} `json:"lastError"`
 		} `json:"lastOperationStatus"`
 	} `json:"runtimeStatus"`
+}
+
+type OperationStatusResp struct {
+	OperationStatus struct {
+		Operation string `json:"operation"`
+		State     string `json:"state"`
+	} `json:"runtimeOperationStatus"`
 }
 
 type DeprovisionResp struct {
@@ -111,7 +117,7 @@ func (gql GQLClient) deprovision(ctx context.Context, runtimeID string) (resp De
 	return
 }
 
-func (gql GQLClient) status(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
+func (gql GQLClient) runtimeStatus(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
 	err = gql.gqlRequest(
 		ctx,
 		"status.graphql",
@@ -120,23 +126,34 @@ func (gql GQLClient) status(ctx context.Context, runtimeID string) (resp StatusR
 	return
 }
 
-func (gql GQLClient) waitForOp(ctx context.Context, runtimeID string) (resp StatusResp, err error) {
+func (gql GQLClient) operationStatus(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
+	fmt.Println("Getting operation status for ", operationID)
+
+	err = gql.gqlRequest(
+		ctx,
+		"operationstatus.graphql",
+		map[string]string{"operationID": operationID},
+		&resp)
+	return
+}
+
+func (gql GQLClient) waitForOp(ctx context.Context, operationID string) (resp OperationStatusResp, err error) {
 	start := time.Now()
-	defer fmt.Println()
+	defer func() {
+		fmt.Printf("done in: %s", time.Since(start))
+	}()
 	for {
-		resp, err = gql.status(ctx, runtimeID)
+		resp, err = gql.operationStatus(ctx, operationID)
 		if err != nil {
 			return
 		}
 
-		msg := resp.RuntimeStatus.LastOperationStatus.Message
+		fmt.Printf("resp:[%s:%s]\n", resp.OperationStatus.Operation, resp.OperationStatus.State)
 
-		if strings.HasPrefix(msg, "Operation in progress.") ||
-			strings.HasSuffix(msg, "started") {
+		if resp.OperationStatus.State == "InProgress" {
 			if time.Since(start) > waitTimeout {
 				return
 			}
-			fmt.Print(".")
 			time.Sleep(waitDelay)
 			continue
 		}
@@ -148,7 +165,7 @@ func (gql GQLClient) waitForOp(ctx context.Context, runtimeID string) (resp Stat
 type testConfig struct {
 	ProviderSecret    string `envconfig:"GARDENER_SECRET_NAME"`
 	Provider          string `envconfig:"GARDENER_PROVIDER,default=gcp"`
-	KubernetesVersion string `envconfig:"default=1.26.5"`
+	KubernetesVersion string `envconfig:"default=1.26.11"`
 	MachineType       string `envconfig:"default=e2-medium"`
 	DiskType          string `envconfig:"default=pd-balanced"`
 	Region            string `envconfig:"default=europe-west3"`
@@ -189,10 +206,11 @@ func TestName(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(provisionResp)
 
+	operationID := provisionResp.ProvisionRuntime.Id
 	runtimeID := provisionResp.ProvisionRuntime.RuntimeID
 
-	t.Logf("Waiting for %s to provision", name)
-	statusResp, err := cli.waitForOp(ctx, runtimeID)
+	t.Logf("Waiting for %s to provision, runtimeID %s, OperationID %s", name, runtimeID, operationID)
+	statusResp, err := cli.waitForOp(ctx, operationID)
 	assert.NoError(t, err)
 	t.Log(statusResp)
 

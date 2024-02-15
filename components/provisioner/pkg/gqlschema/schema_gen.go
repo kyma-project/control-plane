@@ -177,12 +177,13 @@ type ComplexityRoot struct {
 	}
 
 	OperationStatus struct {
-		ID        func(childComplexity int) int
-		LastError func(childComplexity int) int
-		Message   func(childComplexity int) int
-		Operation func(childComplexity int) int
-		RuntimeID func(childComplexity int) int
-		State     func(childComplexity int) int
+		CompassRuntimeID func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LastError        func(childComplexity int) int
+		Message          func(childComplexity int) int
+		Operation        func(childComplexity int) int
+		RuntimeID        func(childComplexity int) int
+		State            func(childComplexity int) int
 	}
 
 	Query struct {
@@ -854,6 +855,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenStackProviderConfig.Zones(childComplexity), true
 
+	case "OperationStatus.compassRuntimeID":
+		if e.complexity.OperationStatus.CompassRuntimeID == nil {
+			break
+		}
+
+		return e.complexity.OperationStatus.CompassRuntimeID(childComplexity), true
+
 	case "OperationStatus.id":
 		if e.complexity.OperationStatus.ID == nil {
 			break
@@ -1068,8 +1076,8 @@ type GardenerConfig {
     diskType: String
     volumeSizeGB: Int
     workerCidr: String
-    podsCidr: String
-    servicesCidr: String
+    podsCidr: String #field not stored in provisioner database, see https://github.com/kyma-project/control-plane/issues/3038
+    servicesCidr: String #field not stored in provisioner database, see https://github.com/kyma-project/control-plane/issues/3038
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
@@ -1178,6 +1186,7 @@ type OperationStatus {
     state: OperationState!
     message: String
     runtimeID: String
+    compassRuntimeID: String
     lastError: LastError
 }
 
@@ -1270,9 +1279,9 @@ input GardenerConfigInput {
     machineImageVersion: String                     # Machine OS image version
     diskType: String                                # Disk type, varies depending on the target provider
     volumeSizeGB: Int                               # Size of the available disk, provided in GB
-    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
-    podsCidr: String                                # Configures IP address ranges for pods
-    servicesCidr: String                            # Configures IP address ranges for services
+    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/.
+    podsCidr: String                                # Configures IP address ranges for pods. This field is immutable. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/. You can read more on https://github.com/gardener/gardener/blob/master/docs/usage/shoot_networking.md
+    servicesCidr: String                            # Configures IP address ranges for services. This field is immutable. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/. You can read more on https://github.com/gardener/gardener/blob/master/docs/usage/shoot_networking.md
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
@@ -1338,7 +1347,7 @@ input AWSProviderConfigInput {
 
 input OpenStackProviderConfigInput {
     zones:           [String!]!   # Zones in which to create the cluster
-    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    floatingPoolName: String     # FloatingPoolName name in which LoadBalancer FIPs should be created. Set to FloatingIP-external-kyma-01 by default
     cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
@@ -4499,6 +4508,37 @@ func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OperationStatus_compassRuntimeID(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OperationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CompassRuntimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OperationStatus_lastError(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6716,7 +6756,7 @@ func (ec *executionContext) unmarshalInputOpenStackProviderConfigInput(ctx conte
 			}
 		case "floatingPoolName":
 			var err error
-			it.FloatingPoolName, err = ec.unmarshalNString2string(ctx, v)
+			it.FloatingPoolName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7576,6 +7616,8 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._OperationStatus_message(ctx, field, obj)
 		case "runtimeID":
 			out.Values[i] = ec._OperationStatus_runtimeID(ctx, field, obj)
+		case "compassRuntimeID":
+			out.Values[i] = ec._OperationStatus_compassRuntimeID(ctx, field, obj)
 		case "lastError":
 			out.Values[i] = ec._OperationStatus_lastError(ctx, field, obj)
 		default:

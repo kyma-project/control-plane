@@ -8,10 +8,10 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
+	"github.com/kyma-project/kyma-environment-broker/common/events"
+	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -77,7 +77,7 @@ func NewRuntimeCmd() *cobra.Command {
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.
 
 Progress of each operation can be tracked by looking at finished stages. 
-https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-broker/03-03-runtime-operations.md
+https://github.com/kyma-project/kyma-environment-broker/blob/main/docs/user/03-20-runtime-operations.md
 `,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
@@ -104,6 +104,7 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().BoolVar(&cmd.opDetail, "ops", false, "Get all operations for the runtimes instead of just querying the last operation.")
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
+	cobraCmd.Flags().BoolVar(&cmd.params.GardenerConfig, "gardener-config", false, "Get all current Gardener cluster configuration details from provisioner for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes.")
 	cobraCmd.Flags().StringVar(&cmd.params.Events, "events", "none", "Enhance output with tracing events. Enables by default --ops. You can provide one value (all, info, error, none) for filtering events or leave it blank to get all events.")
 	cobraCmd.Flags().Lookup("events").NoOptDefVal = "all"

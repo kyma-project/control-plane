@@ -70,7 +70,7 @@ has_to_succeed
 
 wait_for postgres 5432
 
-export APP_DIRECTOR_URL=https://compass-gateway-auth-oauth.mps.dev.kyma.cloud.sap/director/graphql
+export APP_DIRECTOR_URL=https://compass-gateway-auth-oauth.cmp-main.dev.kyma.cloud.sap/director/graphql
 if [[ -z "$APP_DIRECTOR_OAUTH_PATH" ]]; then
     export APP_DIRECTOR_OAUTH_PATH=/compass-director-secret/secret.yaml
 fi
@@ -108,6 +108,7 @@ export APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION=90m
 export APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION=90m
 export APP_PROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_CREATION=90m
 export APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING=90m
+export APP_OPENSTACKCONFIG_REGIONS='["test-openstack-region"]'
 
 printf '\n########## SETTING UP THE DB ##########\n\n'
 go run ./pgsetup.go
