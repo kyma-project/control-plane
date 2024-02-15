@@ -123,6 +123,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	}
 	metric.RuntimeId = record.RuntimeID
 	metric.SubAccountId = record.SubAccountID
+	metric.ShootName = record.ShootName
 	record.Metric = metric
 	return record, nil
 }
@@ -271,7 +272,7 @@ func (p *Process) processSubAccountID(subAccountID string, identifier int) {
 		return
 	}
 	p.namedLoggerWithRuntime(record).With(log.KeyResult, log.ValueSuccess).With(log.KeySubAccountID, subAccountID).
-		With(log.KeyWorkerID, identifier).Infof("sent event stream")
+		With(log.KeyWorkerID, identifier).Infof("sent event stream, shoot: %s", record.ShootName)
 
 	if !isOldMetricValid {
 		p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
@@ -350,11 +351,12 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			continue
 		}
 		validSubAccounts[runtime.SubAccountID] = true
-		_, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
+		recordObj, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
 				RuntimeID:    runtime.RuntimeID,
+				ShootName:    runtime.ShootName,
 				ProviderType: strings.ToLower(runtime.Provider),
 				KubeConfig:   "",
 				Metric:       nil,
@@ -373,6 +375,17 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				p.namedLogger().With(log.KeyResult, log.ValueSuccess).With(log.KeySubAccountID, runtime.SubAccountID).
 					With(log.KeyRuntimeID, runtime.RuntimeID).Debug("Queued and added to cache")
 				continue
+			}
+
+			// Cluster is trackable and exists in the cache
+			if record, ok := recordObj.(kmccache.Record); ok {
+				if record.ShootName != runtime.ShootName {
+					// The shootname has changed hence the record in the cache is not valid anymore
+					// No need to queue as the subAccountID already exists in queue
+					p.Cache.Set(runtime.SubAccountID, newRecord, cache.NoExpiration)
+					p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+						Debug("Resetted the values in cache for subAccount")
+				}
 			}
 			continue
 		}

@@ -52,6 +52,7 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 	expectedSubAccIDToExist := uuid.New().String()
 	expectedRecord := kmccache.Record{
 		SubAccountID: expectedSubAccIDToExist,
+		ShootName:    fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
 		KubeConfig:   "foo",
 		Metric:       NewMetric(),
 	}
@@ -60,10 +61,12 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 		expectedRecord,
 		{
 			SubAccountID: uuid.New().String(),
+			ShootName:    fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
 			KubeConfig:   "foo",
 		},
 		{
 			SubAccountID: expectedSubAccIDWithNoMetrics,
+			ShootName:    "",
 			KubeConfig:   "",
 		},
 	}
@@ -334,6 +337,7 @@ func TestExecute(t *testing.T) {
 
 	edpConfig := newEDPConfig(srv.URL)
 	edpClient := edp.NewClient(edpConfig, log)
+	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
 	secretKCPStored := kmctesting.NewKCPStoredSecret(runtimeID, expectedKubeconfig)
 
 	// Populate cache
@@ -341,6 +345,7 @@ func TestExecute(t *testing.T) {
 	newRecord := kmccache.Record{
 		SubAccountID: subAccID,
 		RuntimeID:    runtimeID,
+		ShootName:    shootName,
 		KubeConfig:   "",
 		ProviderType: Azure,
 		Metric:       nil,
@@ -350,6 +355,7 @@ func TestExecute(t *testing.T) {
 	expectedRecord.Metric = NewMetric()
 	expectedRecord.Metric.RuntimeId = runtimeID
 	expectedRecord.Metric.SubAccountId = subAccID
+	expectedRecord.Metric.ShootName = shootName
 
 	err := cache.Add(subAccID, newRecord, gocache.NoExpiration)
 	g.Expect(err).Should(gomega.BeNil())
@@ -417,6 +423,7 @@ func TestExecute(t *testing.T) {
 		// check if IDs are correct.
 		g.Expect(record.Metric.RuntimeId).To(gomega.Equal(expectedRecord.Metric.RuntimeId))
 		g.Expect(record.Metric.SubAccountId).To(gomega.Equal(expectedRecord.Metric.SubAccountId))
+		g.Expect(record.Metric.ShootName).To(gomega.Equal(expectedRecord.Metric.ShootName))
 		return nil
 	}, bigTimeout).Should(gomega.BeNil())
 
@@ -446,6 +453,7 @@ func TestExecute(t *testing.T) {
 func NewRecord(subAccId, shootName, kubeconfig string) kmccache.Record {
 	return kmccache.Record{
 		SubAccountID: subAccId,
+		ShootName:    shootName,
 		KubeConfig:   kubeconfig,
 		Metric:       nil,
 	}
@@ -473,6 +481,7 @@ func AddSuccessfulIDsToCacheQueueAndRuntimes(runtimesPage *kebruntime.RuntimesPa
 		runtimesPage.Data = append(runtimesPage.Data, runtime)
 		err := expectedCache.Add(successfulID, kmccache.Record{
 			SubAccountID: successfulID,
+			ShootName:    shootName,
 		}, gocache.NoExpiration)
 		if err != nil {
 			return nil, nil, nil, err
@@ -521,10 +530,6 @@ func NewMetric() *edp.ConsumptionMetrics {
 				Count:         2,
 				SizeGbRounded: 64,
 			},
-		},
-		Networking: edp.Networking{
-			ProvisionedVnets: 0,
-			ProvisionedIPs:   2,
 		},
 	}
 }

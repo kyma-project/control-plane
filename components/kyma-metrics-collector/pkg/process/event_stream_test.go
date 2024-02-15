@@ -51,9 +51,6 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 96,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedIPs: 1,
-				},
 			},
 		},
 		{
@@ -101,9 +98,6 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 0,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedIPs: 0,
-				},
 			},
 		},
 		{
@@ -116,9 +110,9 @@ func TestParse(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name: "with OpenStack, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
+			name: "with sapconvergedcloud, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				provider: OpenStack,
+				provider: CCEE,
 				nodeList: kmctesting.Get2NodesOpenStack(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -137,9 +131,6 @@ func TestParse(t *testing.T) {
 						Count:         3,
 						SizeGbRounded: 96,
 					},
-				},
-				Networking: edp.Networking{
-					ProvisionedIPs: 1,
 				},
 			},
 		},

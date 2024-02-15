@@ -16,10 +16,10 @@ const (
 	// storageRoundingFactor rounds of storage to 32. E.g. 17 -> 32, 33 -> 64
 	storageRoundingFactor = 32
 
-	Azure     = "azure"
-	AWS       = "aws"
-	GCP       = "gcp"
-	OpenStack = "openstack"
+	Azure = "azure"
+	AWS   = "aws"
+	GCP   = "gcp"
+	CCEE  = "sapconvergedcloud"
 )
 
 type EventStream struct {
@@ -75,16 +75,6 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		}
 	}
 
-	provisionedIPs := 0
-	if inp.svcList != nil {
-		// Calculate network related information
-		for _, svc := range inp.svcList.Items {
-			if svc.Spec.Type == "LoadBalancer" {
-				provisionedIPs += 1
-			}
-		}
-	}
-
 	// Calculate vnets(for Azure) or vpc(for AWS)
 	metric.Timestamp = getTimestampNow()
 	metric.Compute.ProvisionedCpus = provisionedCPUs
@@ -93,8 +83,6 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	metric.Compute.ProvisionedVolumes.SizeGbTotal = pvcStorage
 	metric.Compute.ProvisionedVolumes.SizeGbRounded = pvcStorageRounded
 	metric.Compute.ProvisionedVolumes.Count = volumeCount
-
-	metric.Networking.ProvisionedIPs = provisionedIPs
 
 	for vmType, count := range vmTypes {
 		metric.Compute.VMTypes = append(metric.Compute.VMTypes, edp.VMType{
