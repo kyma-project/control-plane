@@ -306,6 +306,193 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 	})
 }
 
+// TestPrometheusMetricsRemovedForDeletedSubAccounts tests that the prometheus metrics
+// are deleted by `populateCacheAndQueue` method. It will test the following cases:
+// case 1: Cache entry exists for a shoot, but it is not returned by KEB anymore.
+// case 2: Shoot with de-provisioned status returned by KEB.
+// case 3: Shoot name of existing subAccount changed and cache entry exists with old shoot name.
+func TestPrometheusMetricsRemovedForDeletedSubAccounts(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// test cases. These cases are not safe to be run in parallel.
+	testCases := []struct {
+		name                       string
+		givenShoot1                kmccache.Record
+		givenShoot2                kmccache.Record
+		givenShoot2NewName         string
+		givenIsShoot2ReturnedByKEB bool
+	}{
+		{
+			name: "should have removed metrics when cache entry exists for a shoot, but it is not returned by KEB anymore",
+			givenShoot1: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenShoot2: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenIsShoot2ReturnedByKEB: false,
+		},
+		{
+			name: "should have removed metrics when cache entry exists for a shoot, but KEB returns shoot with de-provisioned status",
+			givenShoot1: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenShoot2: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenIsShoot2ReturnedByKEB: true,
+		},
+		{
+			name: "should have removed metrics when cache entry exists for a shoot, but KEB returns shoot with different shoot name",
+			givenShoot1: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenShoot2: kmccache.Record{
+				SubAccountID:    uuid.New().String(),
+				InstanceID:      uuid.New().String(),
+				RuntimeID:       uuid.New().String(),
+				GlobalAccountID: uuid.New().String(),
+				ShootName:       fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+				ProviderType:    Azure,
+			},
+			givenIsShoot2ReturnedByKEB: true,
+			givenShoot2NewName:         fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			// reset metrics.
+			subAccountProcessed.Reset()
+			subAccountProcessedTimeStamp.Reset()
+			oldMetricsPublishedGauge.Reset()
+
+			// add metrics for both shoots.
+			recordSubAccountProcessed(false, tc.givenShoot1)
+			recordSubAccountProcessed(false, tc.givenShoot2)
+			recordOldMetricsPublishedGauge(tc.givenShoot1)
+			recordOldMetricsPublishedGauge(tc.givenShoot2)
+			recordSubAccountProcessedTimeStamp(false, tc.givenShoot1)
+			recordSubAccountProcessedTimeStamp(false, tc.givenShoot2)
+
+			// setup cache
+			cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
+			// add both shoots to cache
+			err := cache.Add(tc.givenShoot1.SubAccountID, tc.givenShoot1, gocache.NoExpiration)
+			g.Expect(err).Should(gomega.BeNil())
+			// define target shoot to test.
+			err = cache.Add(tc.givenShoot2.SubAccountID, tc.givenShoot2, gocache.NoExpiration)
+			g.Expect(err).Should(gomega.BeNil())
+
+			// init queue.
+			queue := workqueue.NewDelayingQueue()
+			expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
+			err = expectedCache.Add(tc.givenShoot1.SubAccountID, tc.givenShoot1, gocache.NoExpiration)
+			g.Expect(err).Should(gomega.BeNil())
+
+			// mock KEB response.
+			runtimesPage := new(kebruntime.RuntimesPage)
+			runtime := kmctesting.NewRuntimesDTO(tc.givenShoot1.SubAccountID,
+				tc.givenShoot1.ShootName, kmctesting.WithSucceededState)
+			runtimesPage.Data = append(runtimesPage.Data, runtime)
+			if tc.givenIsShoot2ReturnedByKEB {
+				runtime = kmctesting.NewRuntimesDTO(tc.givenShoot2.SubAccountID,
+					tc.givenShoot2.ShootName, kmctesting.WithProvisionedAndDeprovisionedState)
+				if tc.givenShoot2NewName != "" {
+					runtime = kmctesting.NewRuntimesDTO(tc.givenShoot2.SubAccountID,
+						tc.givenShoot2NewName, kmctesting.WithSucceededState)
+				}
+				runtimesPage.Data = append(runtimesPage.Data, runtime)
+			}
+
+			p := Process{
+				Queue:  queue,
+				Cache:  cache,
+				Logger: logger.NewLogger(zapcore.InfoLevel),
+			}
+
+			// when
+			p.populateCacheAndQueue(runtimesPage)
+
+			// then
+			// check if metrics for existingShoot still exists or not.
+			// metric: subAccountProcessed
+			gotMetrics, err := subAccountProcessed.GetMetricWithLabelValues(
+				strconv.FormatBool(false),
+				tc.givenShoot1.ShootName,
+				tc.givenShoot1.InstanceID,
+				tc.givenShoot1.RuntimeID,
+				tc.givenShoot1.SubAccountID,
+				tc.givenShoot1.GlobalAccountID,
+			)
+			g.Expect(err).Should(gomega.BeNil())
+			g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(1)))
+
+			// metric: oldMetricsPublishedGauge
+			gotMetrics, err = oldMetricsPublishedGauge.GetMetricWithLabelValues(
+				tc.givenShoot1.ShootName,
+				tc.givenShoot1.InstanceID,
+				tc.givenShoot1.RuntimeID,
+				tc.givenShoot1.SubAccountID,
+				tc.givenShoot1.GlobalAccountID,
+			)
+			g.Expect(err).Should(gomega.BeNil())
+			g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(1)))
+
+			// check if metrics for de-provisioned shoot were deleted or not.
+			// metric: subAccountProcessed
+			gotMetrics, err = subAccountProcessed.GetMetricWithLabelValues(
+				strconv.FormatBool(false),
+				tc.givenShoot2.ShootName,
+				tc.givenShoot2.InstanceID,
+				tc.givenShoot2.RuntimeID,
+				tc.givenShoot2.SubAccountID,
+				tc.givenShoot2.GlobalAccountID,
+			)
+			g.Expect(err).Should(gomega.BeNil())
+			g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(0)))
+
+			// metric: oldMetricsPublishedGauge
+			gotMetrics, err = oldMetricsPublishedGauge.GetMetricWithLabelValues(
+				tc.givenShoot2.ShootName,
+				tc.givenShoot2.InstanceID,
+				tc.givenShoot2.RuntimeID,
+				tc.givenShoot2.SubAccountID,
+				tc.givenShoot2.GlobalAccountID,
+			)
+			g.Expect(err).Should(gomega.BeNil())
+			g.Expect(testutil.ToFloat64(gotMetrics)).Should(gomega.Equal(float64(0)))
+		})
+	}
+}
+
 // TestPrometheusMetricsProcessSubAccountID tests the prometheus metrics maintained by `processSubAccountID` method.
 func TestPrometheusMetricsProcessSubAccountID(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)

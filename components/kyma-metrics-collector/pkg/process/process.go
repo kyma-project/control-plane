@@ -410,7 +410,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					// delete metrics for old shoot name.
 					if success := deleteMetrics(record); !success {
 						p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
-							Info("promethues metrics were not successfully removed for subAccount")
+							Info("prometheus metrics were not successfully removed for subAccount")
 					}
 				}
 			}
@@ -445,6 +445,11 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			} else {
 				p.namedLogger().With(log.KeySubAccountID, sAccID).With(log.KeyRuntimeID, record.RuntimeID).
 					Debug("SubAccount is not trackable anymore hence deleting it from cache")
+			}
+			// delete metrics for old shoot name.
+			if success := deleteMetrics(record); !success {
+				p.namedLogger().With(log.KeySubAccountID, record.SubAccountID).With(log.KeyRuntimeID, record.RuntimeID).
+					Info("prometheus metrics were not successfully removed for subAccount")
 			}
 		}
 	}
