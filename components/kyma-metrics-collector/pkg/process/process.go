@@ -378,7 +378,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				InstanceID:      runtime.InstanceID,
 				GlobalAccountID: runtime.GlobalAccountID,
 				ShootName:       runtime.ShootName,
-				ProviderType: strings.ToLower(runtime.Provider),
+				ProviderType:    strings.ToLower(runtime.Provider),
 				KubeConfig:      "",
 				Metric:          nil,
 			}
@@ -406,6 +406,12 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					p.Cache.Set(runtime.SubAccountID, newRecord, cache.NoExpiration)
 					p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 						Debug("Resetted the values in cache for subAccount")
+
+					// delete metrics for old shoot name.
+					if success := deleteMetrics(record); !success {
+						p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+							Info("promethues metrics were not successfully removed for subAccount")
+					}
 				}
 			}
 			continue
@@ -415,6 +421,13 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			p.Cache.Delete(runtime.SubAccountID)
 			p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).
 				With(log.KeyRuntimeID, runtime.RuntimeID).Debug("Deleted subAccount from cache")
+			// delete metrics for old shoot name.
+			if record, ok := recordObj.(kmccache.Record); ok {
+				if success := deleteMetrics(record); !success {
+					p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+						Info("prometheus metrics were not successfully removed for subAccount")
+				}
+			}
 			continue
 		}
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).

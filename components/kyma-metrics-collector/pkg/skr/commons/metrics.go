@@ -28,6 +28,19 @@ var (
 	)
 )
 
+// DeleteMetrics deletes all the metrics for the provided shoot.
+// Returns true if some metrics are deleted, returns false if no metrics are deleted for that subAccount.
+func DeleteMetrics(shootInfo kmccache.Record) bool {
+	matchLabels := prometheus.Labels{
+		"shoot_name":        shootInfo.ShootName,
+		"instance_id":       shootInfo.InstanceID,
+		"runtime_id":        shootInfo.RuntimeID,
+		"sub_account_id":    shootInfo.SubAccountID,
+		"global_account_id": shootInfo.GlobalAccountID,
+	}
+	return TotalQueriesMetric.DeletePartialMatch(matchLabels) > 0
+}
+
 func RecordSKRQuery(success bool, action string, shootInfo kmccache.Record) {
 	// the order if the values should be same as defined in the metric declaration.
 	TotalQueriesMetric.WithLabelValues(
