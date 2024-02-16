@@ -11,14 +11,15 @@ groups:
   - name: kmc.rules.edp
     rules:
     - alert: EDPRequestFailures
-      expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[10m])) > 20
+      expr: sum by (status) (increase(kmc_edp_request_duration_seconds_count{status!~"2.."}[10m])) > 20
       for: 10m
       labels:
         severity: critical
       annotations:
         description: Increase in failed requests from KMC to EDP.
     - alert: EDPRequestDuration
-      expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[10m])/rate(kmc_edp_request_duration_seconds_count[10m])) > 3
+      # if for the 95 percentile, the latency (in milliseconds) is greater than 500ms.
+      expr: histogram_quantile(0.95, sum by (le) (rate(kmc_edp_request_duration_seconds_bucket[10m]))) * 1000 > 500
       for: 10m
       labels:
         severity: warning
@@ -27,41 +28,53 @@ groups:
   - name: kmc.rules.keb
     rules:
     - alert: KEBRequestFailures
-      expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[10m])) > 20
+      # Requests to KEB are done every 10 minutes.
+      expr: sum by (status) (increase(kmc_keb_request_duration_seconds_count{status!~"2.."}[40m])) > 3
       for: 10m
       labels:
         severity: critical
       annotations:
         description: Increase in failed requests from KMC to KEB.
     - alert: KEBRequestDuration
-      expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[10m])/rate(kmc_keb_request_duration_seconds_count[10m])) > 5
-      for: 10m
+      expr: histogram_quantile(0.95, sum by (le) (rate(kmc_keb_request_duration_seconds_bucket[40m]))) * 1000 > 800
+      for: 20m
       labels:
         severity: warning
       annotations:
         description: Average request duration from KMC to KEB.
-    - alert: ClustersRateChanged
-      expr: (deriv(kmc_keb_number_clusters_scraped[10m])) < -0.033
-      for: 10m
-      labels:
-        severity: critical
-      annotations:
-        description: Rate of change of the number of clusters obtained by KMC from KEB for each poll.
   - name: kmc.rules.skr
     rules:
     - alert: SKRErrors
-      expr: sum(rate(kmc_skr_calls_total{status="success"}[10m]))/ sum (rate(kmc_skr_calls_total{status="calls_total"}[10m])) * 100  < 90
+      expr: sum by (sub_account_id) (rate(kmc_skr_query_total{success="true"}[30m])) / sum by (sub_account_id) (rate(kmc_skr_query_total{}[30m])) * 100  < 90
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: Success rate of KMC in listing PVCs, SVCs and Nodes for SKRs.
-  - name: kmc.rules.gardener
+        description: "Success rate of KMC in listing PVCs, SVCs and Nodes for SKR in subaccount: {{ $labels.sub_account_id }}"
+  - name: kmc.rules.processing
     rules:
-    - alert: GardenerErrors
-      expr: sum by (reason, shoot) (increase(kmc_gardener_calls_total{status="failure"}[10m])) > 30
-      for: 15m
+    - alert: KMCProcessingNewUpdateWarning
+      expr: time() - kmc_process_sub_account_processed_timestamp_seconds{with_old_metric="false"} >= 900
+      labels:
+        severity: warning
+      annotations:
+        summary: "Sending new data to EDP failed"
+        description: "Could not send new usage data for {{ $labels.sub_account_id }} to EDP. Last successful send {{ $value }} seconds ago"
+    - alert: KMCProcessingNewUpdate
+      # it will alert when the subAccount is not processed with new data for some time.
+      expr: time() - kmc_process_sub_account_processed_timestamp_seconds{with_old_metric="false"} >= 3600
       labels:
         severity: critical
       annotations:
-        description: Rate of increase in errors for the requests from KMC to Gardener.
+        summary: "Sending new data to EDP failed"
+        description: "Could not send new usage data for {{ $labels.sub_account_id }} to EDP. Last successful send {{ $value }} seconds ago"
+
+    - alert: KMCProcessingFailed
+      # it will alert when the subAccount is not being able to processed at all and no data is published to EDP.
+      expr: rate(kmc_process_sub_account_total{success="false"}[15m]) > 0
+      for: 60m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Processing sub-account failed"
+        description: "Could not process subAccount {{ $labels.sub_account_id }}"
