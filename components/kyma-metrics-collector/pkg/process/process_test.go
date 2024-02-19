@@ -3,14 +3,15 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"net/http"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"k8s.io/client-go/kubernetes/fake"
 
