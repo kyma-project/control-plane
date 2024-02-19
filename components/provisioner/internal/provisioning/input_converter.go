@@ -70,7 +70,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	if strings.ToLower(input.ClusterConfig.GardenerConfig.Provider) == "openstack" {
-		input.ClusterConfig.GardenerConfig.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
+		input.ClusterConfig.GardenerConfig.ExposureClassName = util.PtrTo(OpenStackExposureClassName)
 	}
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
@@ -232,7 +232,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 	if input.OpenStackConfig != nil {
 		if input.OpenStackConfig.FloatingPoolName == nil {
-			input.OpenStackConfig.FloatingPoolName = util.StringPtr(OpenStackFloatingPoolName)
+			input.OpenStackConfig.FloatingPoolName = util.PtrTo(OpenStackFloatingPoolName)
 		}
 		return model.NewOpenStackGardenerConfig(input.OpenStackConfig)
 	}
