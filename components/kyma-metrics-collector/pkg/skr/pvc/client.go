@@ -3,6 +3,7 @@ package pvc
 import (
 	"context"
 	"encoding/json"
+	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,11 +16,12 @@ import (
 )
 
 type Client struct {
-	Resource dynamic.NamespaceableResourceInterface
+	Resource  dynamic.NamespaceableResourceInterface
+	ShootInfo kmccache.Record
 }
 
-func (c Config) NewClient(kubeconfig string) (*Client, error) {
-	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+func (c Config) NewClient(shootInfo kmccache.Record) (*Client, error) {
+	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(shootInfo.KubeConfig))
 	if err != nil {
 		return nil, err
 	}
@@ -28,17 +30,16 @@ func (c Config) NewClient(kubeconfig string) (*Client, error) {
 		return nil, err
 	}
 	nsResourceClient := dynamicClient.Resource(GroupVersionResource())
-	return &Client{Resource: nsResourceClient}, nil
+	return &Client{Resource: nsResourceClient, ShootInfo: shootInfo}, nil
 }
 
 func (c Client) List(ctx context.Context) (*corev1.PersistentVolumeClaimList, error) {
-
-	skrcommons.TotalCalls.WithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingPVCLabel).Inc()
 	unstructuredPVCList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
+		skrcommons.RecordSKRQuery(false, skrcommons.ListingPVCsAction, c.ShootInfo)
 		return nil, err
 	}
-	skrcommons.TotalCalls.WithLabelValues(skrcommons.SuccessStatusLabel, skrcommons.SuccessListingPVCLabel).Inc()
+	skrcommons.RecordSKRQuery(true, skrcommons.ListingPVCsAction, c.ShootInfo)
 	return convertUnstructuredListToPVCList(unstructuredPVCList)
 }
 
