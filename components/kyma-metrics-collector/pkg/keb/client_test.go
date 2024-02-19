@@ -104,13 +104,15 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// ensure metric exists.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
 		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 
 		// check if the required labels exists in the metric.
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(pMetric.Metric).Should(gomega.HaveLen(1))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(2))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
 		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
@@ -133,8 +135,8 @@ func TestGetAllRuntimes(t *testing.T) {
 		// check if the required labels exists in the metric.
 		pMetric, err = kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(pMetric.Metric).Should(gomega.HaveLen(1))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(2))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
 		statusLabel = kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
@@ -188,13 +190,14 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// ensure metric exists.
-		// the count should be 1 because it queries for only 1 page.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
 		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 		// check if the required labels exists in the metric.
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(pMetric.Metric).Should(gomega.HaveLen(1))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(2))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
 		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
@@ -237,12 +240,14 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(err.Error()).Should(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 500"))
 
 		// ensure metric exists.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
 		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 		// check if the required labels exists in the metric.
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(pMetric.Metric).Should(gomega.HaveLen(1))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(2))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
 		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())

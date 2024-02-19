@@ -98,15 +98,22 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		reqStartTime := time.Now()
 		// send request.
 		resp, err = c.HTTPClient.Do(req)
-		// record metric.
+		duration := time.Since(reqStartTime)
+		responseCode := http.StatusBadRequest
 		if resp != nil {
-			duration := time.Since(reqStartTime)
-			recordKEBLatency(duration, resp.StatusCode, c.Config.URL)
+			responseCode = resp.StatusCode
 		}
 		if err != nil {
+			urlErr := err.(*url.Error)
+			if urlErr.Timeout() {
+				responseCode = http.StatusRequestTimeout
+			}
 			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("getting runtimes from KEB")
 		}
+
+		// record metric.
+		recordKEBLatency(duration, responseCode, c.Config.URL)
 		return
 	})
 

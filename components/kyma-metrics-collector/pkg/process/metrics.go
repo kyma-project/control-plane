@@ -9,8 +9,15 @@ import (
 )
 
 const (
-	namespace = "kmc"
-	subsystem = "process"
+	namespace          = "kmc"
+	subsystem          = "process"
+	shootNameLabel     = "shoot_name"
+	instanceIdLabel    = "instance_id"
+	runtimeIdLabel     = "runtime_id"
+	subAccountLabel    = "sub_account_id"
+	globalAccountLabel = "global_account_id"
+	successLabel       = "success"
+	withOldMetricLabel = "with_old_metric"
 )
 
 var (
@@ -21,7 +28,7 @@ var (
 			Name:      "sub_account_total",
 			Help:      "Number of sub-accounts processed including successful and failed.",
 		},
-		[]string{"success", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{successLabel, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 	subAccountProcessedTimeStamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -30,16 +37,16 @@ var (
 			Name:      "sub_account_processed_timestamp_seconds",
 			Help:      "Unix timestamp (in seconds) of last successful processing of sub-account.",
 		},
-		[]string{"with_old_metric", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{withOldMetricLabel, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 	oldMetricsPublishedGauge = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "old_metric_publish_gauge",
-			Help:      "Number of consecutive re-sends of old metrics to edp per cluster. It Will be reset to 0 when new metric data is published.",
+			Name:      "old_metric_published_gauge",
+			Help:      "Number of consecutive re-sends of old metrics to edp per cluster. It Will reset to 0 when new metric data is published.",
 		},
-		[]string{"shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 )
 

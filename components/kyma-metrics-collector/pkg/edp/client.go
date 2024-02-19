@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -86,14 +87,17 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		// send request.
 		req.Body = io.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
-		// record metric.
-		if resp != nil {
-			duration := time.Since(reqStartTime)
-			// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
-			recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
-		}
+		duration := time.Since(reqStartTime)
 		// check result.
 		if err != nil {
+			urlErr := err.(*url.Error)
+			responseCode := http.StatusBadRequest
+			if urlErr.Timeout() {
+				responseCode = http.StatusRequestTimeout
+			}
+			// record metric.
+			recordEDPLatency(duration, responseCode, eClient.getEDPURL(tenantIdPlaceholder))
+			// log error.
 			eClient.namedLogger().Debugf("req: %v", req)
 			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
@@ -106,6 +110,10 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 				Warn("send event stream as EDP")
 			err = non2xxErr
 		}
+
+		// record metric.
+		// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
+		recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
 		return
 	})
 
