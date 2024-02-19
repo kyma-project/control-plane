@@ -14,6 +14,13 @@ const (
 	ListingNodesAction     = "listing_nodes"
 	ListingPVCsAction      = "listing_pvc"
 	ListingSVCsAction      = "listing_svc"
+	shootNameLabel         = "shoot_name"
+	instanceIdLabel        = "instance_id"
+	runtimeIdLabel         = "runtime_id"
+	subAccountLabel        = "sub_account_id"
+	globalAccountLabel     = "global_account_id"
+	successLabel           = "success"
+	actionLabel            = "action"
 )
 
 var (
@@ -24,7 +31,7 @@ var (
 			Name:      TotalQueriesMetricName,
 			Help:      "Total number of queries to SKR to get the metrics of the cluster.",
 		},
-		[]string{"action", "success", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
+		[]string{actionLabel, successLabel, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 )
 
@@ -32,11 +39,11 @@ var (
 // Returns true if some metrics are deleted, returns false if no metrics are deleted for that subAccount.
 func DeleteMetrics(shootInfo kmccache.Record) bool {
 	matchLabels := prometheus.Labels{
-		"shoot_name":        shootInfo.ShootName,
-		"instance_id":       shootInfo.InstanceID,
-		"runtime_id":        shootInfo.RuntimeID,
-		"sub_account_id":    shootInfo.SubAccountID,
-		"global_account_id": shootInfo.GlobalAccountID,
+		shootNameLabel:     shootInfo.ShootName,
+		instanceIdLabel:    shootInfo.InstanceID,
+		runtimeIdLabel:     shootInfo.RuntimeID,
+		subAccountLabel:    shootInfo.SubAccountID,
+		globalAccountLabel: shootInfo.GlobalAccountID,
 	}
 	return TotalQueriesMetric.DeletePartialMatch(matchLabels) > 0
 }

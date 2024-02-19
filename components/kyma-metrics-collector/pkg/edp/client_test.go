@@ -79,13 +79,14 @@ func TestClient(t *testing.T) {
 	pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-	g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
+	gotLabel := pMetric.Metric[0].Label
+	g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
 	// response status label.
-	statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+	statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 	g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 	g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusCreated)))
 	// request URL label.
-	g.Expect(kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, requestURLLabel)).ShouldNot(gomega.BeNil())
+	g.Expect(kmctesting.PrometheusFilterLabelPair(gotLabel, requestURLLabel)).ShouldNot(gomega.BeNil())
 }
 
 func TestClientRetry(t *testing.T) {
@@ -96,13 +97,12 @@ func TestClientRetry(t *testing.T) {
 	// reset metrics state.
 	latencyMetric.Reset()
 
-	countRetry := 0
-	counter := &countRetry
+	counter := 0
 	expectedCountRetry := 2
 	edpTestHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		g.Expect(req.URL.Path).To(gomega.Equal(expectedPath))
 		g.Expect(req.Method).To(gomega.Equal(http.MethodPost))
-		*counter += 1
+		counter += 1
 		rw.WriteHeader(http.StatusInternalServerError)
 	})
 	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
@@ -125,7 +125,7 @@ func TestClientRetry(t *testing.T) {
 	// then
 	g.Expect(err).ShouldNot(gomega.BeNil())
 	g.Expect(err.Error()).Should(gomega.Equal("failed to POST event to EDP: failed to send event stream as EDP returned HTTP: 500"))
-	g.Expect(countRetry).Should(gomega.Equal(expectedCountRetry))
+	g.Expect(counter).Should(gomega.Equal(expectedCountRetry))
 
 	// ensure metric exists.
 	expectedNumberOfMetrics := 1 // because single request is send.
@@ -136,8 +136,9 @@ func TestClientRetry(t *testing.T) {
 	pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-	g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
-	statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+	gotLabel := pMetric.Metric[0].Label
+	g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+	statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 	g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 	g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusInternalServerError)))
 }

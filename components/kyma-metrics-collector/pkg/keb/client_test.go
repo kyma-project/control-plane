@@ -112,13 +112,14 @@ func TestGetAllRuntimes(t *testing.T) {
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
-		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusOK)))
 		// request URL label.
-		g.Expect(kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, requestURLLabel)).ShouldNot(gomega.BeNil())
+		g.Expect(kmctesting.PrometheusFilterLabelPair(gotLabel, requestURLLabel)).ShouldNot(gomega.BeNil())
 
 		// Testing http 404 for non-existent path
 		// reset metrics state.
@@ -136,9 +137,10 @@ func TestGetAllRuntimes(t *testing.T) {
 		pMetric, err = kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
+		gotLabel = pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
-		statusLabel = kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+		statusLabel = kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusNotFound)))
 	})
@@ -197,9 +199,10 @@ func TestGetAllRuntimes(t *testing.T) {
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
-		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusOK)))
 	})
@@ -247,9 +250,10 @@ func TestGetAllRuntimes(t *testing.T) {
 		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
-		g.Expect(pMetric.Metric[0].Label).Should(gomega.HaveLen(expectedNumberOfLabels))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
 		// response status label.
-		statusLabel := kmctesting.PrometheusFilterLabelPair(pMetric.Metric[0].Label, responseCodeLabel)
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
 		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
 		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusInternalServerError)))
 	})
