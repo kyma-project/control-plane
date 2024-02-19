@@ -1,4 +1,4 @@
-FROM europe-docker.pkg.dev/kyma-project/prod/external/1.22.0-alpine3.19 as builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/golang:1.22.0-alpine3.19 as builder
 
 ENV SRC_DIR=/go/src/github.com/kyma-project/control-plane/tests/provisioner-tests
 
