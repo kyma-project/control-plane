@@ -1,6 +1,8 @@
 package provisioning
 
 import (
+	"strings"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -8,6 +10,11 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+)
+
+const (
+	OpenStackFloatingPoolName  = "FloatingIP-external-kyma-01"
+	OpenStackExposureClassName = "converged-cloud-internet"
 )
 
 type InputConverter interface {
@@ -60,6 +67,10 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	if input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled == nil {
 		input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = util.BoolPtr(c.defaultProvisioningShootNetworkingFilterDisabled)
+	}
+
+	if strings.ToLower(input.ClusterConfig.GardenerConfig.Provider) == "openstack" {
+		input.ClusterConfig.GardenerConfig.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
 	}
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
@@ -220,6 +231,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 	if input.OpenStackConfig != nil {
+		if input.OpenStackConfig.FloatingPoolName == nil {
+			input.OpenStackConfig.FloatingPoolName = util.StringPtr(OpenStackFloatingPoolName)
+		}
 		return model.NewOpenStackGardenerConfig(input.OpenStackConfig)
 	}
 
