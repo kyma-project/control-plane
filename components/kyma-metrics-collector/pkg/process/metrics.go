@@ -7,6 +7,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const (
+	namespace = "kmc"
+	subsystem = "process"
+	// requestURLLabel name of the request URL label used by multiple metrics.
+	requestURLLabel = "request_url"
+)
+
 var (
 	clustersScraped = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -17,18 +24,18 @@ var (
 		},
 		[]string{"requestURI"},
 	)
-	kebAllClustersCount = promauto.NewGaugeVec(
+	kebTotalClusters = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "kmc",
-			Subsystem: "keb",
-			Name:      "all_clusters_count",
-			Help:      "Number of all clusters got from KEB.",
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "clusters_total",
+			Help:      "Number of all clusters got from KEB including trackable and not trackable.",
 		},
 		[]string{"trackable", "shoot_name", "instance_id", "runtime_id", "sub_account_id", "global_account_id"},
 	)
 )
 
-func recordKEBAllClustersCount(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
+func recordKEBTotalClusters(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
 	// the order if the values should be same as defined in the metric declaration.
-	kebAllClustersCount.WithLabelValues(strconv.FormatBool(trackable), shootName, instanceID, runtimeID, subAccountID, globalAccountID).Inc()
+	kebTotalClusters.WithLabelValues(strconv.FormatBool(trackable), shootName, instanceID, runtimeID, subAccountID, globalAccountID).Inc()
 }
