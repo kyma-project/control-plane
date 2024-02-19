@@ -313,7 +313,7 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apper
 		return model.RuntimeStatus{}, apperrors.Internal("unable to fetch kubeconfig: %s", fetchErr)
 	}
 
-	cluster.Kubeconfig = util.StringPtr(string(kubeconfig))
+	cluster.Kubeconfig = util.PtrTo(string(kubeconfig))
 
 	return model.RuntimeStatus{
 		LastOperationStatus:  operation,

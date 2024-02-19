@@ -56,38 +56,38 @@ type DNSProvider struct {
 }
 
 type GardenerConfig struct {
-	ID                                  string
-	ClusterID                           string
-	Name                                string
-	ProjectName                         string
-	KubernetesVersion                   string
-	VolumeSizeGB                        *int
-	DiskType                            *string
-	MachineType                         string
-	MachineImage                        *string
-	MachineImageVersion                 *string
-	Provider                            string
-	Purpose                             *string
-	LicenceType                         *string
-	Seed                                string
-	TargetSecret                        string
-	Region                              string
-	WorkerCidr                          string
-	PodsCIDR                            *string
-	ServicesCIDR                        *string
-	AutoScalerMin                       int
 	AutoScalerMax                       int
-	MaxSurge                            int
-	MaxUnavailable                      int
+	AutoScalerMin                       int
+	ClusterID                           string
+	ControlPlaneFailureTolerance        *string
+	DNSConfig                           *DNSConfig
+	DiskType                            *string
 	EnableKubernetesVersionAutoUpdate   bool
 	EnableMachineImageVersionAutoUpdate bool
-	GardenerProviderConfig              GardenerProviderConfig
-	OIDCConfig                          *OIDCConfig
-	DNSConfig                           *DNSConfig
-	ExposureClassName                   *string
-	ShootNetworkingFilterDisabled       *bool
-	ControlPlaneFailureTolerance        *string
 	EuAccess                            bool
+	ExposureClassName                   *string
+	GardenerProviderConfig              GardenerProviderConfig
+	ID                                  string
+	KubernetesVersion                   string
+	LicenceType                         *string
+	MachineImage                        *string
+	MachineImageVersion                 *string
+	MachineType                         string
+	MaxSurge                            int
+	MaxUnavailable                      int
+	Name                                string
+	OIDCConfig                          *OIDCConfig
+	PodsCIDR                            *string
+	ProjectName                         string
+	Provider                            string
+	Purpose                             *string
+	Region                              string
+	Seed                                string
+	ServicesCIDR                        *string
+	ShootNetworkingFilterDisabled       *bool
+	TargetSecret                        string
+	VolumeSizeGB                        *int
+	WorkerCidr                          string
 }
 
 type ExtensionProviderConfig struct {
@@ -131,7 +131,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 
 	var seed *string = nil
 	if c.Seed != "" {
-		seed = util.StringPtr(c.Seed)
+		seed = util.PtrTo(c.Seed)
 	}
 	var purpose *gardener_types.ShootPurpose = nil
 	if util.NotNilOrEmpty(c.Purpose) {
@@ -194,11 +194,11 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
-				EnableStaticTokenKubeconfig: util.BoolPtr(false),
+				EnableStaticTokenKubeconfig: util.PtrTo(false),
 			},
 			Networking: &gardener_types.Networking{
 				Type:     &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes:    util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Nodes:    util.PtrTo(c.GardenerProviderConfig.NodeCIDR(c)),
 				Pods:     c.PodsCIDR,
 				Services: c.ServicesCIDR,
 			},
@@ -214,7 +214,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Extensions: []gardener_types.Extension{
 				{Type: "shoot-dns-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig}},
 				{Type: "shoot-cert-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig}},
-				{Type: ShootNetworkingFilterExtensionType, Disabled: util.DefaultBoolIfNil(c.ShootNetworkingFilterDisabled, util.BoolPtr(ShootNetworkingFilterDisabledDefault))},
+				{Type: ShootNetworkingFilterExtensionType, Disabled: util.OkOrDefault(c.ShootNetworkingFilterDisabled, util.PtrTo(ShootNetworkingFilterDisabledDefault))},
 			},
 			ControlPlane: controlPlane,
 		},
@@ -467,7 +467,7 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 					infra.Networks.NatGateway = &azure.NatGateway{}
 				}
 				infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
-				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 			} else {
 				infra.Networks.NatGateway = nil
 			}
@@ -479,14 +479,14 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 						zone.NatGateway = &azure.NatGateway{}
 					}
 					zone.NatGateway.Enabled = *c.input.EnableNatGateway
-					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {
 					zone.NatGateway = nil
 				}
 				infra.Networks.Zones[i] = zone
 			}
 		}
-		infra.Networks.VNet.CIDR = util.StringPtr(c.input.VnetCidr)
+		infra.Networks.VNet.CIDR = util.PtrTo(c.input.VnetCidr)
 		jsonData, err := json.Marshal(infra)
 		if err != nil {
 			return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
@@ -650,7 +650,7 @@ func (c OpenStackGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string 
 func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.OpenStackProviderConfig{
 		Zones:                c.input.Zones,
-		FloatingPoolName:     util.UnwrapStr(c.input.FloatingPoolName),
+		FloatingPoolName:     util.UnwrapOrZero(c.input.FloatingPoolName),
 		CloudProfileName:     c.input.CloudProfileName,
 		LoadBalancerProvider: c.input.LoadBalancerProvider,
 	}
@@ -672,13 +672,13 @@ func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	if shoot.Spec.ExposureClassName == nil {
-		shoot.Spec.ExposureClassName = util.StringPtr(OpenStackExposureClassName)
+		shoot.Spec.ExposureClassName = util.PtrTo(OpenStackExposureClassName)
 	}
 
 	if c.input.FloatingPoolName == nil {
 		openStackInfra = NewOpenStackInfrastructure(OpenStackFloatingPoolName, gardenerConfig.WorkerCidr)
 	} else {
-		openStackInfra = NewOpenStackInfrastructure(util.UnwrapStr(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
+		openStackInfra = NewOpenStackInfrastructure(util.UnwrapOrZero(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
 	}
 
 	jsonData, err := json.Marshal(openStackInfra)
@@ -705,8 +705,8 @@ func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig
 func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_types.Worker {
 	worker := gardener_types.Worker{
 		Name:           "cpu-worker-0",
-		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
-		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
+		MaxSurge:       util.PtrTo(intstr.FromInt(gardenerConfig.MaxSurge)),
+		MaxUnavailable: util.PtrTo(intstr.FromInt(gardenerConfig.MaxUnavailable)),
 		Machine:        getMachineConfig(gardenerConfig),
 		Maximum:        int32(gardenerConfig.AutoScalerMax),
 		Minimum:        int32(gardenerConfig.AutoScalerMin),
@@ -752,8 +752,8 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	// We support only single working group during provisioning
-	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxSurge))
-	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
+	shoot.Spec.Provider.Workers[0].MaxSurge = util.PtrTo(intstr.FromInt(upgradeConfig.MaxSurge))
+	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.PtrTo(intstr.FromInt(upgradeConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
@@ -813,7 +813,7 @@ func adjustStaticKubeconfigFlag(upgradeConfig GardenerConfig, shoot *gardener_ty
 		var upgradedKubernetesVersion, _ = version.NewVersion(upgradeConfig.KubernetesVersion)
 		var firstVersionNotSupportingStaticConfigs, _ = version.NewVersion("1.27.0")
 		if upgradedKubernetesVersion.GreaterThanOrEqual(firstVersionNotSupportingStaticConfigs) {
-			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.BoolPtr(false)
+			shoot.Spec.Kubernetes.EnableStaticTokenKubeconfig = util.PtrTo(false)
 		}
 	}
 }

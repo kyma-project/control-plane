@@ -56,7 +56,7 @@ type GardenerProvisioner struct {
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
-	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapStr(cluster.SubAccountId), cluster.ClusterConfig.OIDCConfig, cluster.ClusterConfig.DNSConfig)
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapOrZero(cluster.SubAccountId), cluster.ClusterConfig.OIDCConfig, cluster.ClusterConfig.DNSConfig)
 	if err != nil {
 		return err.Append("failed to convert cluster config to Shoot template")
 	}
@@ -115,7 +115,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 			return apperr.Append("error during marshaling Shoot data")
 		}
 
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.PtrTo(true)})
 		return err
 	})
 	if err != nil {
@@ -158,7 +158,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
 		return model.Operation{}, apperr.Append("error during marshaling Shoot data")
 	}
-	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
+	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.PtrTo(true)})
 
 	if err != nil {
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)

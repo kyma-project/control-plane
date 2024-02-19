@@ -21,10 +21,10 @@ func NewTestWorker(name string) *TestWorker {
 			Image: &v1beta1.ShootMachineImage{},
 		},
 		Volume: &v1beta1.Volume{
-			Type: util.StringPtr(""),
+			Type: util.PtrTo(""),
 		},
-		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(0)),
-		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(0)),
+		MaxSurge:       util.PtrTo(intstr.FromInt(0)),
+		MaxUnavailable: util.PtrTo(intstr.FromInt(0)),
 		Zones:          nil,
 	}}
 }
@@ -42,13 +42,13 @@ func (tw *TestWorker) WithMachineType(t string) *TestWorker {
 
 func (tw *TestWorker) WithMachineImageAndVersion(name string, version string) *TestWorker {
 	tw.worker.Machine.Image.Name = name
-	tw.worker.Machine.Image.Version = util.StringPtr(version)
+	tw.worker.Machine.Image.Version = util.PtrTo(version)
 	return tw
 }
 
 // WithVolume sets value of worker.Volume Type and Size
 func (tw *TestWorker) WithVolume(vType string, size int) *TestWorker {
-	tw.worker.Volume.Type = util.StringPtr(vType)
+	tw.worker.Volume.Type = util.PtrTo(vType)
 	tw.worker.Volume.VolumeSize = fmt.Sprintf("%dGi", size)
 	return tw
 }
@@ -62,13 +62,13 @@ func (tw *TestWorker) WithMinMax(min, max int32) *TestWorker {
 
 // WithMaxSurge sets value of MaxSurge
 func (tw *TestWorker) WithMaxSurge(max int) *TestWorker {
-	tw.worker.MaxSurge = util.IntOrStringPtr(intstr.FromInt(max))
+	tw.worker.MaxSurge = util.PtrTo(intstr.FromInt(max))
 	return tw
 }
 
 // WithMaxUnavailable sets value of MaxUnavailable
 func (tw *TestWorker) WithMaxUnavailable(max int) *TestWorker {
-	tw.worker.MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(max))
+	tw.worker.MaxUnavailable = util.PtrTo(intstr.FromInt(max))
 	return tw
 }
 

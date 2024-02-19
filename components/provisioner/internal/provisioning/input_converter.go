@@ -59,7 +59,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	if input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled == nil {
-		input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = util.BoolPtr(c.defaultProvisioningShootNetworkingFilterDisabled)
+		input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = util.PtrTo(c.defaultProvisioningShootNetworkingFilterDisabled)
 	}
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
@@ -93,7 +93,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		KubernetesVersion:                   input.KubernetesVersion,
 		Provider:                            input.Provider,
 		Region:                              input.Region,
-		Seed:                                util.UnwrapStr(input.Seed),
+		Seed:                                util.UnwrapOrZero(input.Seed),
 		TargetSecret:                        input.TargetSecret,
 		MachineType:                         input.MachineType,
 		MachineImage:                        input.MachineImage,
@@ -109,8 +109,8 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		MaxUnavailable:                      input.MaxUnavailable,
 		Purpose:                             input.Purpose,
 		LicenceType:                         input.LicenceType,
-		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
@@ -118,7 +118,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ExposureClassName:                   input.ExposureClassName,
 		ShootNetworkingFilterDisabled:       input.ShootNetworkingFilterDisabled,
 		ControlPlaneFailureTolerance:        input.ControlPlaneFailureTolerance,
-		EuAccess:                            util.UnwrapBoolOrDefault(input.EuAccess, c.defaultEuAccess),
+		EuAccess:                            util.UnwrapOrDefault(input.EuAccess, c.defaultEuAccess),
 	}, nil
 }
 
@@ -185,23 +185,23 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		LicenceType:  config.LicenceType,
 		WorkerCidr:   config.WorkerCidr,
 
-		Purpose:                             util.DefaultStrIfNil(input.Purpose, config.Purpose),
-		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
-		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
-		DiskType:                            util.DefaultStrIfNil(input.DiskType, config.DiskType),
-		VolumeSizeGB:                        util.DefaultIntIfNil(input.VolumeSizeGb, config.VolumeSizeGB),
-		MachineImage:                        util.DefaultStrIfNil(input.MachineImage, config.MachineImage),
-		MachineImageVersion:                 util.DefaultStrIfNil(input.MachineImageVersion, config.MachineImageVersion),
-		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
-		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
-		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
-		MaxUnavailable:                      util.UnwrapIntOrDefault(input.MaxUnavailable, config.MaxUnavailable),
-		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
+		Purpose:                             util.OkOrDefault(input.Purpose, config.Purpose),
+		KubernetesVersion:                   util.UnwrapOrDefault(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                         util.UnwrapOrDefault(input.MachineType, config.MachineType),
+		DiskType:                            util.OkOrDefault(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.OkOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        util.OkOrDefault(input.MachineImage, config.MachineImage),
+		MachineImageVersion:                 util.OkOrDefault(input.MachineImageVersion, config.MachineImageVersion),
+		AutoScalerMin:                       util.UnwrapOrDefault(input.AutoScalerMin, config.AutoScalerMin),
+		AutoScalerMax:                       util.UnwrapOrDefault(input.AutoScalerMax, config.AutoScalerMax),
+		MaxSurge:                            util.UnwrapOrDefault(input.MaxSurge, config.MaxSurge),
+		MaxUnavailable:                      util.UnwrapOrDefault(input.MaxUnavailable, config.MaxUnavailable),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
-		ExposureClassName:                   util.DefaultStrIfNil(input.ExposureClassName, config.ExposureClassName),
-		ShootNetworkingFilterDisabled:       util.DefaultBoolIfNil(input.ShootNetworkingFilterDisabled, config.ShootNetworkingFilterDisabled),
+		ExposureClassName:                   util.OkOrDefault(input.ExposureClassName, config.ExposureClassName),
+		ShootNetworkingFilterDisabled:       util.OkOrDefault(input.ShootNetworkingFilterDisabled, config.ShootNetworkingFilterDisabled),
 	}, nil
 }
 
@@ -292,5 +292,5 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, c
 }
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
-	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
+	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapOrDefault(entry.Secret, false))
 }

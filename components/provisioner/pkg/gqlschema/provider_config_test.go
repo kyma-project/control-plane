@@ -12,12 +12,12 @@ import (
 
 func TestGardenerConfig_UnmarshalJSON(t *testing.T) {
 
-	azureProviderCfgNoZones := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25")}
-	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25"), Zones: []string{"az-zone-1", "az-zone-2"}}
+	azureProviderCfgNoZones := &AzureProviderConfig{VnetCidr: util.PtrTo("10.10.11.11/25")}
+	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.PtrTo("10.10.11.11/25"), Zones: []string{"az-zone-1", "az-zone-2"}}
 	gcpProviderCfg := &GCPProviderConfig{Zones: []string{"gcp-zone-1", "gcp-zone-2"}}
 	awsProviderCfg := &AWSProviderConfig{
 		AwsZones: []*AWSZone{},
-		VpcCidr:  util.StringPtr("10.10.10.11/25"),
+		VpcCidr:  util.PtrTo("10.10.10.11/25"),
 	}
 	openstackProviderCfg := &OpenStackProviderConfig{
 		Zones:                []string{"eu-de-1a"},
@@ -77,19 +77,19 @@ func newGardenerClusterCfg(gardenerCfg GardenerConfig, providerCfg ProviderSpeci
 
 func fixGardenerConfig(providerName string) GardenerConfig {
 	return GardenerConfig{
-		Name:              util.StringPtr("name"),
-		KubernetesVersion: util.StringPtr("1.16"),
-		VolumeSizeGb:      util.IntPtr(50),
-		MachineType:       util.StringPtr("machine"),
-		Region:            util.StringPtr("region"),
-		Provider:          util.StringPtr(providerName),
-		Seed:              util.StringPtr("seed"),
-		TargetSecret:      util.StringPtr("secret"),
-		DiskType:          util.StringPtr("disk"),
-		WorkerCidr:        util.StringPtr("10.10.10.10/25"),
-		AutoScalerMin:     util.IntPtr(1),
-		AutoScalerMax:     util.IntPtr(4),
-		MaxSurge:          util.IntPtr(25),
-		MaxUnavailable:    util.IntPtr(2),
+		Name:              util.PtrTo("name"),
+		KubernetesVersion: util.PtrTo("1.16"),
+		VolumeSizeGb:      util.PtrTo(50),
+		MachineType:       util.PtrTo("machine"),
+		Region:            util.PtrTo("region"),
+		Provider:          util.PtrTo(providerName),
+		Seed:              util.PtrTo("seed"),
+		TargetSecret:      util.PtrTo("secret"),
+		DiskType:          util.PtrTo("disk"),
+		WorkerCidr:        util.PtrTo("10.10.10.10/25"),
+		AutoScalerMin:     util.PtrTo(1),
+		AutoScalerMax:     util.PtrTo(4),
+		MaxSurge:          util.PtrTo(25),
+		MaxUnavailable:    util.PtrTo(2),
 	}
 }

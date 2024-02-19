@@ -89,7 +89,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 			ProjectName:            "project-name",
 			GardenerProviderConfig: gcpGardenerConfig,
 		},
-		ActiveKymaConfigId: util.StringPtr("activekymaconfigid"),
+		ActiveKymaConfigId: util.PtrTo("activekymaconfigid"),
 	}
 
 	t.Run("should start deprovisioning without uninstallation", func(t *testing.T) {
@@ -225,13 +225,13 @@ func newClusterConfig(name string, subAccountID *string, providerConfig model.Ga
 			Name:                   name,
 			ProjectName:            "project-name",
 			KubernetesVersion:      "1.16",
-			VolumeSizeGB:           util.IntPtr(50),
-			DiskType:               util.StringPtr("standard"),
+			VolumeSizeGB:           util.PtrTo(50),
+			DiskType:               util.PtrTo("standard"),
 			MachineType:            "n1-standard-4",
 			Provider:               "gcp",
 			TargetSecret:           "secret",
 			Region:                 region,
-			Purpose:                util.StringPtr(purpose),
+			Purpose:                util.PtrTo(purpose),
 			WorkerCidr:             "10.10.10.10",
 			AutoScalerMin:          1,
 			AutoScalerMax:          5,
