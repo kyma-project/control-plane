@@ -1,4 +1,4 @@
-FROM golang:1.21.3-alpine3.18 as builder
+FROM golang:1.21.7-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/provisioner
 WORKDIR ${BASE_APP_DIR}
@@ -21,7 +21,7 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
 
-FROM alpine:3.18.5
+FROM alpine:3.18.6
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

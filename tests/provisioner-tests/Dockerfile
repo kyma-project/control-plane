@@ -1,4 +1,4 @@
-FROM europe-docker.pkg.dev/kyma-project/prod/external/golang:1.20.3-alpine3.17 as builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/golang:1.21.7-alpine3.18 as builder
 
 ENV SRC_DIR=/go/src/github.com/kyma-project/control-plane/tests/provisioner-tests
 
@@ -13,7 +13,7 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/provisioner
 
 
-FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.17.3
+FROM alpine:3.18.6
 LABEL source=git@github.com:kyma-project/kyma.git
 
 WORKDIR /app
