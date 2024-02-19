@@ -6,10 +6,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -95,18 +95,27 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	err = retry.OnError(customBackoff, func(err error) bool {
 		return err != nil
 	}, func() (err error) {
-		metricTimer := prometheus.NewTimer(sentRequestDuration)
+		reqStartTime := time.Now()
+		// send request.
 		resp, err = c.HTTPClient.Do(req)
-		metricTimer.ObserveDuration()
+		duration := time.Since(reqStartTime)
+		responseCode := http.StatusBadRequest
+		if resp != nil {
+			responseCode = resp.StatusCode
+		}
 		if err != nil {
+			urlErr := err.(*url.Error)
+			if urlErr.Timeout() {
+				responseCode = http.StatusRequestTimeout
+			}
 			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("getting runtimes from KEB")
 		}
+
+		// record metric.
+		recordKEBLatency(duration, responseCode, c.Config.URL)
 		return
 	})
-	if resp != nil {
-		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-	}
 
 	if err != nil {
 		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Warnw("getting runtimes from KEB")

@@ -71,7 +71,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	record.KubeConfig = kubeconfig
 
 	// Get nodes dynamic client
-	nodesClient, err := p.NodeConfig.NewClient(record.KubeConfig)
+	nodesClient, err := p.NodeConfig.NewClient(record)
 	if err != nil {
 		return record, err
 	}
@@ -89,7 +89,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 	}
 
 	// Get PVCs
-	pvcClient, err := p.PVCConfig.NewClient(record.KubeConfig)
+	pvcClient, err := p.PVCConfig.NewClient(record)
 	if err != nil {
 		return record, err
 	}
@@ -101,7 +101,7 @@ func (p *Process) generateRecordWithNewMetrics(identifier int, subAccountID stri
 
 	// Get Svcs
 	var svcList *corev1.ServiceList
-	svcClient, err := p.SvcConfig.NewClient(record.KubeConfig)
+	svcClient, err := p.SvcConfig.NewClient(record)
 	if err != nil {
 		return record, err
 	}
@@ -162,7 +162,6 @@ func (p *Process) pollKEBForRuntimes() {
 			time.Sleep(p.KEBClient.Config.PollWaitDuration)
 			continue
 		}
-		clustersScraped.WithLabelValues(kebReq.RequestURI).Set(float64(runtimesPage.Count))
 
 		p.namedLogger().Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
@@ -233,6 +232,11 @@ func (p *Process) processSubAccountID(subAccountID string, identifier int) {
 		p.namedLoggerWithRuntime(record).With(log.KeyRequeue, log.ValueTrue).With(log.KeySubAccountID, subAccountID).
 			With(log.KeyWorkerID, identifier).Debugf("successfully requeued subAccountID after %v", p.ScrapeInterval)
 
+		// record metric.
+		if oldRecord := p.getSubAccountFromCache(subAccountID); oldRecord != nil {
+			recordSubAccountProcessed(false, *oldRecord)
+		}
+
 		// Nothing to do further
 		return
 	}
@@ -248,6 +252,9 @@ func (p *Process) processSubAccountID(subAccountID string, identifier int) {
 		p.namedLoggerWithRuntime(record).With(log.KeyResult, log.ValueSuccess).With(log.KeyRequeue, log.ValueTrue).
 			With(log.KeySubAccountID, subAccountID).With(log.KeyWorkerID, identifier).
 			Debugf("requeued subAccountID after %v", p.ScrapeInterval)
+
+		// record metric.
+		recordSubAccountProcessed(false, *record)
 
 		// Nothing to do further
 		return
@@ -268,16 +275,28 @@ func (p *Process) processSubAccountID(subAccountID string, identifier int) {
 			With(log.KeySubAccountID, subAccountID).With(log.KeyWorkerID, identifier).
 			Debugf("requeued subAccountID after %v", p.ScrapeInterval)
 
+		// record metric.
+		recordSubAccountProcessed(false, *record)
+
 		// Nothing to do further hence continue
 		return
 	}
 	p.namedLoggerWithRuntime(record).With(log.KeyResult, log.ValueSuccess).With(log.KeySubAccountID, subAccountID).
 		With(log.KeyWorkerID, identifier).Infof("sent event stream, shoot: %s", record.ShootName)
 
+	// record metrics.
+	recordSubAccountProcessed(true, *record)
+	recordSubAccountProcessedTimeStamp(isOldMetricValid, *record)
+
+	// update cache.
 	if !isOldMetricValid {
 		p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
 		p.namedLoggerWithRuntime(record).With(log.KeyResult, log.ValueSuccess).With(log.KeySubAccountID, record.SubAccountID).
 			With(log.KeyWorkerID, identifier).Debug("saved metric")
+		resetOldMetricsPublishedGauge(*record)
+	} else {
+		// record metric.
+		recordOldMetricsPublishedGauge(*record)
 	}
 
 	// Requeue the subAccountID anyway
@@ -354,12 +373,14 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 		recordObj, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
-				SubAccountID: runtime.SubAccountID,
-				RuntimeID:    runtime.RuntimeID,
-				ShootName:    runtime.ShootName,
-				ProviderType: strings.ToLower(runtime.Provider),
-				KubeConfig:   "",
-				Metric:       nil,
+				SubAccountID:    runtime.SubAccountID,
+				RuntimeID:       runtime.RuntimeID,
+				InstanceID:      runtime.InstanceID,
+				GlobalAccountID: runtime.GlobalAccountID,
+				ShootName:       runtime.ShootName,
+				ProviderType:    strings.ToLower(runtime.Provider),
+				KubeConfig:      "",
+				Metric:          nil,
 			}
 
 			// Cluster is trackable but does not exist in the cache
@@ -385,6 +406,12 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					p.Cache.Set(runtime.SubAccountID, newRecord, cache.NoExpiration)
 					p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 						Debug("Resetted the values in cache for subAccount")
+
+					// delete metrics for old shoot name.
+					if success := deleteMetrics(record); !success {
+						p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+							Info("prometheus metrics were not successfully removed for subAccount")
+					}
 				}
 			}
 			continue
@@ -394,6 +421,13 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			p.Cache.Delete(runtime.SubAccountID)
 			p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).
 				With(log.KeyRuntimeID, runtime.RuntimeID).Debug("Deleted subAccount from cache")
+			// delete metrics for old shoot name.
+			if record, ok := recordObj.(kmccache.Record); ok {
+				if success := deleteMetrics(record); !success {
+					p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
+						Info("prometheus metrics were not successfully removed for subAccount")
+				}
+			}
 			continue
 		}
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).
@@ -412,8 +446,23 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				p.namedLogger().With(log.KeySubAccountID, sAccID).With(log.KeyRuntimeID, record.RuntimeID).
 					Debug("SubAccount is not trackable anymore hence deleting it from cache")
 			}
+			// delete metrics for old shoot name.
+			if success := deleteMetrics(record); !success {
+				p.namedLogger().With(log.KeySubAccountID, record.SubAccountID).With(log.KeyRuntimeID, record.RuntimeID).
+					Info("prometheus metrics were not successfully removed for subAccount")
+			}
 		}
 	}
+}
+
+func (p *Process) getSubAccountFromCache(subAccountID string) *kmccache.Record {
+	obj, found := p.Cache.Get(subAccountID)
+	if found {
+		if record, ok := obj.(kmccache.Record); ok {
+			return &record
+		}
+	}
+	return nil
 }
 
 func (p *Process) namedLogger() *zap.SugaredLogger {
