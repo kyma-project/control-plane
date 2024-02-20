@@ -11,7 +11,6 @@ import (
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
@@ -84,15 +83,9 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		"page": []string{fmt.Sprintf("%d", pageNum)},
 	}
 	req.URL.RawQuery = query.Encode()
-	customBackoff := wait.Backoff{
-		Steps:    c.Config.RetryCount,
-		Duration: c.HTTPClient.Timeout,
-		Factor:   backOffFactor,
-		Jitter:   backOffJitter,
-	}
 	var resp *http.Response
 	var err error
-	err = retry.OnError(customBackoff, func(err error) bool {
+	err = retry.OnError(retry.DefaultRetry, func(err error) bool {
 		return err != nil
 	}, func() (err error) {
 		reqStartTime := time.Now()

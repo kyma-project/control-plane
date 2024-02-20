@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
@@ -74,13 +73,7 @@ func (eClient Client) getEDPURL(dataTenant string) string {
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
 	var resp *http.Response
 	var err error
-	customBackoff := wait.Backoff{
-		Steps:    eClient.Config.EventRetry,
-		Duration: eClient.Config.Timeout,
-		Factor:   5.0,
-		Jitter:   0.1,
-	}
-	err = retry.OnError(customBackoff, func(err error) bool {
+	err = retry.OnError(retry.DefaultRetry, func(err error) bool {
 		return err != nil
 	}, func() (err error) {
 		reqStartTime := time.Now()

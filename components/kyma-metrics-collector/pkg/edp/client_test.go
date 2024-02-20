@@ -2,6 +2,7 @@ package edp
 
 import (
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"net/http"
 	"net/url"
 	"testing"
@@ -98,7 +99,7 @@ func TestClientRetry(t *testing.T) {
 	latencyMetric.Reset()
 
 	counter := 0
-	expectedCountRetry := 2
+	expectedCountRetry := retry.DefaultRetry.Steps
 	edpTestHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		g.Expect(req.URL.Path).To(gomega.Equal(expectedPath))
 		g.Expect(req.Method).To(gomega.Equal(http.MethodPost))
