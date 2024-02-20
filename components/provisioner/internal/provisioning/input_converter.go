@@ -15,6 +15,7 @@ import (
 const (
 	OpenStackFloatingPoolName  = "FloatingIP-external-kyma-01"
 	OpenStackExposureClassName = "converged-cloud-internet"
+	OpenStackCloudProfileName  = "converged-cloud-kyma"
 )
 
 type InputConverter interface {
@@ -233,6 +234,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	if input.OpenStackConfig != nil {
 		if input.OpenStackConfig.FloatingPoolName == nil {
 			input.OpenStackConfig.FloatingPoolName = util.PtrTo(OpenStackFloatingPoolName)
+		}
+		if input.OpenStackConfig.CloudProfileName == nil {
+			input.OpenStackConfig.CloudProfileName = util.PtrTo(OpenStackCloudProfileName)
 		}
 		return model.NewOpenStackGardenerConfig(input.OpenStackConfig)
 	}

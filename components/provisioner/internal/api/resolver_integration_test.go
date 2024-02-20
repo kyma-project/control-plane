@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -211,8 +213,8 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                []string{"eu-de-1a"},
-					FloatingPoolName:     util.PtrTo("FloatingIP-external-cp"),
-					CloudProfileName:     "converged-cloud-cp",
+					FloatingPoolName:     util.PtrTo(provisioning.OpenStackFloatingPoolName),
+					CloudProfileName:     util.PtrTo(provisioning.OpenStackCloudProfileName),
 					LoadBalancerProvider: "f5",
 				},
 			},
