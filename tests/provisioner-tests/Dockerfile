@@ -13,7 +13,7 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/provisioner
 
 
-FROM alpine:3.19.1
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1
 LABEL source=git@github.com:kyma-project/kyma.git
 
 WORKDIR /app

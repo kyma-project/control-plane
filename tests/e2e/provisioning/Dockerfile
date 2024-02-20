@@ -7,7 +7,7 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
-FROM alpine:3.19.1
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1
 LABEL source=git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
