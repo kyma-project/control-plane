@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 	"os"
 	"path/filepath"
 	"testing"
@@ -211,8 +212,8 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                []string{"eu-de-1a"},
-					FloatingPoolName:     util.PtrTo("FloatingIP-external-cp"),
-					CloudProfileName:     "converged-cloud-cp",
+					FloatingPoolName:     util.PtrTo(provisioning.OpenStackFloatingPoolName),
+					CloudProfileName:     util.PtrTo(provisioning.OpenStackCloudProfileName),
 					LoadBalancerProvider: "f5",
 				},
 			},

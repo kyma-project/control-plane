@@ -1348,7 +1348,7 @@ input AWSProviderConfigInput {
 input OpenStackProviderConfigInput {
     zones:           [String!]!   # Zones in which to create the cluster
     floatingPoolName: String     # FloatingPoolName name in which LoadBalancer FIPs should be created. Set to FloatingIP-external-kyma-01 by default
-    cloudProfileName: String!     # Name of the target Cloud Profile
+    cloudProfileName: String     # Name of the target Cloud Profile. Set to converged-cloud-kyma by default
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -6762,7 +6762,7 @@ func (ec *executionContext) unmarshalInputOpenStackProviderConfigInput(ctx conte
 			}
 		case "cloudProfileName":
 			var err error
-			it.CloudProfileName, err = ec.unmarshalNString2string(ctx, v)
+			it.CloudProfileName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
