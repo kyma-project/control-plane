@@ -661,6 +661,8 @@ func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, 
 }
 
 func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	shoot.Spec.CloudProfileName = util.UnwrapOrZero(c.input.CloudProfileName)
+
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	openStackInfra := NewOpenStackInfrastructure(util.UnwrapOrZero(c.input.FloatingPoolName), gardenerConfig.WorkerCidr)
