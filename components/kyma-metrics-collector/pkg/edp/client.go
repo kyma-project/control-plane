@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -29,6 +30,7 @@ const (
 	contentTypeKeyHeader   = "Content-Type"
 	authorizationKeyHeader = "Authorization"
 	clientName             = "edp-client"
+	tenantIdPlaceholder    = "<subAccountId>"
 )
 
 func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
@@ -44,14 +46,7 @@ func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 }
 
 func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
-	edpURL := fmt.Sprintf(edpPathFormat,
-		eClient.Config.URL,
-		eClient.Config.Namespace,
-		eClient.Config.DataStreamName,
-		eClient.Config.DataStreamVersion,
-		dataTenant,
-		eClient.Config.DataStreamEnv,
-	)
+	edpURL := eClient.getEDPURL(dataTenant)
 
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
 	if err != nil {
@@ -63,6 +58,17 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 	req.Header.Add(authorizationKeyHeader, fmt.Sprintf("Bearer %s", eClient.Config.Token))
 
 	return req, nil
+}
+
+func (eClient Client) getEDPURL(dataTenant string) string {
+	return fmt.Sprintf(edpPathFormat,
+		eClient.Config.URL,
+		eClient.Config.Namespace,
+		eClient.Config.DataStreamName,
+		eClient.Config.DataStreamVersion,
+		dataTenant,
+		eClient.Config.DataStreamEnv,
+	)
 }
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
@@ -77,11 +83,21 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	err = retry.OnError(customBackoff, func(err error) bool {
 		return err != nil
 	}, func() (err error) {
-		metricTimer := prometheus.NewTimer(sentRequestDuration)
+		reqStartTime := time.Now()
+		// send request.
 		req.Body = io.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
-		metricTimer.ObserveDuration()
+		duration := time.Since(reqStartTime)
+		// check result.
 		if err != nil {
+			urlErr := err.(*url.Error)
+			responseCode := http.StatusBadRequest
+			if urlErr.Timeout() {
+				responseCode = http.StatusRequestTimeout
+			}
+			// record metric.
+			recordEDPLatency(duration, responseCode, eClient.getEDPURL(tenantIdPlaceholder))
+			// log error.
 			eClient.namedLogger().Debugf("req: %v", req)
 			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
@@ -94,11 +110,12 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 				Warn("send event stream as EDP")
 			err = non2xxErr
 		}
+
+		// record metric.
+		// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
+		recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
 		return
 	})
-	if resp != nil {
-		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-	}
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to POST event to EDP")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -73,6 +74,10 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
+	}
+
+	OpenStackConfig struct {
+		Regions string `envconfig:"default="`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -210,7 +215,12 @@ func main() {
 	)
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
-	validator := api.NewValidator()
+
+	var openStackRegions []string
+	err = json.Unmarshal([]byte(cfg.OpenStackConfig.Regions), &openStackRegions)
+	exitOnError(err, "Failed to unmarshal OpenStack config.")
+
+	validator := api.NewValidator(openStackRegions)
 	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater)
 
 	ctx, cancel := context.WithCancel(context.Background())

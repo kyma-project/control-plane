@@ -275,7 +275,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		KymaConfig: &model.KymaConfig{
 			ID: "id",
 		},
-		ActiveKymaConfigId: util.StringPtr("activekymaconfigid"),
+		ActiveKymaConfigId: util.PtrTo("activekymaconfigid"),
 		Kubeconfig:         &mockedKubeconfig,
 	}
 
@@ -536,7 +536,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID:         runtimeID,
-		Kubeconfig: util.StringPtr(kubeconfig),
+		Kubeconfig: util.PtrTo(kubeconfig),
 	}
 
 	t.Run("Should return runtime status", func(t *testing.T) {
@@ -616,8 +616,8 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		Tenant: tenant,
 		ClusterConfig: model.GardenerConfig{
 			ClusterID:              runtimeID,
-			Purpose:                util.StringPtr("evaluation"),
-			LicenceType:            util.StringPtr("license"),
+			Purpose:                util.PtrTo("evaluation"),
+			LicenceType:            util.PtrTo("license"),
 			GardenerProviderConfig: providerConfig,
 			OIDCConfig:             oidcConfig(),
 		},

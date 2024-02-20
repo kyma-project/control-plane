@@ -3,13 +3,13 @@ package keb
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/onsi/gomega"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
@@ -32,7 +32,9 @@ const (
 func TestGetAllRuntimes(t *testing.T) {
 	t.Run("when 2 pages are returned for all runtimes on matching path and HTTP 404 for non matched ones", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
-		totalRequest.Reset()
+		// given
+		// reset metrics state.
+		latencyMetric.Reset()
 
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
@@ -92,21 +94,36 @@ func TestGetAllRuntimes(t *testing.T) {
 		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
 
+		// when
 		gotRuntimes, err := kebClient.GetAllRuntimes(req)
+
+		// then
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(*gotRuntimes).To(gomega.Equal(*expectedRuntimes))
 		g.Expect(gotRuntimes.TotalCount).To(gomega.Equal(expectedRuntimes.TotalCount))
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
-		// Ensure metric exists
-		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
-		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
-		// Ensure metric has expected value
-		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
-		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(2)))
+		// ensure metric exists.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
+		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 
-		// Testing http 404 for non existent path
+		// check if the required labels exists in the metric.
+		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
+		g.Expect(err).Should(gomega.BeNil())
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+		// response status label.
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusOK)))
+		// request URL label.
+		g.Expect(kmctesting.PrometheusFilterLabelPair(gotLabel, requestURLLabel)).ShouldNot(gomega.BeNil())
+
+		// Testing http 404 for non-existent path
+		// reset metrics state.
+		latencyMetric.Reset()
 		kebClient.Config.URL = fmt.Sprintf("%s/nopaging", kebClient.Config.URL)
 		req, err = kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
@@ -114,18 +131,24 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(err).ShouldNot(gomega.BeNil())
 		g.Expect(err.Error()).To(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 404"))
 
-		// Ensure metric exists
-		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(2))
-		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
-		// Ensure metric has expected value
-		counter, err = totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusNotFound))
+		// ensure metric exists.
+		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
+		// check if the required labels exists in the metric.
+		pMetric, err = kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		gotLabel = pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+		// response status label.
+		statusLabel = kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusNotFound)))
 	})
 
 	t.Run("when all runtimes are returned in 1 page", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
-		totalRequest.Reset()
+		// given
+		latencyMetric.Reset()
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
@@ -158,24 +181,36 @@ func TestGetAllRuntimes(t *testing.T) {
 		// Testing response which contains all the records
 		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
+
+		// when
 		gotRuntimes, err := kebClient.GetAllRuntimes(req)
+
+		// then
 		g.Expect(err).Should(gomega.BeNil())
 		g.Expect(*gotRuntimes).To(gomega.Equal(*expectedRuntimes))
 		g.Expect(gotRuntimes.TotalCount).To(gomega.Equal(expectedRuntimes.TotalCount))
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
-		// Ensure metric exists
-		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
-		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
-		// Ensure metric has expected value
-		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
+		// ensure metric exists.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
+		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
+		// check if the required labels exists in the metric.
+		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+		// response status label.
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusOK)))
 	})
 
 	t.Run("when HTTP non 2xx is returned by KEB", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
-		totalRequest.Reset()
+		// given
+		latencyMetric.Reset()
 		getRuntimesHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 			// Success endpoint
 			g.Expect(req.URL.Path).To(gomega.Equal(expectedPathPrefixWith1Page))
@@ -200,17 +235,27 @@ func TestGetAllRuntimes(t *testing.T) {
 		// Testing response which contains HTTP 500
 		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
+
+		// when
 		_, err = kebClient.GetAllRuntimes(req)
+
+		// then
 		g.Expect(err.Error()).Should(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 500"))
 
-		// Ensure metric exists
-		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
-		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
-
-		// Ensure metric has expected value
-		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
+		// ensure metric exists.
+		expectedNumberOfMetrics := 1 // because single request is send.
+		expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
+		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
+		// check if the required labels exists in the metric.
+		pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
+		g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+		gotLabel := pMetric.Metric[0].Label
+		g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+		// response status label.
+		statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+		g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+		g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusInternalServerError)))
 	})
 }
 

@@ -25,15 +25,16 @@ const (
 	testEnv               = "env"
 
 	//Metrics related variable
-	metricsName   = "kmc_edp_request_total"
 	histogramName = "kmc_edp_request_duration_seconds"
 )
 
 func TestClient(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
+	// given
 	dataTenant := "testTenant"
-	// Resetting any old state
-	totalRequest.Reset()
+	// reset metrics state.
+	latencyMetric.Reset()
+
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 	expectedHeaders := http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
@@ -62,33 +63,46 @@ func TestClient(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(gotReq.URL.Host).To(gomega.Equal(edpURL.Host))
 
+	// when
 	resp, err := edpClient.Send(gotReq, testData)
+
+	// then
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(resp.StatusCode).Should(gomega.Equal(http.StatusCreated))
 
-	// Ensure metrics exists
-	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
-	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
-	// Ensure metric has expected value
-	counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
+	// ensure metrics exists.
+	g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
+
+	// check if the required labels exists in the metric.
+	expectedNumberOfMetrics := 1 // because single request is send.
+	expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
+	pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
+	g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+	gotLabel := pMetric.Metric[0].Label
+	g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+	// response status label.
+	statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+	g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+	g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusCreated)))
+	// request URL label.
+	g.Expect(kmctesting.PrometheusFilterLabelPair(gotLabel, requestURLLabel)).ShouldNot(gomega.BeNil())
 }
 
 func TestClientRetry(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
+	// given
 	dataTenant := "testTenant"
-	// Resetting any old state
-	totalRequest.Reset()
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
+	// reset metrics state.
+	latencyMetric.Reset()
 
-	countRetry := 0
-	counter := &countRetry
+	counter := 0
 	expectedCountRetry := 2
 	edpTestHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		g.Expect(req.URL.Path).To(gomega.Equal(expectedPath))
 		g.Expect(req.Method).To(gomega.Equal(http.MethodPost))
-		*counter += 1
+		counter += 1
 		rw.WriteHeader(http.StatusInternalServerError)
 	})
 	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
@@ -105,19 +119,28 @@ func TestClientRetry(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(gotReq.URL.Host).To(gomega.Equal(edpURL.Host))
 
+	// when
 	_, err = edpClient.Send(gotReq, testData)
+
+	// then
 	g.Expect(err).ShouldNot(gomega.BeNil())
 	g.Expect(err.Error()).Should(gomega.Equal("failed to POST event to EDP: failed to send event stream as EDP returned HTTP: 500"))
-	g.Expect(countRetry).Should(gomega.Equal(expectedCountRetry))
+	g.Expect(counter).Should(gomega.Equal(expectedCountRetry))
 
-	// Ensure metric exists
-	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
-	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
+	// ensure metric exists.
+	expectedNumberOfMetrics := 1 // because single request is send.
+	expectedNumberOfLabels := 2  // because 2 labels are set in the definition of latencyMetric metric.
+	g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
 
-	// Ensure metric has expected value
-	status500Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
+	// ensure metric has expected label value.
+	pMetric, err := kmctesting.PrometheusGatherAndReturn(latencyMetric, histogramName)
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(status500Counter)).Should(gomega.Equal(float64(1)))
+	g.Expect(pMetric.Metric).Should(gomega.HaveLen(expectedNumberOfMetrics))
+	gotLabel := pMetric.Metric[0].Label
+	g.Expect(gotLabel).Should(gomega.HaveLen(expectedNumberOfLabels))
+	statusLabel := kmctesting.PrometheusFilterLabelPair(gotLabel, responseCodeLabel)
+	g.Expect(statusLabel).ShouldNot(gomega.BeNil())
+	g.Expect(statusLabel.GetValue()).Should(gomega.Equal(fmt.Sprint(http.StatusInternalServerError)))
 }
 
 func NewTestConfig(url string) *Config {

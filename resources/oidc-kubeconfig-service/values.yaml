@@ -7,9 +7,7 @@ global:
   ingress:
     domainName: "override.me.io"
   istio:
-    gateway:
-      name: "kyma-gateway"
-      namespace: "kyma-system"
+    gateway: "kyma-system/kyma-gateway"
   livenessProbe:
     initialDelaySeconds: 180
     timeoutSeconds: 1
@@ -23,7 +21,7 @@ replicaCount: 1
 
 image:
   repository: europe-docker.pkg.dev/kyma-project/prod/control-plane/kubeconfig-service
-  tag: "v20231128-21b583e5"
+  tag: "v20240124-709e778b"
   pullPolicy: IfNotPresent
 
 config:

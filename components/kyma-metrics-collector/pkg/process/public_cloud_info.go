@@ -3,16 +3,16 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 )
 
 type Providers struct {
-	Azure AzureMachines
-	AWS   AWSMachines
-	GCP   GCPMachines
+	Azure     AzureMachines
+	AWS       AWSMachines
+	GCP       GCPMachines
+	OpenStack OpenStackMachines
 }
 
 type AzureMachines map[string]Feature
@@ -20,6 +20,8 @@ type AzureMachines map[string]Feature
 type AWSMachines map[string]Feature
 
 type GCPMachines map[string]Feature
+
+type OpenStackMachines map[string]Feature
 
 type Feature struct {
 	CpuCores int     `json:"cpu_cores"`
@@ -42,6 +44,10 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 		}
 	case GCP:
 		if feature, ok := p.GCP[vmType]; ok {
+			return &feature
+		}
+	case CCEE:
+		if feature, ok := p.OpenStack[vmType]; ok {
 			return &feature
 		}
 	}
@@ -85,11 +91,20 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if err = json.Unmarshal(gcpMachinesData, gcpMachines); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal GCP machines data")
 	}
+	openStackMachinesData, err := machineInfo[CCEE].MarshalJSON()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal sapconvergedcloud info")
+	}
+	openStackMachines := &OpenStackMachines{}
+	if err = json.Unmarshal(openStackMachinesData, openStackMachines); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal sapconvergedcloud machines data")
+	}
 
 	providers := Providers{
-		AWS:   *awsMachines,
-		Azure: *azureMachines,
-		GCP:   *gcpMachines,
+		AWS:       *awsMachines,
+		Azure:     *azureMachines,
+		GCP:       *gcpMachines,
+		OpenStack: *openStackMachines,
 	}
 
 	return &providers, nil

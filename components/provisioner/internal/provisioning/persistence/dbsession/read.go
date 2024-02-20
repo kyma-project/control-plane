@@ -188,7 +188,7 @@ type kymaComponentConfigDTO struct {
 type kymaConfigDTO []kymaComponentConfigDTO
 
 func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
-	kymaModulesOrdered := make(map[int][]model.KymaComponentConfig, 0)
+	kymaModulesOrdered := make(map[int][]model.KymaComponentConfig)
 
 	for _, componentCfg := range c {
 		var configuration model.Configuration
@@ -204,11 +204,11 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 			SourceURL:      componentCfg.SourceURL,
 			Configuration:  configuration,
 			KymaConfigID:   componentCfg.KymaConfigID,
-			ComponentOrder: util.UnwrapInt(componentCfg.ComponentOrder),
+			ComponentOrder: util.UnwrapOrZero(componentCfg.ComponentOrder),
 		}
 
 		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
-		kymaModulesOrdered[util.UnwrapInt(componentCfg.ComponentOrder)] = append(kymaModulesOrdered[util.UnwrapInt(componentCfg.ComponentOrder)], kymaComponentConfig)
+		kymaModulesOrdered[util.UnwrapOrZero(componentCfg.ComponentOrder)] = append(kymaModulesOrdered[util.UnwrapOrZero(componentCfg.ComponentOrder)], kymaComponentConfig)
 	}
 
 	keys := make([]int, 0, len(kymaModulesOrdered))

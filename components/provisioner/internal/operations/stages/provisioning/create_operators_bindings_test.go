@@ -28,7 +28,7 @@ const dynamicKubeconfig = "dynamic_kubeconfig"
 func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 
 	cluster := model.Cluster{
-		Kubeconfig: util.StringPtr("kubeconfig"),
+		Kubeconfig: util.PtrTo("kubeconfig"),
 		ClusterConfig: model.GardenerConfig{
 			Name: "shoot",
 		},
