@@ -33,13 +33,13 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           util.IntPtr(30),
+			VolumeSizeGb:           util.PtrTo(30),
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
 			Provider:               "gcp",
-			Seed:                   util.StringPtr(""),
+			Seed:                   util.PtrTo(""),
 			TargetSecret:           "test-secret",
-			DiskType:               util.StringPtr("ssd"),
+			DiskType:               util.PtrTo("ssd"),
 			WorkerCidr:             "10.10.10.10/255",
 			AutoScalerMin:          1,
 			AutoScalerMax:          3,
@@ -76,11 +76,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		}
 
 		operation := &gqlschema.OperationStatus{
-			ID:        util.StringPtr(operationID),
+			ID:        util.PtrTo(operationID),
 			Operation: gqlschema.OperationTypeProvision,
 			State:     gqlschema.OperationStateInProgress,
-			Message:   util.StringPtr("Message"),
-			RuntimeID: util.StringPtr(runtimeID),
+			Message:   util.PtrTo("Message"),
+			RuntimeID: util.PtrTo(runtimeID),
 		}
 
 		config := gqlschema.ProvisionRuntimeInput{
@@ -104,7 +104,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, runtimeID, *status.RuntimeID)
 		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
 		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
-		assert.Equal(t, util.StringPtr("Message"), status.Message)
+		assert.Equal(t, util.PtrTo("Message"), status.Message)
 	})
 
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {
@@ -390,11 +390,11 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		operation := &gqlschema.OperationStatus{
-			ID:        util.StringPtr(operationID),
+			ID:        util.PtrTo(operationID),
 			Operation: gqlschema.OperationTypeUpgradeShoot,
 			State:     gqlschema.OperationStateInProgress,
-			Message:   util.StringPtr("Message"),
-			RuntimeID: util.StringPtr(runtimeID),
+			Message:   util.PtrTo("Message"),
+			RuntimeID: util.PtrTo(runtimeID),
 		}
 
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
