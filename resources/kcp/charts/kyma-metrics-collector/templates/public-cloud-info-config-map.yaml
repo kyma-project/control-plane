@@ -235,6 +235,12 @@ data:
             "memory": 256,
             "storage": 0,
             "max_nics": 8
+        },
+        "standard_d2s_v5": {
+            "cpu_cores": 2,
+            "memory": 8,
+            "storage": 0,
+            "max_nics": 2
         }
       },
       "aws": {
@@ -353,6 +359,10 @@ data:
         "m6i.12xlarge": {
             "cpu_cores": 48,
             "memory": 192
+        },
+        "m6i.large": {
+            "cpu_cores": 2,
+            "memory": 8
         }
       },
       "gcp": {
@@ -421,6 +431,10 @@ data:
        "g_c8_m32": {
          "cpu_cores": 8,
          "memory": 32
+       },
+       "g_c2_m8": {
+         "cpu_cores": 2,
+         "memory": 8
        }
      }
     }
