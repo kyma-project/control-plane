@@ -67,10 +67,10 @@ groups:
         description: Rate of increase in errors for the requests from KMC to Gardener.
   - name: kmc.rules.processing
     rules:
-    - alert: ProcessingClustersRateChanged
+    - alert: KMCProcessingClustersFromKEBFailed
       expr: sum(rate(kmc_process_clusters_total[15m])) > 0
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: Rate of change of the number of clusters obtained by KMC from KEB for each poll.
+        description: Processing clusters obtained from KEB failed.

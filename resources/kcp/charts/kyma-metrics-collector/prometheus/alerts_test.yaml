@@ -164,3 +164,22 @@ tests:
                 severity: critical
               exp_annotations:
                 description: Rate of increase in errors for the requests from KMC to Gardener.
+
+    - interval: 1m
+      input_series:
+        - series: 'kmc_process_clusters_total{cluster_id="C"}'
+          values: '0+1x15'
+        - series: 'kmc_process_clusters_total{cluster_id="D"}'
+          values: '0x15'
+
+      alert_rule_test:
+        - eval_time: 5m
+          alertname: KMCProcessingClustersFromKEBFailed
+        - eval_time: 15m
+          alertname: KMCProcessingClustersFromKEBFailed
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+              exp_annotations:
+                description: "Processing clusters obtained from KEB failed."
+
