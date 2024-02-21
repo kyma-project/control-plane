@@ -129,7 +129,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 		_, err = kebClient.GetAllRuntimes(req)
 		g.Expect(err).ShouldNot(gomega.BeNil())
-		g.Expect(err.Error()).To(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 404"))
+		g.Expect(err.Error()).To(gomega.ContainSubstring("KEB returned status code: 404"))
 
 		// ensure metric exists.
 		g.Expect(testutil.CollectAndCount(latencyMetric, histogramName)).Should(gomega.Equal(1))
@@ -240,7 +240,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		_, err = kebClient.GetAllRuntimes(req)
 
 		// then
-		g.Expect(err.Error()).Should(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 500"))
+		g.Expect(err.Error()).Should(gomega.ContainSubstring("KEB returned status code: 500"))
 
 		// ensure metric exists.
 		expectedNumberOfMetrics := 1 // because single request is send.

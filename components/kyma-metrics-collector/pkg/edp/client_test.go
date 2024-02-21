@@ -2,7 +2,6 @@ package edp
 
 import (
 	"fmt"
-	"k8s.io/client-go/util/retry"
 	"net/http"
 	"net/url"
 	"testing"
@@ -99,7 +98,7 @@ func TestClientRetry(t *testing.T) {
 	latencyMetric.Reset()
 
 	counter := 0
-	expectedCountRetry := retry.DefaultRetry.Steps
+	expectedCountRetry := 2
 	edpTestHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		g.Expect(req.URL.Path).To(gomega.Equal(expectedPath))
 		g.Expect(req.Method).To(gomega.Equal(http.MethodPost))
@@ -125,7 +124,7 @@ func TestClientRetry(t *testing.T) {
 
 	// then
 	g.Expect(err).ShouldNot(gomega.BeNil())
-	g.Expect(err.Error()).Should(gomega.Equal("failed to POST event to EDP: failed to send event stream as EDP returned HTTP: 500"))
+	g.Expect(err.Error()).Should(gomega.ContainSubstring("failed to send event stream as EDP returned HTTP: 500"))
 	g.Expect(counter).Should(gomega.Equal(expectedCountRetry))
 
 	// ensure metric exists.

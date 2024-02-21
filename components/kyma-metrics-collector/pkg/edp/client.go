@@ -3,16 +3,15 @@ package edp
 import (
 	"bytes"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
 
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/client-go/util/retry"
-
-	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 type Client struct {
@@ -30,6 +29,7 @@ const (
 	authorizationKeyHeader = "Authorization"
 	clientName             = "edp-client"
 	tenantIdPlaceholder    = "<subAccountId>"
+	retryInterval          = 10 * time.Second
 )
 
 func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
@@ -73,53 +73,62 @@ func (eClient Client) getEDPURL(dataTenant string) string {
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
 	var resp *http.Response
 	var err error
-	err = retry.OnError(retry.DefaultRetry, func(err error) bool {
-		return err != nil
-	}, func() (err error) {
-		reqStartTime := time.Now()
-		// send request.
-		req.Body = io.NopCloser(bytes.NewReader(payload))
-		resp, err = eClient.HttpClient.Do(req)
-		duration := time.Since(reqStartTime)
-		// check result.
-		if err != nil {
-			urlErr := err.(*url.Error)
-			responseCode := http.StatusBadRequest
-			if urlErr.Timeout() {
-				responseCode = http.StatusRequestTimeout
-			}
-			// record metric.
-			recordEDPLatency(duration, responseCode, eClient.getEDPURL(tenantIdPlaceholder))
-			// log error.
-			eClient.namedLogger().Debugf("req: %v", req)
-			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
-				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
+	defer func() {
+		if resp == nil {
 			return
 		}
-
-		if resp.StatusCode != http.StatusCreated {
-			non2xxErr := fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
-			eClient.namedLogger().With(log.KeyError, non2xxErr.Error()).With(log.KeyRetry, log.ValueTrue).
-				Warn("send event stream as EDP")
-			err = non2xxErr
-		}
-
-		// record metric.
-		// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
-		recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
-		return
-	})
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to POST event to EDP")
-	}
-
-	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
 			eClient.namedLogger().Warn(err)
 		}
 	}()
+
+	retryOptions := []retry.Option{
+		retry.Attempts(uint(eClient.Config.EventRetry)),
+		retry.Delay(retryInterval),
+	}
+
+	resp, err = retry.DoWithData(
+		func() (*http.Response, error) {
+			reqStartTime := time.Now()
+			// send request.
+			req.Body = io.NopCloser(bytes.NewReader(payload))
+			resp, err = eClient.HttpClient.Do(req)
+			duration := time.Since(reqStartTime)
+			// check result.
+			if err != nil {
+				urlErr := err.(*url.Error)
+				responseCode := http.StatusBadRequest
+				if urlErr.Timeout() {
+					responseCode = http.StatusRequestTimeout
+				}
+				// record metric.
+				recordEDPLatency(duration, responseCode, eClient.getEDPURL(tenantIdPlaceholder))
+				// log error.
+				eClient.namedLogger().Debugf("req: %v", req)
+				eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+					With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
+				return resp, err
+			}
+
+			// set error object if status is not StatusCreated.
+			if resp.StatusCode != http.StatusCreated {
+				err = fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
+				eClient.namedLogger().With(log.KeyError, err.Error()).With(log.KeyRetry, log.ValueTrue).
+					Warn("send event stream as EDP")
+			}
+
+			// record metric.
+			// the request URL is recorded without the actual tenant id to avoid having multiple histograms.
+			recordEDPLatency(duration, resp.StatusCode, eClient.getEDPURL(tenantIdPlaceholder))
+			return resp, err
+		},
+		retryOptions...,
+	)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to POST event to EDP")
+	}
 
 	eClient.namedLogger().Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
 	return resp, nil

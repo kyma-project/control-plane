@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/client-go/util/retry"
 
 	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
@@ -23,10 +23,8 @@ type Client struct {
 }
 
 const (
-	backOffJitter = 0.1
-	backOffFactor = 5.0
-
-	clientName = "keb-client"
+	clientName    = "keb-client"
+	retryInterval = 10 * time.Second
 )
 
 func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
@@ -78,62 +76,79 @@ func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, err
 }
 
 func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
+	var resp *http.Response
+	var err error
+	defer func() {
+		if resp == nil {
+			return
+		}
+		err := resp.Body.Close()
+		if err != nil {
+			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+				Error("close body for KEB runtime request")
+		}
+	}()
+
+	// define URL.
 	c.Logger.Debugf("polling for runtimes with URL: %s", req.URL.String())
 	query := url.Values{
 		"page": []string{fmt.Sprintf("%d", pageNum)},
 	}
 	req.URL.RawQuery = query.Encode()
-	var resp *http.Response
-	var err error
-	err = retry.OnError(retry.DefaultRetry, func(err error) bool {
-		return err != nil
-	}, func() (err error) {
-		reqStartTime := time.Now()
-		// send request.
-		resp, err = c.HTTPClient.Do(req)
-		duration := time.Since(reqStartTime)
-		responseCode := http.StatusBadRequest
-		if resp != nil {
-			responseCode = resp.StatusCode
-		}
-		if err != nil {
-			urlErr := err.(*url.Error)
-			if urlErr.Timeout() {
-				responseCode = http.StatusRequestTimeout
-			}
-			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
-				With(log.KeyRetry, log.ValueTrue).Warn("getting runtimes from KEB")
-		}
 
-		// record metric.
-		recordKEBLatency(duration, responseCode, c.Config.URL)
-		return
-	})
+	// define request retry options.
+	retryOptions := []retry.Option{
+		retry.Attempts(uint(c.Config.RetryCount)),
+		retry.Delay(retryInterval),
+	}
+
+	resp, err = retry.DoWithData(
+		func() (*http.Response, error) {
+			// send request and record duration.
+			reqStartTime := time.Now()
+			resp, err = c.HTTPClient.Do(req)
+			duration := time.Since(reqStartTime)
+
+			// check for error.
+			if err != nil {
+				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+					With(log.KeyRetry, log.ValueTrue).Warn("getting runtimes from KEB")
+				// record metric.
+				responseCode := http.StatusBadRequest
+				urlErr := err.(*url.Error)
+				if urlErr.Timeout() {
+					responseCode = http.StatusRequestTimeout
+				}
+				recordKEBLatency(duration, responseCode, c.Config.URL)
+				// return error.
+				return resp, err
+			}
+
+			// set error object if status is not OK.
+			if resp.StatusCode != http.StatusOK {
+				err = fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
+				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("get runtimes from KEB")
+			}
+
+			// record metric.
+			recordKEBLatency(duration, resp.StatusCode, c.Config.URL)
+			return resp, err
+		},
+		retryOptions...,
+	)
 
 	if err != nil {
 		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Warnw("getting runtimes from KEB")
 		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		failedErr := fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, failedErr.Error()).Error("get runtimes from KEB")
-		return nil, failedErr
-	}
-
+	// read data from response body.
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("read response body")
 		return nil, err
 	}
-	defer func() {
-		if resp.Body != nil {
-			if err = resp.Body.Close(); err != nil {
-				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
-					Error("close body for KEB runtime request")
-			}
-		}
-	}()
+
 	runtimesPage := new(kebruntime.RuntimesPage)
 	if err := json.Unmarshal(body, runtimesPage); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal runtimes response")
