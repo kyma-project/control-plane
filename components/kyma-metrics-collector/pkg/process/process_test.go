@@ -38,7 +38,7 @@ const (
 	bigTimeout = 10 * time.Second
 
 	// KEB related variables.
-	kebRuntimeResponseFilePath = "../testing/fixtures/runtimes_response.json"
+	kebRuntimeResponseFilePath = "../testing/fixtures/runtimes_response_process.json"
 	expectedPathPrefix         = "/runtimes"
 
 	// EDP related variables.
