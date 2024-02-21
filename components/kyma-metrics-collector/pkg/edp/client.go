@@ -74,12 +74,11 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	var resp *http.Response
 	var err error
 	defer func() {
-		if resp == nil {
-			return
-		}
-		err := resp.Body.Close()
-		if err != nil {
-			eClient.namedLogger().Warn(err)
+		if resp != nil && resp.Body != nil {
+			err := resp.Body.Close()
+			if err != nil {
+				eClient.namedLogger().Warn(err)
+			}
 		}
 	}()
 
