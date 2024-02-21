@@ -1,11 +1,12 @@
 package process
 
 import (
+	"strconv"
+
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"strconv"
 )
 
 const (
@@ -48,14 +49,23 @@ var (
 		},
 		[]string{shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
-	kebTotalClusters = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
+	kebTotalClusters = promauto.NewCounterVec(
+		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "clusters_total",
 			Help:      "Number of all clusters got from KEB including trackable and not trackable.",
 		},
 		[]string{"trackable", shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
+	)
+	kebTotalClustersNrTwo = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "clusters_total_nr_2",
+			Help:      "Number of all clusters got from KEB including trackable and not trackable.",
+		},
+		[]string{},
 	)
 )
 
@@ -68,7 +78,7 @@ func recordKEBTotalClusters(trackable bool, shootName, instanceID, runtimeID, su
 		runtimeID,
 		subAccountID,
 		globalAccountID,
-		).Inc()
+	).Inc()
 }
 
 // deleteMetrics deletes all the metrics for the provided shoot.

@@ -163,6 +163,8 @@ func (p *Process) pollKEBForRuntimes() {
 			continue
 		}
 
+		kebTotalClustersNrTwo.WithLabelValues().Set(float64(runtimesPage.Count))
+
 		p.namedLogger().Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
 		p.namedLogger().Debugf("length of the cache after KEB is done populating: %d", p.Cache.ItemCount())
