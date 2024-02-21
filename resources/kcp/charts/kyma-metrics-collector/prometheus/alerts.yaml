@@ -11,7 +11,7 @@ groups:
   - name: kmc.rules.edp
     rules:
     - alert: EDPRequestFailures
-      expr: sum by (status) (increase(kmc_edp_request_duration_seconds_count{status!~"2.."}[10m])) > 20
+      expr: rate(kmc_edp_request_duration_seconds_count{status!~"2.."}[10m]) > 0
       for: 10m
       labels:
         severity: critical
@@ -29,7 +29,7 @@ groups:
     rules:
     - alert: KEBRequestFailures
       # Requests to KEB are done every 10 minutes.
-      expr: sum by (status) (increase(kmc_keb_request_duration_seconds_count{status!~"2.."}[40m])) > 3
+      expr: rate(kmc_keb_request_duration_seconds_count{status!~"2.."}[40m]) > 0
       for: 10m
       labels:
         severity: critical
