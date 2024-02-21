@@ -353,28 +353,21 @@ func isSuccess(status int) bool {
 	return false
 }
 
+// Helper function which returns true if the runtime state is trackable
+func isTrackableState(state kebruntime.State) bool {
+	switch state {
+	case kebruntime.StateSucceeded, kebruntime.StateError, kebruntime.StateUpgrading, kebruntime.StateUpdating:
+		return true
+	}
+	return false
+}
+
 func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	// Check if the cluster is in a trackable state
-	trackableStates := map[kebruntime.State]bool{
-		"succeeded": true,
-		"error":     true,
-		"upgrading": true,
-		"updating":  true,
-	}
-
-	if trackableStates[runtime.Status.State] ||
+	if isTrackableState(runtime.Status.State) ||
 		(runtime.Status.Provisioning != nil &&
 			runtime.Status.Provisioning.State == string(kebruntime.StateSucceeded) &&
 			runtime.Status.Deprovisioning == nil) {
-
-		// record kebFetchedClusters metric
-		recordKEBFetchedClusters(
-			true,
-			runtime.ShootName,
-			runtime.InstanceID,
-			runtime.RuntimeID,
-			runtime.SubAccountID,
-			runtime.GlobalAccountID)
 
 		p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 			Infof("Tracked cluster of state: %s, provisioning state: %s, no deprovisioning state.",
@@ -385,15 +378,6 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	// Set provisioning and deprovisioning states if available
 	provisioning := getOrDefault(runtime.Status.Provisioning, "")
 	deprovisioning := getOrDefault(runtime.Status.Deprovisioning, "")
-
-	// record kebFetchedClusters metric
-	recordKEBFetchedClusters(
-		false,
-		runtime.ShootName,
-		runtime.InstanceID,
-		runtime.RuntimeID,
-		runtime.SubAccountID,
-		runtime.GlobalAccountID)
 
 	p.namedLogger().With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
 		Infof("Not tracking cluster of state: %s, provisioning state: %s, deprovisioning state: %s",
@@ -433,6 +417,15 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				Metric:          nil,
 			}
 
+			// record kebFetchedClusters metric for trackable cluster
+			recordKEBFetchedClusters(
+				true,
+				runtime.ShootName,
+				runtime.InstanceID,
+				runtime.RuntimeID,
+				runtime.SubAccountID,
+				runtime.GlobalAccountID)
+
 			// Cluster is trackable but does not exist in the cache
 			if !isFoundInCache {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
@@ -466,6 +459,16 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			}
 			continue
 		}
+
+		// record kebFetchedClusters metric for not trackable clusters
+		recordKEBFetchedClusters(
+			false,
+			runtime.ShootName,
+			runtime.InstanceID,
+			runtime.RuntimeID,
+			runtime.SubAccountID,
+			runtime.GlobalAccountID)
+
 		if isFoundInCache {
 			// Cluster is not trackable but is found in cache should be deleted
 			p.Cache.Delete(runtime.SubAccountID)
