@@ -6,15 +6,15 @@ require (
 	github.com/gardener/gardener v1.88.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/jellydator/ttlcache/v3 v3.1.1
+	github.com/jellydator/ttlcache/v3 v3.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/kyma-environment-broker v0.0.1
 	github.com/onsi/gomega v1.31.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
-	github.com/prometheus/client_model v0.5.0
-	go.uber.org/zap v1.26.0
+	github.com/prometheus/client_model v0.6.0
+	go.uber.org/zap v1.27.0
 	k8s.io/api v0.28.5
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
@@ -62,7 +62,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

@@ -387,7 +387,7 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	runtimeFromDB, err = readSession.GetCluster(runtimeID)
 	require.NoError(t, err)
 	assert.Equal(t, tenant, runtimeFromDB.Tenant)
-	assert.Equal(t, subAccountId, util.UnwrapStr(runtimeFromDB.SubAccountId))
+	assert.Equal(t, subAccountId, util.UnwrapOrZero(runtimeFromDB.SubAccountId))
 	assert.Equal(t, true, runtimeFromDB.Deleted)
 
 	operation, err := readSession.GetOperation(deprovisionRuntimeID)
@@ -402,7 +402,7 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 		State:            gqlschema.OperationStateSucceeded,
 		RuntimeID:        runtimeId,
 		CompassRuntimeID: runtimeId,
-		Message:          util.StringPtr("Operation succeeded"),
+		Message:          util.PtrTo("Operation succeeded"),
 		LastError:        &gqlschema.LastError{},
 	}
 }
@@ -467,7 +467,7 @@ func ensureShootSeedName(t *testing.T, f gardener_apis.ShootInterface, shootName
 	require.NoError(t, err)
 
 	if util.IsNilOrEmpty(s.Spec.SeedName) {
-		s.Spec.SeedName = util.StringPtr(gardenerGenSeed)
+		s.Spec.SeedName = util.PtrTo(gardenerGenSeed)
 
 		_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 		require.NoError(t, err)
@@ -478,7 +478,7 @@ func simulateDNSAdmissionPluginRun(t *testing.T, f gardener_apis.ShootInterface,
 	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
 	require.NoError(t, err)
 
-	s.Spec.DNS = &gardener_types.DNS{Domain: util.StringPtr("domain")}
+	s.Spec.DNS = &gardener_types.DNS{Domain: util.PtrTo("domain")}
 
 	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)

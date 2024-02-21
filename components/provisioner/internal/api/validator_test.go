@@ -91,7 +91,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		validator := NewValidator(supportedOpenStackRegions)
 
 		testClusterConfig := clusterConfig
-		testClusterConfig.GardenerConfig.MachineImageVersion = util.StringPtr("24.3")
+		testClusterConfig.GardenerConfig.MachineImageVersion = util.PtrTo("24.3")
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -115,9 +115,9 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 				MachineType:            "n1-standard-4",
 				Region:                 "europe",
 				Provider:               "openstack",
-				Seed:                   util.StringPtr("2"),
+				Seed:                   util.PtrTo("2"),
 				TargetSecret:           "test-secret",
-				DiskType:               util.StringPtr("ssd"),
+				DiskType:               util.PtrTo("ssd"),
 				WorkerCidr:             "10.10.10.10/255",
 				AutoScalerMin:          1,
 				AutoScalerMax:          3,
@@ -141,7 +141,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		//then
 		require.Error(t, err)
 
-		openStackClusterConfig.GardenerConfig.VolumeSizeGb = util.IntPtr(30)
+		openStackClusterConfig.GardenerConfig.VolumeSizeGb = util.PtrTo(30)
 		openStackClusterConfig.GardenerConfig.DiskType = nil
 
 		//when
@@ -180,15 +180,15 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("new-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr("development"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("new-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo("development"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -220,15 +220,15 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr(""),
-				DiskType:               util.StringPtr("stone"),
-				Purpose:                util.StringPtr("development"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo(""),
+				DiskType:               util.PtrTo("stone"),
+				Purpose:                util.PtrTo("development"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -247,15 +247,15 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr(""),
-				Purpose:                util.StringPtr("evaluation"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo(""),
+				Purpose:                util.PtrTo("evaluation"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -274,15 +274,15 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr(""),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo(""),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -301,15 +301,15 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr(""),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr("evaluation"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo(""),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo("evaluation"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -328,13 +328,13 @@ func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                   "tets-clst",
 			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           util.IntPtr(30),
+			VolumeSizeGb:           util.PtrTo(30),
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
 			Provider:               "gcp",
-			Seed:                   util.StringPtr("2"),
+			Seed:                   util.PtrTo("2"),
 			TargetSecret:           "test-secret",
-			DiskType:               util.StringPtr("ssd"),
+			DiskType:               util.PtrTo("ssd"),
 			WorkerCidr:             "10.10.10.10/255",
 			AutoScalerMin:          1,
 			AutoScalerMax:          3,

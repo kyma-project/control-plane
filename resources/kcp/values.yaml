@@ -12,14 +12,14 @@ global:
       version: "v20240129-70857389"
     kyma_metrics_collector:
       dir: control-plane/
-      version: v20240215-b53a794b
+      version: v20240219-e999017d
     tests:
       provisioner:
         dir: control-plane/
-        version: "v20230426-ad965fac"
+        version: "v20240220-6d8e99e0"
       e2e_provisioning:
         dir: control-plane/
-        version: "v20230614-bcb66b55"
+        version: "v20240220-6d8e99e0"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:

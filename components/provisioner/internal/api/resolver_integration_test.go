@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -133,22 +135,22 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
 			KubernetesVersion:   "1.20.7",
-			Purpose:             util.StringPtr("evaluation"),
+			Purpose:             util.PtrTo("evaluation"),
 			Provider:            "Azure",
 			TargetSecret:        "secret",
-			Seed:                util.StringPtr("az-eu2"),
+			Seed:                util.PtrTo("az-eu2"),
 			Region:              "westeurope",
 			MachineType:         "Standard_D8_v3",
-			MachineImage:        util.StringPtr("red-hat"),
-			MachineImageVersion: util.StringPtr("8.0"),
-			DiskType:            util.StringPtr("Standard_LRS"),
-			VolumeSizeGb:        util.IntPtr(40),
+			MachineImage:        util.PtrTo("red-hat"),
+			MachineImageVersion: util.PtrTo("8.0"),
+			DiskType:            util.PtrTo("Standard_LRS"),
+			VolumeSizeGb:        util.PtrTo(40),
 			WorkerCidr:          "cidr",
 			AutoScalerMin:       1,
 			AutoScalerMax:       5,
 			MaxSurge:            1,
 			MaxUnavailable:      2,
-			ExposureClassName:   util.StringPtr("exp-class"),
+			ExposureClassName:   util.PtrTo("exp-class"),
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "cidr",
@@ -165,15 +167,15 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
 			KubernetesVersion:   "1.20.7",
-			Purpose:             util.StringPtr("evaluation"),
+			Purpose:             util.PtrTo("evaluation"),
 			Provider:            "Azure",
 			TargetSecret:        "secret",
 			Region:              "westeurope",
 			MachineType:         "Standard_D8_v3",
-			MachineImage:        util.StringPtr("red-hat"),
-			MachineImageVersion: util.StringPtr("8.0"),
-			DiskType:            util.StringPtr("Standard_LRS"),
-			VolumeSizeGb:        util.IntPtr(40),
+			MachineImage:        util.PtrTo("red-hat"),
+			MachineImageVersion: util.PtrTo("8.0"),
+			DiskType:            util.PtrTo("Standard_LRS"),
+			VolumeSizeGb:        util.PtrTo(40),
 			WorkerCidr:          "cidr",
 			AutoScalerMin:       1,
 			AutoScalerMax:       5,
@@ -195,14 +197,14 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
 			KubernetesVersion:   "1.20.7",
-			Purpose:             util.StringPtr("evaluation"),
+			Purpose:             util.PtrTo("evaluation"),
 			Provider:            "Openstack",
 			TargetSecret:        "secret",
-			Seed:                util.StringPtr("os-eu1"),
+			Seed:                util.PtrTo("os-eu1"),
 			Region:              "region1",
 			MachineType:         "t3-xlarge",
-			MachineImage:        util.StringPtr("red-hat"),
-			MachineImageVersion: util.StringPtr("8.0"),
+			MachineImage:        util.PtrTo("red-hat"),
+			MachineImageVersion: util.PtrTo("8.0"),
 			WorkerCidr:          "cidr",
 			AutoScalerMin:       1,
 			AutoScalerMax:       5,
@@ -211,8 +213,8 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                []string{"eu-de-1a"},
-					FloatingPoolName:     util.StringPtr("FloatingIP-external-cp"),
-					CloudProfileName:     "converged-cloud-cp",
+					FloatingPoolName:     util.PtrTo(provisioning.OpenStackFloatingPoolName),
+					CloudProfileName:     util.PtrTo(provisioning.OpenStackCloudProfileName),
 					LoadBalancerProvider: "f5",
 				},
 			},
@@ -238,21 +240,21 @@ func seedConfig(seedName, region, provider string) *gardener_types.Seed {
 func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   util.StringPtr("1.20.8"),
-			Purpose:                             util.StringPtr("testing"),
-			MachineType:                         util.StringPtr("new-machine"),
-			DiskType:                            util.StringPtr("papyrus"),
-			VolumeSizeGb:                        util.IntPtr(50),
-			AutoScalerMin:                       util.IntPtr(2),
-			AutoScalerMax:                       util.IntPtr(6),
-			MachineImage:                        util.StringPtr("ubuntu"),
-			MachineImageVersion:                 util.StringPtr("12.0.2"),
-			MaxSurge:                            util.IntPtr(2),
-			MaxUnavailable:                      util.IntPtr(1),
-			EnableKubernetesVersionAutoUpdate:   util.BoolPtr(true),
-			EnableMachineImageVersionAutoUpdate: util.BoolPtr(true),
+			KubernetesVersion:                   util.PtrTo("1.20.8"),
+			Purpose:                             util.PtrTo("testing"),
+			MachineType:                         util.PtrTo("new-machine"),
+			DiskType:                            util.PtrTo("papyrus"),
+			VolumeSizeGb:                        util.PtrTo(50),
+			AutoScalerMin:                       util.PtrTo(2),
+			AutoScalerMax:                       util.PtrTo(6),
+			MachineImage:                        util.PtrTo("ubuntu"),
+			MachineImageVersion:                 util.PtrTo("12.0.2"),
+			MaxSurge:                            util.PtrTo(2),
+			MaxUnavailable:                      util.PtrTo(1),
+			EnableKubernetesVersionAutoUpdate:   util.PtrTo(true),
+			EnableMachineImageVersionAutoUpdate: util.PtrTo(true),
 			OidcConfig:                          oidcInput(),
-			ExposureClassName:                   util.StringPtr("new-exp-class"),
+			ExposureClassName:                   util.PtrTo("new-exp-class"),
 		},
 	}
 }
@@ -260,17 +262,17 @@ func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   util.StringPtr("1.20.8"),
-			Purpose:                             util.StringPtr("testing"),
-			MachineType:                         util.StringPtr("new-machine"),
-			MachineImage:                        util.StringPtr("ubuntu"),
-			MachineImageVersion:                 util.StringPtr("12.0.2"),
-			AutoScalerMin:                       util.IntPtr(2),
-			AutoScalerMax:                       util.IntPtr(6),
-			MaxSurge:                            util.IntPtr(2),
-			MaxUnavailable:                      util.IntPtr(1),
-			EnableKubernetesVersionAutoUpdate:   util.BoolPtr(true),
-			EnableMachineImageVersionAutoUpdate: util.BoolPtr(true),
+			KubernetesVersion:                   util.PtrTo("1.20.8"),
+			Purpose:                             util.PtrTo("testing"),
+			MachineType:                         util.PtrTo("new-machine"),
+			MachineImage:                        util.PtrTo("ubuntu"),
+			MachineImageVersion:                 util.PtrTo("12.0.2"),
+			AutoScalerMin:                       util.PtrTo(2),
+			AutoScalerMax:                       util.PtrTo(6),
+			MaxSurge:                            util.PtrTo(2),
+			MaxUnavailable:                      util.PtrTo(1),
+			EnableKubernetesVersionAutoUpdate:   util.PtrTo(true),
+			EnableMachineImageVersionAutoUpdate: util.PtrTo(true),
 			OidcConfig:                          oidcInput(),
 		},
 	}
@@ -288,37 +290,37 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			{
 				Component: rafterComponent,
 				Namespace: kymaSystemNamespace,
-				SourceURL: util.StringPtr(rafterSourceURL),
+				SourceURL: util.PtrTo(rafterSourceURL),
 			},
 			{
 				Component: coreComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.config.key", "value", util.PtrTo(false)),
+					fixGQLConfigEntryInput("test.config.key2", "value2", util.PtrTo(false)),
 				},
 			},
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+					fixGQLConfigEntryInput("test.config.key", "value", util.PtrTo(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.PtrTo(true)),
 				},
 			},
 			{
 				Component: runtimeAgentComponent,
 				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+					fixGQLConfigEntryInput("test.config.key", "value", util.PtrTo(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.PtrTo(true)),
 				},
 			},
 		},
 		Configuration: []*gqlschema.ConfigEntryInput{
-			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
-			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+			fixGQLConfigEntryInput("global.config.key", "globalValue", util.PtrTo(false)),
+			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.PtrTo(false)),
+			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.PtrTo(true)),
 		},
 	}
 }

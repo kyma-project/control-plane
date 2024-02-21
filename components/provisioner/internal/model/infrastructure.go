@@ -30,7 +30,7 @@ func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
 		},
 		Networks: gcp.NetworkConfig{
 			Worker:  workerCIDR,
-			Workers: util.StringPtr(workerCIDR),
+			Workers: util.PtrTo(workerCIDR),
 		},
 	}
 }
@@ -67,7 +67,7 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 	if isZoned && len(azConfig.input.AzureZones) == 0 && azConfig.input.EnableNatGateway != nil && *azConfig.input.EnableNatGateway {
 		natGateway := azure.NatGateway{
 			Enabled:                      *azConfig.input.EnableNatGateway,
-			IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
+			IdleConnectionTimeoutMinutes: util.UnwrapOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
 		}
 		azureConfig.Networks.NatGateway = &natGateway
 	}
@@ -87,7 +87,7 @@ func createAzureZones(input *gqlschema.AzureProviderConfigInput) []azure.Zone {
 		if input.EnableNatGateway != nil && *input.EnableNatGateway {
 			zone.NatGateway = &azure.NatGateway{
 				Enabled:                      true,
-				IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
+				IdleConnectionTimeoutMinutes: util.UnwrapOrDefault(input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
 			}
 		}
 		zones = append(zones, zone)
@@ -114,7 +114,7 @@ func NewAWSInfrastructure(awsConfig AWSGardenerConfig) *aws.InfrastructureConfig
 		Networks: aws.Networks{
 			Zones: createAWSZones(awsConfig.input.AwsZones),
 			VPC: aws.VPC{
-				CIDR: util.StringPtr(awsConfig.input.VpcCidr),
+				CIDR: util.PtrTo(awsConfig.input.VpcCidr),
 			},
 		},
 	}
