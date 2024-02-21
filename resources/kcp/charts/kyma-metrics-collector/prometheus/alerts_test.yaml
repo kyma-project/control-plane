@@ -165,21 +165,19 @@ tests:
               exp_annotations:
                 description: Rate of increase in errors for the requests from KMC to Gardener.
 
+### kmc.rules.processing
     - interval: 1m
       input_series:
-        - series: 'kmc_process_clusters_total{cluster_id="C"}'
-          values: '0+1x15'
-        - series: 'kmc_process_clusters_total{cluster_id="D"}'
-          values: '0x15'
+        - series: 'kmc_process_fetched_clusters{trackable="true"}'
+          values: '52 52 53 60 60 1x20'
 
       alert_rule_test:
         - eval_time: 5m
-          alertname: KMCProcessingClustersFromKEBFailed
-        - eval_time: 15m
-          alertname: KMCProcessingClustersFromKEBFailed
+          alertname: KMCFetchingClustersFromKEBFailed
+        - eval_time: 10m
+          alertname: KMCFetchingClustersFromKEBFailed
           exp_alerts:
             - exp_labels:
                 severity: critical
               exp_annotations:
-                description: "Processing clusters obtained from KEB failed."
-
+                description: Fetching clusters obtained from KEB failed.

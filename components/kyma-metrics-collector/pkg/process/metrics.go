@@ -19,6 +19,7 @@ const (
 	globalAccountLabel = "global_account_id"
 	successLabel       = "success"
 	withOldMetricLabel = "with_old_metric"
+	trackable          = "trackable"
 )
 
 var (
@@ -49,29 +50,20 @@ var (
 		},
 		[]string{shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
-	kebTotalClusters = promauto.NewCounterVec(
+	kebFetchedClusters = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "clusters_total",
-			Help:      "Number of all clusters got from KEB including trackable and not trackable.",
+			Name:      "fetched_clusters",
+			Help:      "All clusters fetched from KEB including trackable and not trackable.",
 		},
-		[]string{"trackable", shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
-	)
-	kebTotalClustersNrTwo = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "clusters_total_nr_2",
-			Help:      "Number of all clusters got from KEB including trackable and not trackable.",
-		},
-		[]string{},
+		[]string{trackable, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 )
 
-func recordKEBTotalClusters(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
+func recordKEBFetchedClusters(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
 	// the order if the values should be same as defined in the metric declaration.
-	kebTotalClusters.WithLabelValues(
+	kebFetchedClusters.WithLabelValues(
 		strconv.FormatBool(trackable),
 		shootName,
 		instanceID,

@@ -163,8 +163,6 @@ func (p *Process) pollKEBForRuntimes() {
 			continue
 		}
 
-		kebTotalClustersNrTwo.WithLabelValues().Set(float64(runtimesPage.Count))
-
 		p.namedLogger().Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
 		p.namedLogger().Debugf("length of the cache after KEB is done populating: %d", p.Cache.ItemCount())
@@ -369,8 +367,8 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 			runtime.Status.Provisioning.State == string(kebruntime.StateSucceeded) &&
 			runtime.Status.Deprovisioning == nil) {
 
-		// record kebTotalClusters metric
-		recordKEBTotalClusters(
+		// record kebFetchedClusters metric
+		recordKEBFetchedClusters(
 			true,
 			runtime.ShootName,
 			runtime.InstanceID,
@@ -388,8 +386,8 @@ func (p *Process) isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	provisioning := getOrDefault(runtime.Status.Provisioning, "")
 	deprovisioning := getOrDefault(runtime.Status.Deprovisioning, "")
 
-	// record kebTotalClusters metric
-	recordKEBTotalClusters(
+	// record kebFetchedClusters metric
+	recordKEBFetchedClusters(
 		false,
 		runtime.ShootName,
 		runtime.InstanceID,
@@ -414,7 +412,7 @@ func getOrDefault(runtimeStatus *kebruntime.Operation, defaultValue string) stri
 // populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked.
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 	// clear the gauge to fill it with the new data
-	kebTotalClusters.Reset()
+	kebFetchedClusters.Reset()
 
 	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {

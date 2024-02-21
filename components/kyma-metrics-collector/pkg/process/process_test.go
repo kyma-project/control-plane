@@ -164,7 +164,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		}
 
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		go func() {
 			newProcess.pollKEBForRuntimes()
@@ -174,10 +174,10 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		}, 10*time.Second).Should(gomega.Equal(expectedTimesVisited))
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		numberOfAllClusters := 4
 		expectedMetricValue := 1
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		// check each metric with labels has the expected value
 		for _, runtimeData := range expectedRuntimes.Data {
 			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
@@ -190,7 +190,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 	t.Run("runtimes with only provisioned status and other statuses with failures", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedFailedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
@@ -220,10 +220,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		numberOfAllClusters := 4
 		expectedMetricValue := 1
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
 			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
@@ -231,7 +231,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 	t.Run("runtimes with both provisioned and deprovisioned status", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedAndDeprovisionedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
@@ -260,10 +260,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		numberOfAllClusters := 4
 		expectedMetricValue := 1
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
 			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
@@ -271,7 +271,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -304,10 +304,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		numberOfAllClusters := 1
 		expectedMetricValue := 1
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPage.Data {
 			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
@@ -315,7 +315,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -343,10 +343,10 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(areQueuesEqual(p.Queue, expectedEmptyQueue)).To(gomega.BeTrue())
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		numberOfAllClusters := 0
 		expectedMetricValue := 0
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		for _, runtimeData := range runtimesPageWithNoRuntimes.Data {
 			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
 		}
@@ -354,7 +354,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 	t.Run("with loaded cache, then shoot is deprovisioned and provisioned again", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
-		kebTotalClusters.Reset()
+		kebFetchedClusters.Reset()
 
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -402,11 +402,11 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(gotSubAccID).To(gomega.Equal(subAccID))
 
 		// Ensure metric exists
-		metricName := "kmc_process_clusters_total"
+		metricName := "kmc_process_fetched_clusters"
 		// expecting number of all clusters to be 1, as deprovisioned shoot is removed
 		// only counting the new shoot
 		numberOfAllClusters := 1
-		g.Eventually(testutil.CollectAndCount(kebTotalClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
 		// old shoot should not be present in the metric
 		for _, runtimeData := range runtimesPage.Data {
 			expectedMetricValue := 0
@@ -1052,13 +1052,13 @@ func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 	return false
 }
 
-// Helper function to check the value of the `kmc_process_clusters_total` metric using `ToFloat64`
+// Helper function to check the value of the `kmc_process_fetched_clusters` metric using `ToFloat64`
 func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
 	return g.Eventually(func() int {
 
 		trackable := isClusterTrackable(&runtimeData)
 
-		counter, err := kebTotalClusters.GetMetricWithLabelValues(
+		counter, err := kebFetchedClusters.GetMetricWithLabelValues(
 			strconv.FormatBool(trackable),
 			runtimeData.ShootName,
 			runtimeData.InstanceID,
