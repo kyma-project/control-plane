@@ -64,7 +64,8 @@ func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, err
 		finalRuntimesPage.Data = append(finalRuntimesPage.Data, runtimesPage.Data...)
 		finalRuntimesPage.Count = len(finalRuntimesPage.Data)
 		recordsSeen += runtimesPage.Count
-		c.namedLogger().Debugf("count: %d, records-seen: %d, page-num: %d, total-count: %d", runtimesPage.Count, recordsSeen, pageNum, runtimesPage.TotalCount)
+		c.namedLogger().Debugf("count: %d, records-seen: %d, page-num: %d, total-count: %d",
+			runtimesPage.Count, recordsSeen, pageNum, runtimesPage.TotalCount)
 		if recordsSeen >= runtimesPage.TotalCount {
 			morePages = false
 			continue
@@ -76,18 +77,6 @@ func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, err
 }
 
 func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
-	var resp *http.Response
-	var err error
-	defer func() {
-		if resp != nil && resp.Body != nil {
-			err := resp.Body.Close()
-			if err != nil {
-				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
-					Error("close body for KEB runtime request")
-			}
-		}
-	}()
-
 	// define URL.
 	c.Logger.Debugf("polling for runtimes with URL: %s", req.URL.String())
 	query := url.Values{
@@ -101,11 +90,12 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		retry.Delay(retryInterval),
 	}
 
-	resp, err = retry.DoWithData(
-		func() (*http.Response, error) {
+	// send request with retries.
+	runtimesPage, err := retry.DoWithData(
+		func() (*kebruntime.RuntimesPage, error) {
 			// send request and record duration.
 			reqStartTime := time.Now()
-			resp, err = c.HTTPClient.Do(req)
+			resp, err := c.HTTPClient.Do(req)
 			duration := time.Since(reqStartTime)
 
 			// check for error.
@@ -120,40 +110,43 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 				}
 				recordKEBLatency(duration, responseCode, c.Config.URL)
 				// return error.
-				return resp, err
-			}
-
-			// set error object if status is not OK.
-			if resp.StatusCode != http.StatusOK {
-				err = fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
-				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("get runtimes from KEB")
+				return nil, err
 			}
 
 			// record metric.
 			recordKEBLatency(duration, resp.StatusCode, c.Config.URL)
-			return resp, err
+
+			// defer to close response body.
+			defer func() {
+				if errClose := resp.Body.Close(); errClose != nil {
+					c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, errClose.Error()).
+						Error("close body for KEB runtime request")
+				}
+			}()
+
+			// return error object if status is not OK.
+			if resp.StatusCode != http.StatusOK {
+				return nil, fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
+			}
+
+			// read data from response body.
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError,
+					err.Error()).Error("read response body")
+				return nil, err
+			}
+
+			// parse body as RuntimesPage object.
+			runtimesPage := new(kebruntime.RuntimesPage)
+			if err = json.Unmarshal(body, runtimesPage); err != nil {
+				return nil, errors.Wrapf(err, "failed to unmarshal runtimes response")
+			}
+			return runtimesPage, err
 		},
 		retryOptions...,
 	)
-
-	if err != nil {
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Warnw("getting runtimes from KEB")
-		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
-	}
-
-	// read data from response body.
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("read response body")
-		return nil, err
-	}
-
-	runtimesPage := new(kebruntime.RuntimesPage)
-	if err := json.Unmarshal(body, runtimesPage); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal runtimes response")
-	}
-
-	return runtimesPage, nil
+	return runtimesPage, err
 }
 
 func (c *Client) namedLogger() *zap.SugaredLogger {

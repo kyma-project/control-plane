@@ -71,28 +71,18 @@ func (eClient Client) getEDPURL(dataTenant string) string {
 }
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
-	var resp *http.Response
-	var err error
-	defer func() {
-		if resp != nil && resp.Body != nil {
-			err := resp.Body.Close()
-			if err != nil {
-				eClient.namedLogger().Warn(err)
-			}
-		}
-	}()
-
+	// define retry policy.
 	retryOptions := []retry.Option{
 		retry.Attempts(uint(eClient.Config.EventRetry)),
 		retry.Delay(retryInterval),
 	}
 
-	resp, err = retry.DoWithData(
+	resp, err := retry.DoWithData(
 		func() (*http.Response, error) {
 			reqStartTime := time.Now()
 			// send request.
 			req.Body = io.NopCloser(bytes.NewReader(payload))
-			resp, err = eClient.HttpClient.Do(req)
+			resp, err := eClient.HttpClient.Do(req)
 			duration := time.Since(reqStartTime)
 			// check result.
 			if err != nil {
@@ -109,6 +99,13 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 					With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
 				return resp, err
 			}
+
+			// defer to close response body.
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					eClient.namedLogger().Warn(err)
+				}
+			}()
 
 			// set error object if status is not StatusCreated.
 			if resp.StatusCode != http.StatusCreated {
