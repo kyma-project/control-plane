@@ -1,183 +1,251 @@
 rule_files:
-    - alerts.yaml
+  - alerts.yaml
 
 # How often the rules will be evaluated
 evaluation_interval: 1m
 
 group_eval_order:
-    - kmc.rules
-    - kmc.rules.edp
-    - kmc.rules.keb
+  - kmc.rules
+  - kmc.rules.edp
+  - kmc.rules.keb
 
 tests:
-## kmc.rules
-    - interval: 1m
-      input_series:
-          - series: 'up{job="kcp-kyma-metrics-collector", namespace="kcp-system"}'
-            values: '0+0x10'
-          - series: 'up{job="kcp-kyma-metrics-collector", namespace="foo"}'
-            values: '1+0x10'
-          - series: 'up{job="foo", namespace="kcp-system"}'
-            values: '1+0x10'
+  ## kmc.rules
+  - interval: 1m
+    input_series:
+      - series: 'up{job="kcp-kyma-metrics-collector", namespace="kcp-system"}'
+        values: '0+0x10'
+      - series: 'up{job="kcp-kyma-metrics-collector", namespace="foo"}'
+        values: '1+0x10'
+      - series: 'up{job="foo", namespace="kcp-system"}'
+        values: '1+0x10'
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: KMCDown
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-                job: kcp-kyma-metrics-collector
-                namespace: kcp-system
-              exp_annotations:
-                description: KMC has disappeared from Prometheus target discovery.
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KMCDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: kcp-kyma-metrics-collector
+              namespace: kcp-system
+            exp_annotations:
+              description: KMC has disappeared from Prometheus target discovery.
 
-## kmc.rules.edp
-    - interval: 1m
-      input_series:
-          - series: 'kmc_edp_request_total{status="500"}'
-            values: '10+5x20'
-          - series: 'kmc_edp_request_total{status="201"}'
-            values: '0+5x10 50+5x20'
+  ## kmc.rules.edp
+  - interval: 1m
+    input_series:
+      - series: 'kmc_edp_request_duration_seconds_count{status="201"}'
+        values: '0+5x10'
+      - series: 'kmc_edp_request_duration_seconds_count{status="500"}'
+        values: '0+5x10 50+5x20'
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: EDPRequestFailures
-          exp_alerts:
-        - eval_time: 20m
-          alertname: EDPRequestFailures
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-                status: "500"
-              exp_annotations:
-                description: Increase in failed requests from KMC to EDP.
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: EDPRequestFailures
+        exp_alerts:
+      - eval_time: 20m
+        alertname: EDPRequestFailures
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              status: "500"
+            exp_annotations:
+              description: Increase in failed requests from KMC to EDP.
 
-    - interval: 1m
-      input_series:
-        - series: 'kmc_edp_request_duration_seconds_sum'
-          values: '60+4x60'
-        - series: 'kmc_edp_request_duration_seconds_count'
-          values: '0+1x60'
+  - interval: 1m
+    # Testing alert: EDPRequestDuration, when all requests took more than 0.5 seconds,
+    # it should raise an alert.
+    input_series:
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.25"}'
+        values: '0x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.50"}'
+        values: '0x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.75"}'
+        values: '96+1x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="+Inf"}'
+        values: '96+1x100'
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: EDPRequestDuration
-          exp_alerts:
-        - eval_time: 20m
-          alertname: EDPRequestDuration
-          exp_alerts:
-            - exp_labels:
-                severity: warning
-              exp_annotations:
-                description: Average request duration from KMC to EDP.
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: EDPRequestDuration
+      - eval_time: 11m
+        alertname: EDPRequestDuration
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              description: "Average request duration from KMC to EDP."
 
-### kmc.rules.keb
-    - interval: 1m
-      input_series:
-          - series: 'kmc_keb_request_total{status="500"}'
-            values: '10+5x20'
-          - series: 'kmc_keb_request_total{status="201"}'
-            values: '50+5x20'
+  - interval: 1m
+    # Testing alert: EDPRequestDuration, when all requests took less than 0.2 seconds,
+    # it should not raise an alert.
+    input_series:
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.25"}'
+        values: '96+1x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.50"}'
+        values: '96+1x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="0.75"}'
+        values: '96+1x100'
+      - series: 'kmc_edp_request_duration_seconds_bucket{le="+Inf"}'
+        values: '96+1x100'
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: KEBRequestFailures
-          exp_alerts:
-        - eval_time: 20m
-          alertname: KEBRequestFailures
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-                status: "500"
-              exp_annotations:
-                description: Increase in failed requests from KMC to KEB.
+    alert_rule_test:
+    - eval_time: 9m
+      alertname: EDPRequestDuration
+    - eval_time: 11m
+      alertname: EDPRequestDuration
 
-    - interval: 1m
-      input_series:
-        - series: 'kmc_keb_request_duration_seconds_sum'
-          values: '5+6x30'
-        - series: 'kmc_keb_request_duration_seconds_count'
-          values: '1+1x30'
-#
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: KEBRequestDuration
-          exp_alerts:
-        - eval_time: 20m
-          alertname: KEBRequestDuration
-          exp_alerts:
-            - exp_labels:
-                severity: warning
-              exp_annotations:
-                description: Average request duration from KMC to KEB.
+  ### kmc.rules.keb
+  - interval: 1m
+    input_series:
+      - series: 'kmc_keb_request_duration_seconds_count{status="500"}'
+        values: '10+5x20'
+      - series: 'kmc_keb_request_duration_seconds_count{status="201"}'
+        values: '50+5x20'
 
-    - interval: 1m
-      input_series:
-        - series: 'kmc_keb_number_clusters_scraped'
-          values: '10950-200x50'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KEBRequestFailures
+        exp_alerts:
+      - eval_time: 40m
+        alertname: KEBRequestFailures
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              status: "500"
+            exp_annotations:
+              description: Increase in failed requests from KMC to KEB.
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: ClustersRateChanged
-          exp_alerts:
-        - eval_time: 20m
-          alertname: ClustersRateChanged
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-              exp_annotations:
-                description: Rate of change of the number of clusters obtained by KMC from KEB for each poll.
+  - interval: 1m
+    # Testing alert: KEBRequestDuration, when all requests took more than 0.8 seconds,
+    # it should raise an alert.
+    input_series:
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.30"}'
+        values: '0x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.60"}'
+        values: '0x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.90"}'
+        values: '100+1x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="+Inf"}'
+        values: '100+1x500'
 
-### kmc.rules.skr
-    - interval: 1m
-      input_series:
-          - series: 'kmc_skr_calls_total{status="success"}'
-            values: '2-1x20'
-          - series: 'kmc_skr_calls_total{status="calls_total"}'
-            values: '20+5x20'
+    alert_rule_test:
+      - eval_time: 19m
+        alertname: KEBRequestDuration
+      - eval_time: 21m
+        alertname: KEBRequestDuration
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              description: "Average request duration from KMC to KEB."
 
-      alert_rule_test:
-        - eval_time: 10m
-          alertname: SKRErrors
-          exp_alerts:
-        - eval_time: 20m
-          alertname: SKRErrors
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-              exp_annotations:
-                description: Success rate of KMC in listing PVCs, SVCs and Nodes for SKRs.
+  - interval: 1m
+    # Testing alert: KEBRequestDuration, when all requests took less than 0.6 seconds,
+    # it should not raise an alert.
+    input_series:
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.30"}'
+        values: '0x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.60"}'
+        values: '100+1x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="0.90"}'
+        values: '100+1x500'
+      - series: 'kmc_keb_request_duration_seconds_bucket{le="+Inf"}'
+        values: '100+1x500'
 
-### kmc.rules.gardener
-    - interval: 1m
-      input_series:
-        - series: 'kmc_gardener_calls_total{status="failure"}'
-          values: '1+5x30'
+    alert_rule_test:
+      - eval_time: 19m
+        alertname: KEBRequestDuration
+      - eval_time: 21m
+        alertname: KEBRequestDuration
 
-      alert_rule_test:
-        - eval_time: 15m
-          alertname: GardenerErrors
-        - eval_time: 25m
-          alertname: GardenerErrors
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-              exp_annotations:
-                description: Rate of increase in errors for the requests from KMC to Gardener.
+  ### kmc.rules.skr
+  - interval: 1m
+    input_series:
+      - series: 'kmc_skr_query_total{success="true", sub_account_id="A"}'
+        values: '0+1x10 10x50'
+      - series: 'kmc_skr_query_total{success="false", sub_account_id="A"}'
+        values: '0x10 10+1x50'
+      - series: 'kmc_skr_query_total{success="true", sub_account_id="B"}'
+        values: '0+1x60'
+
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: SKRErrors
+      - eval_time: 45m
+        alertname: SKRErrors
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              sub_account_id: "A"
+            exp_annotations:
+              description: "Success rate of KMC in listing PVCs, SVCs and Nodes for SKR in subaccount: A"
+
+  - interval: 1m
+    input_series:
+      - series: 'kmc_process_sub_account_processed_timestamp_seconds{with_old_metric="false",sub_account_id="A"}'
+        values: '0+60x80'
+      - series: 'kmc_process_sub_account_processed_timestamp_seconds{with_old_metric="false",sub_account_id="B"}'
+        values: '0 60x80'
+
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: KMCProcessingNewUpdateWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              sub_account_id: B
+              with_old_metric: false
+            exp_annotations:
+              summary: "Sending new data to EDP failed"
+              description: Could not send new usage data for B to EDP. Last successful send 900 seconds ago
+
+      - eval_time: 61m
+        alertname: KMCProcessingNewUpdate
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              sub_account_id: B
+              with_old_metric: false
+            exp_annotations:
+              summary: "Sending new data to EDP failed"
+              description: Could not send new usage data for B to EDP. Last successful send 3600 seconds ago
+
+  - interval: 1m
+    input_series:
+      - series: 'kmc_process_sub_account_total{success="false", sub_account_id="A"}'
+        values: '0+1x65'
+      - series: 'kmc_process_sub_account_total{success="false", sub_account_id="B"}'
+        values: '0x65'
+
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KMCProcessingFailed
+      - eval_time: 65m
+        alertname: KMCProcessingFailed
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              sub_account_id: A
+              success: false
+            exp_annotations:
+              summary: "Processing sub-account failed"
+              description: "Could not process subAccount A"
+
 
 ### kmc.rules.processing
-    - interval: 1m
-      input_series:
-        - series: 'kmc_process_fetched_clusters{trackable="true"}'
-          values: '52 52 53 60 60 1x20'
+  - interval: 1m
+    input_series:
+      - series: 'kmc_process_fetched_clusters{trackable="true"}'
+        values: '52 52 53 60 60 1x20'
 
-      alert_rule_test:
-        - eval_time: 5m
-          alertname: KMCFetchingClustersFromKEBFailed
-        - eval_time: 10m
-          alertname: KMCFetchingClustersFromKEBFailed
-          exp_alerts:
-            - exp_labels:
-                severity: critical
-              exp_annotations:
-                description: Fetching clusters obtained from KEB failed.
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: KMCFetchingClustersFromKEBFailed
+      - eval_time: 10m
+        alertname: KMCFetchingClustersFromKEBFailed
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              description: Fetching clusters obtained from KEB failed.
