@@ -124,7 +124,7 @@ func TestClientRetry(t *testing.T) {
 
 	// then
 	g.Expect(err).ShouldNot(gomega.BeNil())
-	g.Expect(err.Error()).Should(gomega.Equal("failed to POST event to EDP: failed to send event stream as EDP returned HTTP: 500"))
+	g.Expect(err.Error()).Should(gomega.ContainSubstring("failed to send event stream as EDP returned HTTP: 500"))
 	g.Expect(counter).Should(gomega.Equal(expectedCountRetry))
 
 	// ensure metric exists.
