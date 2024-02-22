@@ -253,15 +253,17 @@ tests:
   - interval: 1m
     input_series:
       - series: 'kmc_process_fetched_clusters{trackable="true"}'
-        values: '52 52 53 60 60 0x20'
+        values: '52 52 53 60 60'
+      - series: 'kmc_process_fetched_clusters{trackable="true"}'
+        values:
 
     alert_rule_test:
-      - eval_time: 4m
-        alertname: KMCFetchingClustersFromKEBReturnsZero
-      - eval_time: 10m
-        alertname: KMCFetchingClustersFromKEBReturnsZero
+      - eval_time: 5m
+        alertname: KMCFetchingClustersFromKEBReturnsNoData
+      - eval_time: 20m
+        alertname: KMCFetchingClustersFromKEBReturnsNoData
         exp_alerts:
           - exp_labels:
-              severity: critical
+              severity: warning
             exp_annotations:
-              description: No clusters obtained from KEB.
+              description: No data obtained from KEB.
