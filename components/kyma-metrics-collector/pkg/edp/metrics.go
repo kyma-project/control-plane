@@ -25,7 +25,7 @@ var (
 			Subsystem: subsystem,
 			Name:      latencyMetricName,
 			Help:      "Duration of HTTP request to EDP in seconds.",
-			Buckets:   []float64{0.1, 0.25, 0.5, 1, 2.5, 5, 10},
+			Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 1, 2},
 		},
 		[]string{responseCodeLabel, requestURLLabel},
 	)
