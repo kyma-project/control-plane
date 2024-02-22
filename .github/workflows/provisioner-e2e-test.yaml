@@ -1,4 +1,4 @@
-name: Run e2e tests
+name: Run unit tests
 on:
   push:
     branches: [ main ]
@@ -9,11 +9,8 @@ on:
     paths:
       - 'components/provisioner/**'
 jobs:
-  container-test-job:
+  test:
     runs-on: ubuntu-latest
-    container:
-      image: europe-docker.pkg.dev/kyma-project/prod/testimages/e2e-dind-k3d:v20240216-773062a8
-      options: --cpus 2 --memory 3G
     steps:
-      - name: Check for dockerenv file
+      - name: Run unit tests
         run: make -C components/provisioner verify
