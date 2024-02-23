@@ -378,11 +378,7 @@ func isProvisionedStatus(runtime kebruntime.RuntimeDTO) bool {
 }
 
 func isRuntimeTrackable(runtime kebruntime.RuntimeDTO) bool {
-	// Check if the runtime is trackable
-	if isTrackableState(runtime.Status.State) || isProvisionedStatus(runtime) {
-		return true
-	}
-	return false
+	return isTrackableState(runtime.Status.State) || isProvisionedStatus(runtime)
 }
 
 // getOrDefault returns the runtime state or a default value if runtimeStatus is nil
