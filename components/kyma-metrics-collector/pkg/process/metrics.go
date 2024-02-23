@@ -19,7 +19,7 @@ const (
 	globalAccountLabel = "global_account_id"
 	successLabel       = "success"
 	withOldMetricLabel = "with_old_metric"
-	trackable          = "trackable"
+	trackableLabel     = "trackable"
 )
 
 var (
@@ -57,7 +57,7 @@ var (
 			Name:      "fetched_clusters",
 			Help:      "All clusters fetched from KEB including trackable and not trackable.",
 		},
-		[]string{trackable, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
+		[]string{trackableLabel, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
 )
 
