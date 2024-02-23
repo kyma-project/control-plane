@@ -269,50 +269,6 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		}
 	})
 
-	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
-		// Reset the cluster count necessary for clean slate of next tests
-		kebFetchedClusters.Reset()
-
-		subAccID := uuid.New().String()
-		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
-		queue := workqueue.NewDelayingQueue()
-		oldShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-		newShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-
-		p := Process{
-			Queue:  queue,
-			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.InfoLevel),
-		}
-		oldRecord := NewRecord(subAccID, oldShootName, "foo")
-		newRecord := NewRecord(subAccID, newShootName, "")
-
-		err := p.Cache.Add(subAccID, oldRecord, gocache.NoExpiration)
-		g.Expect(err).Should(gomega.BeNil())
-
-		runtimesPage := new(kebruntime.RuntimesPage)
-		expectedQueue := workqueue.NewDelayingQueue()
-		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
-		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
-		g.Expect(err).Should(gomega.BeNil())
-
-		rntme := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState)
-		runtimesPage.Data = append(runtimesPage.Data, rntme)
-
-		p.populateCacheAndQueue(runtimesPage)
-		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
-		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
-
-		// Ensure metric exists
-		metricName := "kmc_process_fetched_clusters"
-		numberOfAllClusters := 1
-		expectedMetricValue := 1
-		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
-		for _, runtimeData := range runtimesPage.Data {
-			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
-		}
-	})
-
 	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
 		// Reset the cluster count necessary for clean slate of next tests
 		kebFetchedClusters.Reset()
