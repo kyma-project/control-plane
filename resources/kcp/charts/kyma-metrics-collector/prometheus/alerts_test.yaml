@@ -241,9 +241,9 @@ tests:
 
     alert_rule_test:
       - eval_time: 4m
-        alertname: KMCFetchingClustersFromKEBFailed
+        alertname: KMCNumberOfClustersFromKEBDropped
       - eval_time: 10m
-        alertname: KMCFetchingClustersFromKEBFailed
+        alertname: KMCNumberOfClustersFromKEBDropped
         exp_alerts:
           - exp_labels:
               severity: critical
@@ -255,7 +255,7 @@ tests:
       - series: 'kmc_process_fetched_clusters{trackable="true"}'
         values: '52 52 53 60 60'
       - series: 'kmc_process_fetched_clusters{trackable="true"}'
-        values:
+        values: '_ _ _ _ _ _ _ _ _ _'
 
     alert_rule_test:
       - eval_time: 5m
@@ -264,6 +264,6 @@ tests:
         alertname: KMCFetchingClustersFromKEBReturnsNoData
         exp_alerts:
           - exp_labels:
-              severity: warning
+              severity: critical
             exp_annotations:
               description: No data obtained from KEB.
