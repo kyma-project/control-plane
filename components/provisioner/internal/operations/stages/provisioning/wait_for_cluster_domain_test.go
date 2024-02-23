@@ -58,7 +58,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			Name: clusterName,
 		},
-		Kubeconfig: util.StringPtr(kubeconfig),
+		Kubeconfig: util.PtrTo(kubeconfig),
 	}
 
 	for _, testCase := range []struct {

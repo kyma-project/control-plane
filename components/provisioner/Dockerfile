@@ -21,7 +21,7 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
 
-FROM alpine:3.18.5
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

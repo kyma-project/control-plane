@@ -30,7 +30,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure, 2 vm types, 3 pvcs(5,10 and 20Gi) and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get2Nodes(),
 				pvcList:  kmctesting.Get3PVCs(),
 				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
@@ -51,16 +51,12 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 96,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   1,
-				},
 			},
 		},
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -79,16 +75,12 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 0,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   0,
-				},
 			},
 		},
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
@@ -106,27 +98,49 @@ func TestParse(t *testing.T) {
 						SizeGbRounded: 0,
 					},
 				},
-				Networking: edp.Networking{
-					ProvisionedVnets: 1,
-					ProvisionedIPs:   0,
-				},
 			},
 		},
 		{
 			name: "with Azure and vm type missing from the list of vmtypes",
 			input: Input{
-				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndFooVMType),
+				provider: Azure,
 				nodeList: kmctesting.Get3NodesWithFooVMType(),
 			},
 			providers:   *providers,
 			expectedErr: true,
 		},
+		{
+			name: "with sapconvergedcloud, 2 vm types, 3 pvcs(5,10 and 20Gi), and 2 svcs(1 clusterIP and 1 LoadBalancer)",
+			input: Input{
+				provider: CCEE,
+				nodeList: kmctesting.Get2NodesOpenStack(),
+				pvcList:  kmctesting.Get3PVCs(),
+				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
+			},
+			providers: *providers,
+			expectedMetrics: edp.ConsumptionMetrics{
+				Compute: edp.Compute{
+					VMTypes: []edp.VMType{{
+						Name:  "g_c12_m48",
+						Count: 2,
+					}},
+					ProvisionedCpus:  24,
+					ProvisionedRAMGb: 96,
+					ProvisionedVolumes: edp.ProvisionedVolumes{
+						SizeGbTotal:   35,
+						Count:         3,
+						SizeGbRounded: 96,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			gotMetrics, err := tc.input.Parse(&tc.providers)
-			if err == nil {
+			if !tc.expectedErr {
 				g.Expect(err).Should(gomega.BeNil())
 				g.Expect(gotMetrics.Compute).To(gomega.Equal(tc.expectedMetrics.Compute))
 				g.Expect(gotMetrics.Networking).To(gomega.Equal(tc.expectedMetrics.Networking))

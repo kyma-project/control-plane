@@ -2,7 +2,7 @@ global:
   images:
     kyma_metrics_collector:
       dir:
-      version: "v20230411-94ab3da5"
+      version: "" # Set the image in kcp/values.yaml
 
 nameOverride: ""
 fullnameOverride: ""
@@ -57,10 +57,6 @@ serviceAccount:
   enabled: true
   ## Name of an already existing service account. Setting this value disables the automatic service account creation.
   # name:
-
-gardener:
-  secretName: "gardener-credentials"
-  namespace: "garden-kyma-dev"
 
 edp:
   namespace: "TBD"

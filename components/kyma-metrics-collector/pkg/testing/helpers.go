@@ -2,15 +2,15 @@ package testing
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"time"
 
-	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
@@ -18,12 +18,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	providersFile = "static_providers.json"
-	timeout       = 10 * time.Second
+	timeout = 10 * time.Second
 )
 
 type NewRuntimeOpts func(*kebruntime.RuntimeDTO)
@@ -92,103 +90,17 @@ func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega)
 
 type NewShootOpts func(shoot *gardencorev1beta1.Shoot)
 
-func GetShoot(name string, opts ...NewShootOpts) *gardencorev1beta1.Shoot {
-	shoot := &gardencorev1beta1.Shoot{
-		TypeMeta: metaV1.TypeMeta{
-			Kind:       "Shoot",
-			APIVersion: "core.gardener.cloud/v1beta1",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-		},
-		Spec: gardencorev1beta1.ShootSpec{},
-	}
-	for _, opt := range opts {
-		opt(shoot)
-	}
-	return shoot
-}
-
-func WithVMSpecs(shoot *gardencorev1beta1.Shoot) {
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type: "azure",
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_D8_v3",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
-func WithAzureProviderAndStandardD8V3VMs(shoot *gardencorev1beta1.Shoot) {
-	infraConfig := NewInfraConfig()
-	byteInfraConfig, err := json.Marshal(infraConfig)
-	if err != nil {
-		log.Fatalf("failed to marshal: %v", err)
-	}
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type: "azure",
-		InfrastructureConfig: &runtime.RawExtension{
-			Raw: byteInfraConfig,
-		},
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_D8_v3",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
-func NewInfraConfig() *gardenerazurev1alpha1.InfrastructureConfig {
-	name := "foo"
-	cidr := "10.25.0.0/19"
-	return &gardenerazurev1alpha1.InfrastructureConfig{
-		Networks: gardenerazurev1alpha1.NetworkConfig{
-			VNet: gardenerazurev1alpha1.VNet{
-				Name: &name,
-				CIDR: &cidr,
-			},
-			NatGateway:       nil,
-			ServiceEndpoints: nil,
-		},
-	}
-}
-
-func WithAzureProviderAndFooVMType(shoot *gardencorev1beta1.Shoot) {
-	shoot.Spec.Provider = gardencorev1beta1.Provider{
-		Type:                 "azure",
-		ControlPlaneConfig:   nil,
-		InfrastructureConfig: nil,
-		Workers: []gardencorev1beta1.Worker{
-			{
-				Name: "cpu-worker-0",
-				Machine: gardencorev1beta1.Machine{
-					Type: "Standard_Foo",
-					Image: &gardencorev1beta1.ShootMachineImage{
-						Name: "gardenlinux",
-					},
-				},
-			},
-		},
-	}
-}
-
 func Get2Nodes() *corev1.NodeList {
 	node1 := GetNode("node1", "Standard_D8_v3")
 	node2 := GetNode("node2", "Standard_D8_v3")
+	return &corev1.NodeList{
+		Items: []corev1.Node{node1, node2},
+	}
+}
+
+func Get2NodesOpenStack() *corev1.NodeList {
+	node1 := GetNode("node1", "g_c12_m48")
+	node2 := GetNode("node2", "g_c12_m48")
 	return &corev1.NodeList{
 		Items: []corev1.Node{node1, node2},
 	}
@@ -254,7 +166,7 @@ func GenerateRandomAlphaString(length int) string {
 	return string(result)
 }
 
-// secureRandomBytes returns the requested number of bytes using crypto/rand
+// secureRandomBytes returns the requested number of bytes using crypto/rand.
 func secureRandomBytes(length int) []byte {
 	randomBytes := make([]byte, length)
 	_, err := rand.Read(randomBytes)
@@ -391,23 +303,6 @@ func WithLoadBalancer(service *corev1.Service) {
 	}
 }
 
-func NewSecret(shootName, kubeconfigVal string) *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metaV1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fmt.Sprintf("%s.kubeconfig", shootName),
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
-			"kubeconfig": []byte(kubeconfigVal),
-		},
-	}
-}
-
 func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metaV1.TypeMeta{
@@ -419,8 +314,33 @@ func NewKCPStoredSecret(shootName, kubeconfigVal string) *corev1.Secret {
 			Namespace: "kcp-system",
 		},
 		Data: map[string][]byte{
-			//"kubeconfig": []byte("eyJmb28iOiAiYmFyIn0="),
 			"config": []byte(kubeconfigVal),
 		},
 	}
+}
+
+func PrometheusGatherAndReturn(c prometheus.Collector, metricName string) (*dto.MetricFamily, error) {
+	reg := prometheus.NewPedanticRegistry()
+	if err := reg.Register(c); err != nil {
+		return nil, err
+	}
+	mf, err := reg.Gather()
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range mf {
+		if m.GetName() == metricName {
+			return m, nil
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+func PrometheusFilterLabelPair(pairs []*dto.LabelPair, name string) *dto.LabelPair {
+	for _, p := range pairs {
+		if p.GetName() == name {
+			return p
+		}
+	}
+	return nil
 }
