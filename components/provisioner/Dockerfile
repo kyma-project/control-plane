@@ -21,7 +21,7 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
 
-FROM Scratch
+FROM scratch
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
