@@ -275,8 +275,8 @@ func (OpenStackProviderConfig) IsProviderSpecificConfig() {}
 
 type OpenStackProviderConfigInput struct {
 	Zones                []string `json:"zones"`
-	FloatingPoolName     string   `json:"floatingPoolName"`
-	CloudProfileName     string   `json:"cloudProfileName"`
+	FloatingPoolName     *string  `json:"floatingPoolName"`
+	CloudProfileName     *string  `json:"cloudProfileName"`
 	LoadBalancerProvider string   `json:"loadBalancerProvider"`
 }
 

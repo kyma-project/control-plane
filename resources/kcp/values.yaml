@@ -9,17 +9,17 @@ global:
       version: "v20230120-865831c1"
     subscription_cleanup_job:
       dir:
-      version: "v20240109-3d6a573e"
+      version: "v20240129-70857389"
     kyma_metrics_collector:
       dir: control-plane/
-      version: v20240126-0f92a93f
+      version: v20240226-9bcd3737
     tests:
       provisioner:
         dir: control-plane/
-        version: "v20230426-ad965fac"
+        version: "v20240220-6d8e99e0"
       e2e_provisioning:
         dir: control-plane/
-        version: "v20230614-bcb66b55"
+        version: "v20240220-6d8e99e0"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:
@@ -37,6 +37,7 @@ global:
     - cleaner
     - connectivity-proxy
     - eventing
+    - warden
   provisioning:
     enabled: false
   kyma_environment_broker:
@@ -64,9 +65,7 @@ global:
     mtls:
       host: compass-gateway-mtls
   istio:
-    gateway:
-      name: "kyma-gateway"
-      namespace: "kyma-system"
+    gateway: "kyma-system/kyma-gateway"
     proxy:
       port: 15020
   database:

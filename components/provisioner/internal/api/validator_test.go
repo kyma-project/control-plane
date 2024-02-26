@@ -10,11 +10,12 @@ import (
 )
 
 func TestValidator_ValidateProvisioningInput(t *testing.T) {
-	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
+
+	clusterConfig, runtimeInput, kymaConfig, supportedOpenStackRegions := initializeConfigs()
 
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -31,7 +32,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return nil when kyma config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -47,7 +48,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when config is incorrect", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.ProvisionRuntimeInput{}
 
@@ -60,7 +61,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when Runtime Agent component is not passed in installation config", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -87,10 +88,10 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("should return error when machine image version is set, but machine image is empty", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		testClusterConfig := clusterConfig
-		testClusterConfig.GardenerConfig.MachineImageVersion = util.StringPtr("24.3")
+		testClusterConfig.GardenerConfig.MachineImageVersion = util.PtrTo("24.3")
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -114,9 +115,9 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 				MachineType:            "n1-standard-4",
 				Region:                 "europe",
 				Provider:               "openstack",
-				Seed:                   util.StringPtr("2"),
+				Seed:                   util.PtrTo("2"),
 				TargetSecret:           "test-secret",
-				DiskType:               util.StringPtr("ssd"),
+				DiskType:               util.PtrTo("ssd"),
 				WorkerCidr:             "10.10.10.10/255",
 				AutoScalerMin:          1,
 				AutoScalerMax:          3,
@@ -132,7 +133,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		//when
 		err := validator.ValidateProvisioningInput(config)
@@ -140,7 +141,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		//then
 		require.Error(t, err)
 
-		openStackClusterConfig.GardenerConfig.VolumeSizeGb = util.IntPtr(30)
+		openStackClusterConfig.GardenerConfig.VolumeSizeGb = util.PtrTo(30)
 		openStackClusterConfig.GardenerConfig.DiskType = nil
 
 		//when
@@ -149,25 +150,45 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+
+	t.Run("should return error when requested OpenStack region is not supported", func(t *testing.T) {
+		//given
+		validator := NewValidator(supportedOpenStackRegions)
+
+		clusterConfig.GardenerConfig.Provider = "openstack"
+		clusterConfig.GardenerConfig.Region = "not-supported-region"
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: clusterConfig,
+			KymaConfig:    kymaConfig,
+		}
+
+		//when
+		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+	})
 }
 
 func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
-
+	supportedOpenStackRegions := []string{"region1", "region2"}
 	t.Run("Should return nil when input is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("new-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr("development"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("new-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo("development"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -181,7 +202,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		config := gqlschema.UpgradeShootInput{}
 
@@ -195,19 +216,19 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for machine type", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr(""),
-				DiskType:               util.StringPtr("stone"),
-				Purpose:                util.StringPtr("development"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo(""),
+				DiskType:               util.PtrTo("stone"),
+				Purpose:                util.PtrTo("development"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -222,19 +243,19 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for disk type", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr(""),
-				Purpose:                util.StringPtr("evaluation"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo(""),
+				Purpose:                util.PtrTo("evaluation"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -249,19 +270,19 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for purpose", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("1.20.8"),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr(""),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo("1.20.8"),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo(""),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -276,19 +297,19 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for kubernetes version", func(t *testing.T) {
 		//given
-		validator := NewValidator()
+		validator := NewValidator(supportedOpenStackRegions)
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr(""),
-				MachineType:            util.StringPtr("time-machine"),
-				DiskType:               util.StringPtr("papyrus"),
-				Purpose:                util.StringPtr("evaluation"),
-				VolumeSizeGb:           util.IntPtr(50),
-				AutoScalerMin:          util.IntPtr(2),
-				AutoScalerMax:          util.IntPtr(6),
-				MaxSurge:               util.IntPtr(2),
-				MaxUnavailable:         util.IntPtr(1),
+				KubernetesVersion:      util.PtrTo(""),
+				MachineType:            util.PtrTo("time-machine"),
+				DiskType:               util.PtrTo("papyrus"),
+				Purpose:                util.PtrTo("evaluation"),
+				VolumeSizeGb:           util.PtrTo(50),
+				AutoScalerMin:          util.PtrTo(2),
+				AutoScalerMax:          util.PtrTo(6),
+				MaxSurge:               util.PtrTo(2),
+				MaxUnavailable:         util.PtrTo(1),
 				ProviderSpecificConfig: nil,
 			},
 		}
@@ -302,18 +323,18 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 	})
 }
 
-func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
+func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput, []string) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                   "tets-clst",
 			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           util.IntPtr(30),
+			VolumeSizeGb:           util.PtrTo(30),
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
 			Provider:               "gcp",
-			Seed:                   util.StringPtr("2"),
+			Seed:                   util.PtrTo("2"),
 			TargetSecret:           "test-secret",
-			DiskType:               util.StringPtr("ssd"),
+			DiskType:               util.PtrTo("ssd"),
 			WorkerCidr:             "10.10.10.10/255",
 			AutoScalerMin:          1,
 			AutoScalerMax:          3,
@@ -341,5 +362,7 @@ func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput
 			},
 		},
 	}
-	return clusterConfig, runtimeInput, kymaConfig
+
+	supportedOpenStackRegions := []string{"region1", "region2"}
+	return clusterConfig, runtimeInput, kymaConfig, supportedOpenStackRegions
 }

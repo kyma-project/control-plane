@@ -26,6 +26,15 @@ const (
 	// KeyRuntimeID is used as a named key for a log message with runtime ID.
 	KeyRuntimeID = "RuntimeID"
 
+	// KeyRuntimeState is used as a named key for a log message with runtime state.
+	KeyRuntimeState = "RuntimeState"
+
+	// KeyProvisioningStatus is used as a named key for a log message with provisioning status.
+	KeyProvisioningStatus = "ProvisioningStatus"
+
+	// KeyDeprovisioningStatus is used as a named key for a log message with deprovisioning status.
+	KeyDeprovisioningStatus = "DeprovisioningStatus"
+
 	// KeyWorkerID is used as a named key for a log message with worker ID.
 	KeyWorkerID = "WorkerID"
 
