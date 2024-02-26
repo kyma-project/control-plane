@@ -232,3 +232,43 @@ tests:
               summary: "Processing sub-account failed"
               description: "Could not process subAccount A"
 
+
+### kmc.rules.processing
+  - interval: 1m
+    input_series:
+      - series: 'kmc_process_fetched_clusters{trackable="true"}'
+        values: '52 52 53 60 60 1x20'
+
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: KMCNumberOfClustersFromKEBDropped
+      - eval_time: 10m
+        alertname: KMCNumberOfClustersFromKEBDropped
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              description: Fetching clusters obtained from KEB failed.
+
+  - interval: 1m
+    input_series:
+       - series: 'kmc_process_fetched_clusters{trackable="true"}'
+         values: '_x40'
+
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: KMCFetchingClustersFromKEBReturnsNoData
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              description: No data obtained from KEB.
+
+  - interval: 1m
+    input_series:
+      - series: 'kmc_process_fetched_clusters{trackable="true"}'
+        values: '60x40'
+
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KMCFetchingClustersFromKEBReturnsNoData

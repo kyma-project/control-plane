@@ -3,14 +3,15 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"net/http"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"k8s.io/client-go/kubernetes/fake"
 
@@ -37,7 +38,7 @@ const (
 	bigTimeout = 10 * time.Second
 
 	// KEB related variables.
-	kebRuntimeResponseFilePath = "../testing/fixtures/runtimes_response.json"
+	kebRuntimeResponseFilePath = "../testing/fixtures/runtimes_response_process.json"
 	expectedPathPrefix         = "/runtimes"
 
 	// EDP related variables.
@@ -162,19 +163,197 @@ func TestPollKEBForRuntimes(t *testing.T) {
 			Logger:         logger.NewLogger(zapcore.InfoLevel),
 		}
 
+		// Reset the cluster count necessary for clean slate of next tests
+		kebFetchedClusters.Reset()
+
 		go func() {
 			newProcess.pollKEBForRuntimes()
 		}()
 		g.Eventually(func() int {
 			return timesVisited
 		}, 10*time.Second).Should(gomega.Equal(expectedTimesVisited))
+
+		// Ensure metric exists
+		metricName := "kmc_process_fetched_clusters"
+		numberOfAllClusters := 4
+		expectedMetricValue := 1
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		// check each metric with labels has the expected value
+		for _, runtimeData := range expectedRuntimes.Data {
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
+		}
 	})
+}
+
+func TestIsProvisionedStatus(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	// t.Parallel()
+
+	// const used in all test cases
+	subAccountID := "c7db696a-32fa-48ee-9009-aa3e0034121e"
+	shootName := "shoot-gKtxg"
+
+	// test cases
+	testCases := []struct {
+		name         string
+		givenRuntime kebruntime.RuntimeDTO
+		expectedBool bool
+	}{
+		{
+			name:         "should return true when runtime is in provisioning state succeeded and provisioning status is not nil and deprovisioning is nil",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded)),
+			expectedBool: true,
+		},
+		{
+			name:         "should return false when runtime is in provisioning state succeeded and deprovisioning is not nil",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateSucceeded)),
+			expectedBool: false,
+		},
+		{
+			name:         "should return false when runtime is in provisioning state failed and provisioning status is not nil and deprovisioning is nil",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisioningFailedState),
+			expectedBool: false,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// when
+			isProvisioned := isProvisionedStatus(tc.givenRuntime)
+
+			// then
+			g.Expect(isProvisioned).To(gomega.Equal(tc.expectedBool))
+		})
+	}
+}
+
+func TestIsTrackableState(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	// t.Parallel()
+
+	// test cases
+	testCases := []struct {
+		name              string
+		givenRuntimeState kebruntime.State
+		expectedBool      bool
+	}{
+		{
+			name:              "should return true when shoot is in succeeded state",
+			givenRuntimeState: kebruntime.StateSucceeded,
+			expectedBool:      true,
+		},
+		{
+			name:              "should return true when shoot is in error state",
+			givenRuntimeState: kebruntime.StateError,
+			expectedBool:      true,
+		},
+		{
+			name:              "should return true when shoot is in upgrading state",
+			givenRuntimeState: kebruntime.StateUpgrading,
+			expectedBool:      true,
+		},
+		{
+			name:              "should return true when shoot is in updating state",
+			givenRuntimeState: kebruntime.StateUpdating,
+			expectedBool:      true,
+		},
+		{
+			name:              "should return false when shoot is in deprovisioned state",
+			givenRuntimeState: kebruntime.StateDeprovisioned,
+			expectedBool:      false,
+		},
+		{
+			name:              "should return false when shoot is in deprovisioned incomplete state",
+			givenRuntimeState: kebruntime.StateDeprovisionIncomplete,
+			expectedBool:      false,
+		},
+		{
+			name:              "should return false when shoot is in deprovisioning  state",
+			givenRuntimeState: kebruntime.StateDeprovisioning,
+			expectedBool:      false,
+		},
+		{
+			name:              "should return false when shoot is in failed state",
+			givenRuntimeState: kebruntime.StateFailed,
+			expectedBool:      false,
+		},
+		{
+			name:              "should return false when shoot is in suspended state",
+			givenRuntimeState: kebruntime.StateSuspended,
+			expectedBool:      false,
+		},
+		{
+			name:              "should return false when shoot is in provisioning state",
+			givenRuntimeState: kebruntime.StateProvisioning,
+			expectedBool:      false,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// when
+			isTrackable := isTrackableState(tc.givenRuntimeState)
+
+			// then
+			g.Expect(isTrackable).To(gomega.Equal(tc.expectedBool))
+		})
+	}
+}
+
+func TestIsRuntimeTrackable(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	// t.Parallel()
+
+	// const used in all test cases
+	subAccountID := "c7db696a-32fa-48ee-9009-aa3e0034121e"
+	shootName := "shoot-gKtxg"
+
+	// test cases
+	testCases := []struct {
+		name         string
+		givenRuntime kebruntime.RuntimeDTO
+		expectedBool bool
+	}{
+		{
+			name:         "should return true when runtime is in trackable state and provisioned status",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded)),
+			expectedBool: true,
+		},
+		{
+			name:         "should return true when runtime is in trackable state and deprovisioned status",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateSucceeded)),
+			expectedBool: true,
+		},
+		{
+			name:         "should return true when runtime is in non-trackable state and provisioned status",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateDeprovisioning)),
+			expectedBool: true,
+		},
+		{
+			name:         "should return false when runtime is in non-trackable state and deprovisioned status",
+			givenRuntime: kmctesting.NewRuntimesDTO(subAccountID, shootName, kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateDeprovisioning)),
+			expectedBool: false,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// when
+			isRuntimeTrackable := isRuntimeTrackable(tc.givenRuntime)
+
+			// then
+			g.Expect(isRuntimeTrackable).To(gomega.Equal(tc.expectedBool))
+		})
+	}
 }
 
 func TestPopulateCacheAndQueue(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	t.Run("runtimes with only provisioned status and other statuses with failures", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebFetchedClusters.Reset()
+
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedFailedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -194,16 +373,28 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 
 		for _, failedID := range provisionedFailedSubAccIDs {
 			shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
-			runtime := kmctesting.NewRuntimesDTO(failedID, shootName, kmctesting.WithFailedState)
+			runtime := kmctesting.NewRuntimesDTO(failedID, shootName, kmctesting.WithProvisioningFailedState)
 			runtimesPage.Data = append(runtimesPage.Data, runtime)
 		}
 
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_process_fetched_clusters"
+		numberOfAllClusters := 4
+		expectedMetricValue := 1
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
+		}
 	})
 
 	t.Run("runtimes with both provisioned and deprovisioned status", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebFetchedClusters.Reset()
+
 		provisionedSuccessfullySubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		provisionedAndDeprovisionedSubAccIDs := []string{uuid.New().String(), uuid.New().String()}
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -222,16 +413,28 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		for _, failedID := range provisionedAndDeprovisionedSubAccIDs {
-			rntme := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedState)
+			rntme := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateDeprovisioned))
 			runtimesPage.Data = append(runtimesPage.Data, rntme)
 		}
 
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_process_fetched_clusters"
+		numberOfAllClusters := 4
+		expectedMetricValue := 1
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPage.Data {
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
+		}
 	})
 
 	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebFetchedClusters.Reset()
+
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -256,9 +459,21 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPageWithNoRuntimes)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedEmptyCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedEmptyQueue)).To(gomega.BeTrue())
+
+		// Ensure metric exists
+		metricName := "kmc_process_fetched_clusters"
+		numberOfAllClusters := 0
+		expectedMetricValue := 0
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		for _, runtimeData := range runtimesPageWithNoRuntimes.Data {
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
+		}
 	})
 
 	t.Run("with loaded cache, then shoot is deprovisioned and provisioned again", func(t *testing.T) {
+		// Reset the cluster count necessary for clean slate of next tests
+		kebFetchedClusters.Reset()
+
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -279,7 +494,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		expectedQueue := workqueue.NewDelayingQueue()
 		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 
-		rntme := kmctesting.NewRuntimesDTO(subAccID, oldShootName, kmctesting.WithProvisionedAndDeprovisionedState)
+		rntme := kmctesting.NewRuntimesDTO(subAccID, oldShootName, kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateDeprovisioned))
 		runtimesPage.Data = append(runtimesPage.Data, rntme)
 
 		// expected cache changes after deprovisioning
@@ -290,7 +505,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		// provision a new SKR again with a new name
 		skrRuntimesPageWithProvisioning := new(kebruntime.RuntimesPage)
 		skrRuntimesPageWithProvisioning.Data = []kebruntime.RuntimeDTO{
-			kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState),
+			kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded)),
 		}
 
 		// expected cache changes after provisioning
@@ -303,6 +518,25 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		gotSubAccID, _ := p.Queue.Get()
 		g.Expect(gotSubAccID).To(gomega.Equal(subAccID))
+
+		// Ensure metric exists
+		metricName := "kmc_process_fetched_clusters"
+		// expecting number of all clusters to be 1, as deprovisioned shoot is removed
+		// only counting the new shoot
+		numberOfAllClusters := 1
+		g.Eventually(testutil.CollectAndCount(kebFetchedClusters, metricName)).Should(gomega.Equal(numberOfAllClusters))
+		// old shoot should not be present in the metric
+		for _, runtimeData := range runtimesPage.Data {
+			expectedMetricValue := 0
+			switch shootName := runtimeData.ShootName; shootName {
+			case oldShootName:
+				expectedMetricValue = 0
+			case newShootName:
+				expectedMetricValue = 1
+			}
+
+			verifyKEBAllClustersCountMetricValue(expectedMetricValue, g, runtimeData)
+		}
 	})
 }
 
@@ -420,14 +654,14 @@ func TestPrometheusMetricsRemovedForDeletedSubAccounts(t *testing.T) {
 			// mock KEB response.
 			runtimesPage := new(kebruntime.RuntimesPage)
 			runtime := kmctesting.NewRuntimesDTO(tc.givenShoot1.SubAccountID,
-				tc.givenShoot1.ShootName, kmctesting.WithSucceededState)
+				tc.givenShoot1.ShootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded))
 			runtimesPage.Data = append(runtimesPage.Data, runtime)
 			if tc.givenIsShoot2ReturnedByKEB {
 				runtime = kmctesting.NewRuntimesDTO(tc.givenShoot2.SubAccountID,
-					tc.givenShoot2.ShootName, kmctesting.WithProvisionedAndDeprovisionedState)
+					tc.givenShoot2.ShootName, kmctesting.WithProvisionedAndDeprovisionedStatus(kebruntime.StateDeprovisioned))
 				if tc.givenShoot2NewName != "" {
 					runtime = kmctesting.NewRuntimesDTO(tc.givenShoot2.SubAccountID,
-						tc.givenShoot2NewName, kmctesting.WithSucceededState)
+						tc.givenShoot2NewName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded))
 				}
 				runtimesPage.Data = append(runtimesPage.Data, runtime)
 			}
@@ -860,7 +1094,7 @@ func AddSuccessfulIDsToCacheQueueAndRuntimes(runtimesPage *kebruntime.RuntimesPa
 	for _, successfulID := range successfulIDs {
 		shootID := kmctesting.GenerateRandomAlphaString(5)
 		shootName := fmt.Sprintf("shoot-%s", shootID)
-		runtime := kmctesting.NewRuntimesDTO(successfulID, shootName, kmctesting.WithSucceededState)
+		runtime := kmctesting.NewRuntimesDTO(successfulID, shootName, kmctesting.WithProvisioningSucceededStatus(kebruntime.StateSucceeded))
 		runtimesPage.Data = append(runtimesPage.Data, runtime)
 		err := expectedCache.Add(successfulID, kmccache.Record{
 			SubAccountID: successfulID,
@@ -915,4 +1149,43 @@ func NewMetric() *edp.ConsumptionMetrics {
 			},
 		},
 	}
+}
+
+// Helper function to check if a cluster is trackable
+func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
+	// Check if the cluster is in a trackable state
+	trackableStates := map[kebruntime.State]bool{
+		"succeeded": true,
+		"error":     true,
+		"upgrading": true,
+		"updating":  true,
+	}
+
+	if trackableStates[runtime.Status.State] ||
+		(runtime.Status.Provisioning != nil &&
+			runtime.Status.Provisioning.State == "succeeded" &&
+			runtime.Status.Deprovisioning == nil) {
+		return true
+	}
+	return false
+}
+
+// Helper function to check the value of the `kmc_process_fetched_clusters` metric using `ToFloat64`
+func verifyKEBAllClustersCountMetricValue(expectedValue int, g *gomega.WithT, runtimeData kebruntime.RuntimeDTO) bool {
+	return g.Eventually(func() int {
+
+		trackable := isClusterTrackable(&runtimeData)
+
+		counter, err := kebFetchedClusters.GetMetricWithLabelValues(
+			strconv.FormatBool(trackable),
+			runtimeData.ShootName,
+			runtimeData.InstanceID,
+			runtimeData.RuntimeID,
+			runtimeData.SubAccountID,
+			runtimeData.GlobalAccountID)
+
+		g.Expect(err).Should(gomega.BeNil())
+		// check the value of the metric
+		return int(testutil.ToFloat64(counter))
+	}).Should(gomega.Equal(expectedValue))
 }

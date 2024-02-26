@@ -3,13 +3,14 @@ package testing
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
@@ -44,22 +45,30 @@ func NewRuntimesDTO(subAccountID string, shootName string, opts ...NewRuntimeOpt
 	return runtime
 }
 
-func WithSucceededState(runtime *kebruntime.RuntimeDTO) {
-	runtime.Status.Provisioning.State = "succeeded"
+func WithProvisioningSucceededStatus(statusState kebruntime.State) func(*kebruntime.RuntimeDTO) {
+	return func(runtime *kebruntime.RuntimeDTO) {
+		runtime.Status.State = statusState
+		runtime.Status.Provisioning = &kebruntime.Operation{
+			State: string(kebruntime.StateSucceeded),
+		}
+	}
 }
 
-func WithFailedState(runtime *kebruntime.RuntimeDTO) {
-	runtime.Status.Provisioning.State = "failed"
+func WithProvisioningFailedState(runtime *kebruntime.RuntimeDTO) {
+	runtime.Status.Provisioning = &kebruntime.Operation{
+		State: string(kebruntime.StateFailed),
+	}
 }
 
-func WithProvisionedAndDeprovisionedState(runtime *kebruntime.RuntimeDTO) {
-	runtime.Status.Provisioning.State = "succeeded"
-	runtime.Status.Deprovisioning = &kebruntime.Operation{
-		State:           "succeeded",
-		Description:     "",
-		CreatedAt:       time.Now(),
-		OperationID:     "",
-		OrchestrationID: "",
+func WithProvisionedAndDeprovisionedStatus(statusState kebruntime.State) func(*kebruntime.RuntimeDTO) {
+	return func(runtime *kebruntime.RuntimeDTO) {
+		runtime.Status.State = statusState
+		runtime.Status.Provisioning = &kebruntime.Operation{
+			State: string(kebruntime.StateSucceeded),
+		}
+		runtime.Status.Deprovisioning = &kebruntime.Operation{
+			State: string(kebruntime.StateSucceeded),
+		}
 	}
 }
 

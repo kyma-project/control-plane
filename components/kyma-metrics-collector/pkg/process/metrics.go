@@ -1,11 +1,12 @@
 package process
 
 import (
+	"strconv"
+
 	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"strconv"
 )
 
 const (
@@ -18,6 +19,7 @@ const (
 	globalAccountLabel = "global_account_id"
 	successLabel       = "success"
 	withOldMetricLabel = "with_old_metric"
+	trackableLabel     = "trackable"
 )
 
 var (
@@ -48,7 +50,28 @@ var (
 		},
 		[]string{shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
 	)
+	kebFetchedClusters = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "fetched_clusters",
+			Help:      "All clusters fetched from KEB including trackable and not trackable.",
+		},
+		[]string{trackableLabel, shootNameLabel, instanceIdLabel, runtimeIdLabel, subAccountLabel, globalAccountLabel},
+	)
 )
+
+func recordKEBFetchedClusters(trackable bool, shootName, instanceID, runtimeID, subAccountID, globalAccountID string) {
+	// the order if the values should be same as defined in the metric declaration.
+	kebFetchedClusters.WithLabelValues(
+		strconv.FormatBool(trackable),
+		shootName,
+		instanceID,
+		runtimeID,
+		subAccountID,
+		globalAccountID,
+	).Inc()
+}
 
 // deleteMetrics deletes all the metrics for the provided shoot.
 // Returns true if some metrics are deleted, returns false if no metrics are deleted for that subAccount.

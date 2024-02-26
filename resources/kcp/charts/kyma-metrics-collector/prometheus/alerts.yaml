@@ -78,3 +78,20 @@ groups:
       annotations:
         summary: "Processing sub-account failed"
         description: "Could not process subAccount {{ $labels.sub_account_id }}"
+    - alert: KMCNumberOfClustersFromKEBDropped
+      # it will alert when the amount of trackable fetched clusters from KEB drops below 40% of the average of the last 20 minutes.
+      # the sub-query sum() in the query avg_over_time() is calculated with step=4m in the scrape_interval=20m
+      expr: (sum(kmc_process_fetched_clusters{trackable="true"})) / (avg_over_time(sum(kmc_process_fetched_clusters{trackable="true"})[20m:4m])) < 0.9
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        description: Fetching clusters obtained from KEB failed.
+    - alert: KMCFetchingClustersFromKEBReturnsNoData
+      # fetching clusters from KMC happens every 10min
+      # it will alert when the last 2 requests to KMC returned no data.
+      expr: absent_over_time(kmc_process_fetched_clusters[20m])
+      labels:
+        severity: critical
+      annotations:
+        description: No data obtained from KEB.
