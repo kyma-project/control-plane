@@ -4,7 +4,6 @@ go 1.22.0
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/gardener/gardener v1.88.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jellydator/ttlcache/v3 v3.2.0
@@ -16,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.6.0
 	go.uber.org/zap v1.27.0
-	k8s.io/api v0.28.5
+	k8s.io/api v0.29.2
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
@@ -29,6 +28,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
+	github.com/gardener/gardener v1.88.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
@@ -75,4 +75,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.28.5
+replace k8s.io/client-go => k8s.io/client-go v0.29.2
