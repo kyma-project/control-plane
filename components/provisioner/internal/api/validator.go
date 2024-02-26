@@ -3,8 +3,6 @@ package api
 import (
 	"strings"
 
-	"k8s.io/utils/strings/slices"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -20,13 +18,10 @@ type Validator interface {
 }
 
 type validator struct {
-	availableOpenStackRegions []string
 }
 
-func NewValidator(availableRegions []string) Validator {
-	return &validator{
-		availableOpenStackRegions: availableRegions,
-	}
+func NewValidator() Validator {
+	return &validator{}
 }
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
@@ -106,10 +101,6 @@ func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfig
 		return err
 	}
 
-	if err := v.validateOpenStackRegions(gardenerConfig.Provider, gardenerConfig.Region); err != nil {
-		return err
-	}
-
 	if err := v.validateOpenStackVolume(gardenerConfig.DiskType, gardenerConfig.VolumeSizeGb, gardenerConfig.Provider); err != nil {
 		return err
 	}
@@ -129,18 +120,6 @@ func (v *validator) validateOpenStackVolume(diskType *string, volumeSizeGb *int,
 	if strings.ToLower(provider) == "openstack" {
 		if diskType != nil || volumeSizeGb != nil {
 			return apperrors.BadRequest("error: OpenStack mutation does not accept diskType or volumeSizeGb parameters")
-		}
-	}
-	return nil
-}
-
-func (v *validator) validateOpenStackRegions(provider, requestedRegion string) apperrors.AppError {
-	if strings.ToLower(provider) == "openstack" {
-		if len(v.availableOpenStackRegions) == 0 {
-			return apperrors.Internal("error: OpenStack regions are not provided to the Provisioner")
-		}
-		if !slices.Contains(v.availableOpenStackRegions, requestedRegion) {
-			return apperrors.BadRequest("error: Requested OpenStack region " + requestedRegion + " is currently not supported. Check the documentation to find out what regions are supported")
 		}
 	}
 	return nil

@@ -7,7 +7,7 @@
     }
   },
   "openstack": {
-    "region1": {
+    "eu-central-1": {
       "tenantID": "e7382275-e835-4549-94e1-3b1101e3a1fa",
       "serviceURL": "https://auditlog.example.com:3000",
       "secretName": "auditlog-secret"

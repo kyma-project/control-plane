@@ -1,11 +1,10 @@
 package api_test
 
 import (
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
@@ -125,7 +124,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-			seed:              seedConfig("os-eu1", "region1", "openstack"),
+			seed:              seedConfig("os-eu1", "eu-central-1", "openstack"),
 		},
 	}
 }
@@ -201,7 +200,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			Provider:            "Openstack",
 			TargetSecret:        "secret",
 			Seed:                util.PtrTo("os-eu1"),
-			Region:              "region1",
+			Region:              "eu-central-1",
 			MachineType:         "t3-xlarge",
 			MachineImage:        util.PtrTo("red-hat"),
 			MachineImageVersion: util.PtrTo("8.0"),
