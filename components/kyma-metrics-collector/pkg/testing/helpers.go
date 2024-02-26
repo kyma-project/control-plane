@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
 	kebruntime "github.com/kyma-project/kyma-environment-broker/common/runtime"
 	"github.com/onsi/gomega"
@@ -96,8 +95,6 @@ func StartTestServer(path string, testHandler http.HandlerFunc, g gomega.Gomega)
 
 	return srv
 }
-
-type NewShootOpts func(shoot *gardencorev1beta1.Shoot)
 
 func Get2Nodes() *corev1.NodeList {
 	node1 := GetNode("node1", "Standard_D8_v3")
@@ -232,7 +229,7 @@ func GetPV(name, namespace, capacity string) *corev1.PersistentVolumeClaim {
 			Namespace: namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Limits: nil,
 				Requests: corev1.ResourceList{
 					"storage": resource.MustParse(capacity),
