@@ -1,10 +1,11 @@
 package api_test
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
