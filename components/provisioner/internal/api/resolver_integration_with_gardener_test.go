@@ -221,8 +221,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 				shootUpgradeQueue,
 				kubeconfigProviderMock)
 
-			supportedOpenStackRegions := []string{"region1", "region2"}
-			validator := api.NewValidator(supportedOpenStackRegions)
+			validator := api.NewValidator()
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 

@@ -31,9 +31,6 @@ serviceAccount:
 security:
   skipTLSCertificateVeryfication: false
 
-openStackConfig:
-  regions: ~
-
 gardener:
   helmAnnotation: false
   argoAnnotation: false

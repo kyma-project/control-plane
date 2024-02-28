@@ -126,8 +126,6 @@ spec:
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
               value: {{ .Values.support.bindingsCreationTimeout | quote }}
-            - name: APP_OPENSTACKCONFIG_REGIONS
-              value: {{ .Values.openStackConfig.regions | squote }}
             - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
               value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
