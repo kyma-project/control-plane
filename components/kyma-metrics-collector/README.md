@@ -6,8 +6,8 @@ Kyma Metrics Collector (KMC) is a component that scrapes all Kyma clusters to ge
 ## Functionality
 The basic flow for KMC is as follows:
 * KMC workers get a list of runtimes from [Kyma Environment Broker (KEB)](https://github.com/kyma-project/kyma-environment-broker/tree/main).
- * KMC adds the runtimes to a queue to work through them and re-queues a runtime should an error occur.
- * Information on PVCs, SVCs and Nodes is retrieved from SAP Kyma Runtime (SKR).
+ * KMC adds the runtimes to a queue to work through them. If an error occurs, KMC re-queues the affected runtime.
+ * Information on PVCs, SVCs and Nodes is retrieved from SAP BTP, Kyma runtime (SKR).
  * This information is sent to EDP as an event stream.
  * For every process step, internal metrics are collected with [Prometheus](https://prometheus.io/docs/introduction/overview/) and alerts have been configured to trigger if any part of the functionality malfunctions. See the [metrics.md](metrics.md) file.
 
