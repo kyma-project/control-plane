@@ -1,8 +1,0 @@
-kcp-darwin
-kcp-linux
-kcp.exe
-ers-darwin
-ers-linux
-ers.exe
-/cmd/ers
-!/cmd/ers/main.go
