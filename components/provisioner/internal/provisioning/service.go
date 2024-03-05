@@ -147,7 +147,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
 	r.provisioningQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
@@ -269,7 +269,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	r.shootUpgradeQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
@@ -295,7 +295,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, app
 		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
-	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
+	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, apperrors.AppError) {
@@ -306,7 +306,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
