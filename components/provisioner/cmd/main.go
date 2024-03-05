@@ -90,7 +90,7 @@ type config struct {
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
 		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
-		"RuntimeRegistrationEnabled %v, RuntimeDeregistrationEnabled %v "+
+		"RuntimeRegistrationEnabled %v, RuntimeDeregistrationEnabled %v, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
