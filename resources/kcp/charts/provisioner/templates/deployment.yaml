@@ -104,9 +104,9 @@ spec:
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
               value: {{ or .Values.global.isLocalEnv .Values.security.skipTLSCertificateVeryfication | quote }}
-            - name: APP_PROVISIONING_RUNTIME_REGISTRATION_ENABLED
+            - name: APP_RUNTIME_REGISTRATION_ENABLED
               value: {{ or .Values.compassIntegration.registratonEnabled | quote }}
-            - name: APP_PROVISIONING_RUNTIME_DEREGISTRATION_ENABLED
+            - name: APP_RUNTIME_DEREGISTRATION_ENABLED
               value: {{ or .Values.compassIntegration.deregistrationEnabled | quote }}
             - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
               value: {{ .Values.installation.timeout | quote }}
