@@ -102,9 +102,9 @@ func invokeMigration() error {
 	direction := os.Getenv("DIRECTION")
 	switch direction {
 	case "up":
-		log.Println("Migration UP")
+		log.Println("MIGRATION UP")
 	case "down":
-		log.Println("Migration DOWN")
+		log.Println("MIGRATION DOWN")
 	default:
 		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
@@ -234,7 +234,9 @@ func invokeMigration() error {
 	log.Println("# MIGRATION DONE #")
 
 	currentMigrationVer, _, err := migrateInstance.Version()
-	if err != nil {
+	if err == migrate.ErrNilVersion {
+		log.Println("# NO ACTIVE MIGRATION VERSION #")
+	} else if err != nil {
 		return fmt.Errorf("during acquiring active migration version: %w", err)
 	}
 
