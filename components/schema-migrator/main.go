@@ -102,9 +102,9 @@ func invokeMigration() error {
 	direction := os.Getenv("DIRECTION")
 	switch direction {
 	case "up":
-		log.Println("MIGRATION UP")
+		log.Println("# MIGRATION UP #")
 	case "down":
-		log.Println("MIGRATION DOWN")
+		log.Println("# MIGRATION DOWN #")
 	default:
 		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
