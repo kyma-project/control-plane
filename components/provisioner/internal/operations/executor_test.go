@@ -43,7 +43,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 	cluster := model.Cluster{ID: clusterId}
 
-	t.Run("should not requeue operation when stage if Finished", func(t *testing.T) {
+	t.Run("should not requeue operation when stage is Finished", func(t *testing.T) {
 		// given
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
@@ -72,7 +72,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		assert.True(t, mockStage.called)
 	})
 
-	t.Run("should not requeue operation when stage if Finished and Director integration is disabled", func(t *testing.T) {
+	t.Run("should not requeue operation when stage is Finished and Director integration is disabled", func(t *testing.T) {
 		// given
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
