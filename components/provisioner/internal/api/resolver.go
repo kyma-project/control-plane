@@ -1,7 +1,5 @@
 package api
 
-// dummy change
-
 import (
 	"context"
 	"fmt"
