@@ -90,7 +90,7 @@ func (c *config) String() string {
 		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
-		"ProvisioningTimeoutClusterCreation: %s "+
+		"ProvisioningTimeoutClusterCreation: %s, "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
