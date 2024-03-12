@@ -206,11 +206,13 @@ func (e *Executor) updateOperationLastError(log logrus.FieldLogger, id string, r
 }
 
 func (e *Executor) setRuntimeStatusCondition(log logrus.FieldLogger, id, tenant string) {
-	err := retry.Do(func() error {
-		return e.directorClient.SetRuntimeStatusCondition(id, graphql.RuntimeStatusConditionFailed, tenant)
-	}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
-	if err != nil {
-		log.Infof("Cannot set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
+	if e.directorClient != nil {
+		err := retry.Do(func() error {
+			return e.directorClient.SetRuntimeStatusCondition(id, graphql.RuntimeStatusConditionFailed, tenant)
+		}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
+		if err != nil {
+			log.Infof("Cannot set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
+		}
 	}
 }
 

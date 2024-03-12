@@ -77,6 +77,35 @@ func CreateProvisioningQueue(
 	return NewQueue(provisioningExecutor)
 }
 
+func CreateProvisioningQueueWithoutRegistration(
+	timeouts ProvisioningTimeouts,
+	factory dbsession.Factory,
+	shootClient gardener_apis.ShootInterface,
+	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
+	k8sClientProvider k8s.K8sClientProvider,
+	kubeconfigProvider KubeconfigProvider) OperationQueue {
+
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, model.FinishedStage, timeouts.BindingsCreation)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, nil, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
+
+	provisionSteps := map[model.OperationStage]operations.Step{
+		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
+		model.WaitingForClusterDomain:      waitForClusterDomainStep,
+		model.WaitingForClusterCreation:    waitForClusterCreationStep,
+	}
+
+	provisioningExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.Provision,
+		provisionSteps,
+		failure.NewNoopFailureHandler(),
+		nil,
+	)
+
+	return NewQueue(provisioningExecutor)
+}
+
 func CreateDeprovisioningQueue(
 	timeouts DeprovisioningTimeouts,
 	factory dbsession.Factory,

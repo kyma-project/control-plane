@@ -45,9 +45,9 @@ func newProvisioningService(
 	shootUpgradeQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
 	defaultEnableMachineImageVersionAutoUpdate bool,
-	dynamicKubeconfigProvider DynamicKubeconfigProvider,
+	runtimeRegistrationEnabled bool,
+	dynamicKubeconfigProvider DynamicKubeconfigProvider) provisioning.Service {
 
-) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := provisioning.NewGraphQLConverter()
@@ -64,7 +64,7 @@ func newProvisioningService(
 		deprovisioningQueue,
 		shootUpgradeQueue,
 		dynamicKubeconfigProvider,
-	)
+		runtimeRegistrationEnabled)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

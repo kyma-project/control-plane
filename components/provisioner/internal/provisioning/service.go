@@ -50,6 +50,8 @@ type service struct {
 	shootProvider             ShootProvider
 	dynamicKubeconfigProvider DynamicKubeconfigProvider
 
+	runtimeRegistrationEnabled bool
+
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
@@ -73,20 +75,22 @@ func NewProvisioningService(
 	deprovisioningQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	dynamicKubeconfigProvider DynamicKubeconfigProvider,
+	runtimeRegistrationEnabled bool,
 
 ) Service {
 	return &service{
-		inputConverter:            inputConverter,
-		graphQLConverter:          graphQLConverter,
-		directorService:           directorService,
-		dbSessionFactory:          factory,
-		provisioner:               provisioner,
-		uuidGenerator:             generator,
-		provisioningQueue:         provisioningQueue,
-		deprovisioningQueue:       deprovisioningQueue,
-		shootUpgradeQueue:         shootUpgradeQueue,
-		shootProvider:             shootProvider,
-		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
+		inputConverter:             inputConverter,
+		graphQLConverter:           graphQLConverter,
+		directorService:            directorService,
+		dbSessionFactory:           factory,
+		provisioner:                provisioner,
+		uuidGenerator:              generator,
+		provisioningQueue:          provisioningQueue,
+		deprovisioningQueue:        deprovisioningQueue,
+		shootUpgradeQueue:          shootUpgradeQueue,
+		shootProvider:              shootProvider,
+		dynamicKubeconfigProvider:  dynamicKubeconfigProvider,
+		runtimeRegistrationEnabled: runtimeRegistrationEnabled,
 	}
 }
 
@@ -95,13 +99,18 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	var runtimeID string
 
-	err := util.RetryOnError(5*time.Second, 3, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
-		runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
-		return
-	})
+	if r.runtimeRegistrationEnabled {
 
-	if err != nil {
-		return nil, err.Append("Failed to register Runtime")
+		err := util.RetryOnError(5*time.Second, 3, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
+			runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
+			return
+		})
+
+		if err != nil {
+			return nil, err.Append("Failed to register Runtime")
+		}
+	} else {
+		runtimeID = r.uuidGenerator.New()
 	}
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
@@ -138,10 +147,15 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
 	r.provisioningQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
+
+	if !r.runtimeRegistrationEnabled {
+		return
+	}
+
 	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
 	err := util.RetryOnError(10*time.Second, 3, "Error while unregistering runtime in Director: %s", func() (err apperrors.AppError) {
 		err = r.directorService.DeleteRuntime(id, tenant)
@@ -255,7 +269,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	r.shootUpgradeQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
@@ -281,7 +295,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, app
 		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
-	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
+	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, apperrors.AppError) {
@@ -292,7 +306,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
