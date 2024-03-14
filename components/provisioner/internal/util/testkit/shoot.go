@@ -184,16 +184,3 @@ func (ts *TestShoot) WithHibernationState(hibernationPossible bool, hibernated b
 
 	return ts
 }
-
-// WithPSPAdmissionPluginDisabled sets shoot.Status.LastOperation to nil
-func (ts *TestShoot) WithPSPAdmissionPluginDisabled() *TestShoot {
-	disable := true
-	plugin := v1beta1.AdmissionPlugin{
-		Name:     "PodSecurityPolicy",
-		Disabled: &disable,
-	}
-
-	ts.shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins = []v1beta1.AdmissionPlugin{plugin}
-
-	return ts
-}

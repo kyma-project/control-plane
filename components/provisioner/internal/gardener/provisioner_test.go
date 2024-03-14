@@ -173,7 +173,6 @@ func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
 				WithMaxSurge(25).
 				WithMaxUnavailable(1).
 				ToWorker()).
-		WithPSPAdmissionPluginDisabled().
 		ToShoot()
 
 	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"zone-1"}})
