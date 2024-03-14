@@ -87,9 +87,11 @@ func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Clu
 		return errors.Wrap(dberr, "error marking cluster for deletion")
 	}
 
-	err := s.deleteRuntime(cluster)
-	if err != nil {
-		return err
+	if s.directorClient != nil {
+		err := s.deleteRuntime(cluster)
+		if err != nil {
+			return err
+		}
 	}
 
 	dberr = session.Commit()

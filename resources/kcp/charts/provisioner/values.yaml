@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20240226-86e3353f"
+      version: "v20240312-b74ff6dd"
       dir: "prod"
 serviceMonitor:
   enabled: true
@@ -30,9 +30,6 @@ serviceAccount:
 
 security:
   skipTLSCertificateVeryfication: false
-
-openStackConfig:
-  regions: ~
 
 gardener:
   helmAnnotation: false
@@ -73,6 +70,10 @@ kymaRelease:
 
 installation:
   timeout: 22h
+
+compassIntegration:
+  registratonEnabled: true
+  deregistrationEnabled: true
 
 upgrade:
   triggeringTimeout: 20m

@@ -58,6 +58,10 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 	}
 
+	if s.directorClient == nil {
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	}
+
 	// TODO: Consider updating Labels and StatusCondition separately without getting the Runtime
 	//       It'll be possible after this issue implementation:
 	//       - https://github.com/kyma-project/control-plane/issues/1186
@@ -79,6 +83,7 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 }
 
 func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeUpdateInput, error) {
+
 	var runtime graphql.RuntimeExt
 
 	err := util.RetryOnError(5*time.Second, 3, "Error while getting runtime from Director: %s", func() (err apperrors.AppError) {

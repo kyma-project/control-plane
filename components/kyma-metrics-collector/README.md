@@ -5,10 +5,9 @@ Kyma Metrics Collector (KMC) is a component that scrapes all Kyma clusters to ge
 
 ## Functionality
 The basic flow for KMC is as follows:
-* KMC workers get a list of runtimes from [Kyma Environment Broker (KEB)](https://github.com/kyma-project/kyma-environment-broker/tree/main). 
- * Additionally, the workers get the kubeconfig, secret and shoot from Gardener. 
- * KMC adds the runtimes to a queue to work through them and re-queues a runtime should an error occur. 
- * Information on PVCs, SVCs and Nodes is retrieved from SAP Kyma Runtime (SKR). 
+* KMC workers get a list of runtimes from [Kyma Environment Broker (KEB)](https://github.com/kyma-project/kyma-environment-broker/tree/main).
+ * KMC adds the runtimes to a queue to work through them. If an error occurs, KMC re-queues the affected runtime.
+ * Information on PVCs, SVCs and Nodes is retrieved from SAP BTP, Kyma runtime (SKR).
  * This information is sent to EDP as an event stream.
  * For every process step, internal metrics are collected with [Prometheus](https://prometheus.io/docs/introduction/overview/) and alerts have been configured to trigger if any part of the functionality malfunctions. See the [metrics.md](metrics.md) file.
 
@@ -20,8 +19,6 @@ Kyma Metrics Collector comes with the following command line argument flags:
 
 | Flag | Description | Default Value   |
 | ----- | ------------ | ------------- |
-| `gardener-secret-path` | The path to the secret which contains the kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
-| `gardener-namespace` | The namespace in the Gardener cluster where information on Kyma clusters is. | `garden-kyma-dev`    |
 | `scrape-interval` | The time interval to wait between 2 executions of metrics generation. | `3m`         |
 | `worker-pool-size` | The number of workers in the pool. | `5` |
 | `log-level` | The log-level of the Application. For example, `fatal`, `error`, `info`, `debug`. | `info` |
@@ -31,7 +28,7 @@ Kyma Metrics Collector comes with the following command line argument flags:
 ### Environment variables
 
 Kyma Metrics Collector comes with the following environment variables:
-     
+
  | Variable | Description | Default Value   |
  | ----- | ------------ | ------------- |
  | `PUBLIC_CLOUD_SPECS` | This specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
@@ -300,7 +297,7 @@ See the example of data sent to EDP:
         "count": 2
       }
     ],
-    "provisioned_cpus": 24,  
+    "provisioned_cpus": 24,
     "provisioned_ram_gb": 96,
     "provisioned_volumes": {
       "size_gb_total": 150,
