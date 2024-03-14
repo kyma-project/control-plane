@@ -31,9 +31,6 @@ serviceAccount:
 security:
   skipTLSCertificateVeryfication: false
 
-openStackConfig:
-  regions: ~
-
 gardener:
   helmAnnotation: false
   argoAnnotation: false
@@ -73,6 +70,10 @@ kymaRelease:
 
 installation:
   timeout: 22h
+
+compassIntegration:
+  registratonEnabled: true
+  deregistrationEnabled: true
 
 upgrade:
   triggeringTimeout: 20m

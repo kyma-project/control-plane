@@ -229,7 +229,7 @@
       "max_nics": 8
     },
     "standard_d2s_v5": {
-      "cpu_cores": 2,
+      "cpu_cores": 3,
       "memory": 8,
       "storage": 0,
       "max_nics": 2
@@ -261,7 +261,7 @@
       "memory": 256
     },
     "m5.large": {
-      "cpu_cores": 2,
+      "cpu_cores": 3,
       "memory": 8
     },
     "m5.xlarge": {
@@ -353,7 +353,7 @@
       "memory": 192
     },
     "m6i.large": {
-      "cpu_cores": 2,
+      "cpu_cores": 3,
       "memory": 8
     }
   },
@@ -363,7 +363,7 @@
       "memory": 15
     },
     "n2-standard-2": {
-      "cpu_cores": 2,
+      "cpu_cores": 3,
       "memory": 8
     },
     "n2-standard-4": {
@@ -425,7 +425,7 @@
       "memory": 32
     },
     "g_c2_m8": {
-      "cpu_cores": 2,
+      "cpu_cores": 3,
       "memory": 8
     }
   }

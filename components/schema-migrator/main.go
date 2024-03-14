@@ -102,9 +102,9 @@ func invokeMigration() error {
 	direction := os.Getenv("DIRECTION")
 	switch direction {
 	case "up":
-		log.Println("Migration UP")
+		log.Println("# MIGRATION UP #")
 	case "down":
-		log.Println("Migration DOWN")
+		log.Println("# MIGRATION DOWN #")
 	default:
 		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
@@ -137,7 +137,7 @@ func invokeMigration() error {
 	db, err := sql.Open("postgres", connectionString)
 
 	for i := 0; i < connRetries && err != nil; i++ {
-		fmt.Printf("Error while connecting to the database, %s\n", err)
+		fmt.Printf("Error while connecting to the database, %s. Retrying step\n", err)
 		db, err = sql.Open("postgres", connectionString)
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -145,7 +145,7 @@ func invokeMigration() error {
 	if err != nil {
 		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
-
+	log.Println("# CONNECTION WITH DATABASE ESTABLISHED #")
 	log.Println("# STARTING TO COPY MIGRATION FILES #")
 
 	migrationEnvPath := os.Getenv("MIGRATION_PATH")
@@ -162,33 +162,36 @@ func invokeMigration() error {
 		fs: osFS{},
 	}
 	newMigrationsSrc := fmt.Sprintf("new-migrations/%s", migrationEnvPath)
+	log.Println("# LOADING MIGRATION FILES FROM CONFIGMAP #")
 	err = ms.copyDir(newMigrationsSrc, migrationExecPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
+			log.Println("# NO MIGRATION FILES PROVIDED BY THE CONFIGMAP, SKIPPING STEP #")
 		} else {
-			return fmt.Errorf("# COULD NOT COPY NEW MIGRATION FILES: %w", err)
+			return fmt.Errorf("# COULD NOT COPY MIGRATION FILES PROVIDED BY THE CONFIGMAP: %w", err)
 		}
+	} else {
+		log.Println("# LOADING MIGRATION FILES FROM CONFIGMAP DONE #")
 	}
 
 	oldMigrationsSrc := fmt.Sprintf("migrations/%s", migrationEnvPath)
+	log.Println("# LOADING EMBEDDED MIGRATION FILES FROM THE SCHEMA-MIGRATOR IMAGE #")
 	err = ms.copyDir(oldMigrationsSrc, migrationExecPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("# COULD NOT COPY OLD MIGRATION FILES: %s\n", err)
+			log.Println("# NO MIGRATION FILES EMBEDDED TO THE SCHEMA-MIGRATOR IMAGE, SKIPPING STEP #")
 		} else {
-			return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
+			return fmt.Errorf("# COULD NOT COPY EMBEDDED MIGRATION FILES FROM THE SCHEMA-MIGRATOR IMAGE: %w", err)
 		}
+	} else {
+		log.Println("# LOADING EMBEDDED MIGRATION FILES FROM THE SCHEMA-MIGRATOR IMAGE DONE #")
 	}
 
-	log.Println("# STARTING MIGRATION #")
-
-	migrationPath := fmt.Sprintf("file:///%s", migrationExecPath)
-
+	log.Println("# INITIALIZING DRIVER #")
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 
 	for i := 0; i < connRetries && err != nil; i++ {
-		fmt.Printf("Error during driver initialization, %s\n", err)
+		fmt.Printf("Error during driver initialization, %s. Retrying step\n", err)
 		driver, err = postgres.WithInstance(db, &postgres.Config{})
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -196,6 +199,10 @@ func invokeMigration() error {
 	if err != nil {
 		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %w", err)
 	}
+	log.Println("# DRIVER INITIALIZED #")
+	log.Println("# STARTING MIGRATION #")
+
+	migrationPath := fmt.Sprintf("file:///%s", migrationExecPath)
 
 	migrateInstance, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
@@ -221,16 +228,26 @@ func invokeMigration() error {
 	if err != nil && !errors.Is(migrate.ErrNoChange, err) {
 		return fmt.Errorf("during migration: %w", err)
 	} else if errors.Is(migrate.ErrNoChange, err) {
-		log.Println("No Changes. Migration done.")
+		log.Println("# NO CHANGES DETECTED #")
 	}
 
+	log.Println("# MIGRATION DONE #")
+
+	currentMigrationVer, _, err := migrateInstance.Version()
+	if err == migrate.ErrNilVersion {
+		log.Println("# NO ACTIVE MIGRATION VERSION #")
+	} else if err != nil {
+		return fmt.Errorf("during acquiring active migration version: %w", err)
+	}
+
+	log.Printf("# CURRENT ACTIVE MIGRATION VERSION: %d #", currentMigrationVer)
 	return nil
 }
 
 type Logger struct{}
 
 func (l *Logger) Printf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
+	fmt.Printf("Executed "+format, v...)
 }
 
 func (l *Logger) Verbose() bool {

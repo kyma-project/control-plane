@@ -141,6 +141,49 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		})
 	}
 
+	// tests for disabled Director integration
+	for _, testCase := range []struct {
+		description   string
+		mockFunc      func(gardenerClient *gardenerMocks.GardenerClient)
+		expectedStage model.OperationStage
+		expectedDelay time.Duration
+	}{
+		{
+			description: "should continue waiting if domain name is not set when Director integration is disabled",
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
+			},
+			expectedStage: model.WaitingForClusterDomain,
+			expectedDelay: 5 * time.Second,
+		},
+		{
+			description: "should go to the next stage if domain name is available and Director integration is disabled",
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &gardenerMocks.GardenerClient{}
+
+			testCase.mockFunc(gardenerClient)
+
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nil, nextStageName, 10*time.Minute)
+
+			// when
+			result, err := waitForClusterDomainStep.Run(cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedStage, result.Stage)
+			assert.Equal(t, testCase.expectedDelay, result.Delay)
+			gardenerClient.AssertExpectations(t)
+		})
+	}
+
 	for _, testCase := range []struct {
 		description        string
 		mockFunc           func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient)
@@ -199,6 +242,42 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 
 			gardenerClient.AssertExpectations(t)
 			directorClient.AssertExpectations(t)
+		})
+	}
+
+	// tests for disabled Director integration
+	for _, testCase := range []struct {
+		description        string
+		mockFunc           func(gardenerClient *gardenerMocks.GardenerClient)
+		cluster            model.Cluster
+		unrecoverableError bool
+	}{
+		{
+			description: "should return error if failed to read Shoot",
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, apperrors.Internal("some error"))
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &gardenerMocks.GardenerClient{}
+
+			testCase.mockFunc(gardenerClient)
+
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nil, nextStageName, 10*time.Minute)
+
+			// when
+			_, err := waitForClusterDomainStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.Error(t, err)
+			nonRecoverable := operations.NonRecoverableError{}
+			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+
+			gardenerClient.AssertExpectations(t)
 		})
 	}
 }

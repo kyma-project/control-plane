@@ -643,7 +643,6 @@ func TestEditShootConfig(t *testing.T) {
 				WithMaxSurge(30).
 				WithMaxUnavailable(1).
 				ToWorker()).
-		WithPSPAdmissionPluginDisabled().
 		ToShoot()
 
 	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())

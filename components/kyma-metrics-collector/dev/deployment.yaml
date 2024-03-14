@@ -30,7 +30,6 @@ spec:
           - --worker-pool-size=5
           - --log-level=debug
           - --listen-addr=8080
-          - --gardener-namespace=garden-kyma-dev
         env:
           - name: EDP_URL
             value: http://edp-mock.kcp-system:8080
