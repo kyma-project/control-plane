@@ -3,6 +3,7 @@ package provisioning
 import (
 	"context"
 	"errors"
+	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	gardenerMocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -63,13 +63,13 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description   string
-		mockFunc      func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient)
+		mockFunc      func(gardenerClient *gardenerMocks.GardenerClient)
 		expectedStage model.OperationStage
 		expectedDelay time.Duration
 	}{
 		{
 			description: "should continue waiting if domain name is not set",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, _ *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
 			},
 			expectedStage: model.WaitingForClusterDomain,
@@ -77,44 +77,36 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next stage if domain name is available",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 
 				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
 					"label": "value",
 				})
-				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(nil)
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
 		},
 		{
 			description: "should retry on failed GetRuntime call and go to the next stage if domain name is available",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 
 				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
 					"label": "value",
 				})
-				directorClient.On("GetRuntime", runtimeID, tenant).Once().Return(graphql.RuntimeExt{}, apperrors.Internal("get runtime error"))
-				directorClient.On("GetRuntime", runtimeID, tenant).Once().Return(runtime, nil)
-				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(nil)
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
 		},
 		{
 			description: "should retry on failed UpdateRuntime call and go to the next stage if domain name is available",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 
 				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
 					"label": "value",
 				})
-				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Once().Return(apperrors.Internal("update runtime error"))
-				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Once().Return(nil)
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -125,9 +117,9 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 			gardenerClient := &gardenerMocks.GardenerClient{}
 			directorClient := &directormock.DirectorClient{}
 
-			testCase.mockFunc(gardenerClient, directorClient)
+			testCase.mockFunc(gardenerClient)
 
-			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, directorClient, nextStageName, 10*time.Minute)
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
 			result, err := waitForClusterDomainStep.Run(cluster, model.Operation{}, logrus.New())
@@ -171,7 +163,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient)
 
-			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nil, nextStageName, 10*time.Minute)
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
 			result, err := waitForClusterDomainStep.Run(cluster, model.Operation{}, logrus.New())
@@ -230,7 +222,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, directorClient)
 
-			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, directorClient, nextStageName, 10*time.Minute)
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
 			_, err := waitForClusterDomainStep.Run(testCase.cluster, model.Operation{}, logrus.New())
@@ -267,7 +259,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient)
 
-			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nil, nextStageName, 10*time.Minute)
+			waitForClusterDomainStep := NewWaitForClusterDomainStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
 			_, err := waitForClusterDomainStep.Run(testCase.cluster, model.Operation{}, logrus.New())
