@@ -208,8 +208,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			runtimeRegistrationEnabled := true
-
 			provisioningService := provisioning.NewProvisioningService(
 				inputConverter,
 				graphQLConverter,
@@ -221,8 +219,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 				provisioningQueue,
 				deprovisioningQueue,
 				shootUpgradeQueue,
-				kubeconfigProviderMock,
-				runtimeRegistrationEnabled)
+				kubeconfigProviderMock)
 
 			validator := api.NewValidator()
 

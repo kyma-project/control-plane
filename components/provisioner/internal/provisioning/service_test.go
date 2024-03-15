@@ -108,43 +108,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	operationMatcher := getOperationMatcher(expectedOperation)
 	kubeconfigProviderMock := &queue_mock.KubeconfigProvider{}
 
-	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID ", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		directorServiceMock := &directormock.DirectorClient{}
-		provisioner := &mocks2.Provisioner{}
-
-		provisioningQueue := &mocks.OperationQueue{}
-
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
-		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("Commit").Return(nil)
-		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
-		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
-
-		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningQueue, nil, nil, kubeconfigProviderMock, true)
-
-		// when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInputNoKymaConfig, tenant, subAccountId)
-		require.NoError(t, err)
-
-		// then
-		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.Equal(t, gqlschema.OperationTypeProvision, operationStatus.Operation)
-		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactoryMock.AssertExpectations(t)
-		writeSessionWithinTransactionMock.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
-		provisioner.AssertExpectations(t)
-	})
-
-	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID without registration of the runtime in Director when registration is disabled", func(t *testing.T) {
+	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
@@ -165,7 +129,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGeneratorMock, nil, provisioningQueue, nil, nil, kubeconfigProviderMock, false)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGeneratorMock, nil, provisioningQueue, nil, nil, kubeconfigProviderMock)
 
 		// when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInputNoKymaConfig, tenant, subAccountId)

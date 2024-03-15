@@ -53,7 +53,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 		}
 
 		//when
-		status := graphQLConverter.OperationStatusToGQLOperationStatus(operation, true)
+		status := graphQLConverter.OperationStatusToGQLOperationStatus(operation)
 
 		//then
 		assert.Equal(t, expectedOperationStatus, status)
@@ -93,7 +93,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 		}
 
 		//when
-		status := graphQLConverter.OperationStatusToGQLOperationStatus(operation, false)
+		status := graphQLConverter.OperationStatusToGQLOperationStatus(operation)
 
 		//then
 		assert.Equal(t, expectedOperationStatus, status)
@@ -261,7 +261,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		}
 
 		//when
-		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, true)
+		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
 
 		//then
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
@@ -410,7 +410,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		}
 
 		//when
-		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, true)
+		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
 
 		//then
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
@@ -552,7 +552,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		}
 
 		//when
-		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, true)
+		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
 
 		//then
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)

@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -21,16 +20,14 @@ import (
 type WaitForClusterDeletionStep struct {
 	gardenerClient GardenerClient
 	dbsFactory     dbsession.Factory
-	directorClient director.DirectorClient
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
 }
 
-func NewWaitForClusterDeletionStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDeletionStep {
+func NewWaitForClusterDeletionStep(gardenerClient GardenerClient, dbsFactory dbsession.Factory, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDeletionStep {
 	return &WaitForClusterDeletionStep{
 		gardenerClient: gardenerClient,
 		dbsFactory:     dbsFactory,
-		directorClient: directorClient,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
 	}
@@ -87,43 +84,9 @@ func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Clu
 		return errors.Wrap(dberr, "error marking cluster for deletion")
 	}
 
-	if s.directorClient != nil {
-		err := s.deleteRuntime(cluster)
-		if err != nil {
-			return err
-		}
-	}
-
 	dberr = session.Commit()
 	if dberr != nil {
 		return errors.Wrap(dberr, "error commiting transaction")
-	}
-
-	return nil
-}
-
-func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error {
-	var exists bool
-	err := util.RetryOnError(5*time.Second, 3, "Error while checking if runtime exists in Director: %s", func() (err apperrors.AppError) {
-		exists, err = s.directorClient.RuntimeExists(cluster.ID, cluster.Tenant)
-		return
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "error checking Runtime exists in Director")
-	}
-
-	if !exists {
-		return nil
-	}
-
-	err = util.RetryOnError(5*time.Second, 3, "Error while unregistering runtime in Director: %s", func() (err apperrors.AppError) {
-		err = s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
-		return
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "error deleting Runtime form Director")
 	}
 
 	return nil

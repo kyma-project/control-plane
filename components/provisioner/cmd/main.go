@@ -26,7 +26,6 @@ import (
 	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -46,8 +45,6 @@ type config struct {
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	DirectorOAuthPath            string `envconfig:"APP_DIRECTOR_OAUTH_PATH,default=./dev/director.yaml"`
-	RuntimeRegistrationEnabled   bool   `envconfig:"default=true"`
-	RuntimeDeregistrationEnabled bool   `envconfig:"default=true"`
 
 	Database struct {
 		User        string `envconfig:"default=postgres"`
@@ -90,7 +87,6 @@ type config struct {
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
 		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
-		"RuntimeRegistrationEnabled %v, RuntimeDeregistrationEnabled %v, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
@@ -105,7 +101,6 @@ func (c *config) String() string {
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.DirectorURL,
 		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
-		c.RuntimeDeregistrationEnabled, c.RuntimeDeregistrationEnabled,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
@@ -173,45 +168,12 @@ func main() {
 
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
-	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
 	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsInterface)
 
-	var provisioningQueue queue.OperationQueue
-	var shootUpgradeQueue queue.OperationQueue
-
-	if cfg.RuntimeRegistrationEnabled {
-		provisioningQueue = queue.CreateProvisioningQueue(
-			cfg.ProvisioningTimeout,
-			dbsFactory,
-			directorClient,
-			shootClient,
-			cfg.OperatorRoleBinding,
-			k8sClientProvider,
-			runtimeConfigurator,
-			kubeconfigProvider)
-
-		shootUpgradeQueue = queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
-
-	} else {
-		provisioningQueue = queue.CreateProvisioningQueueWithoutRegistration(
-			cfg.ProvisioningTimeout,
-			dbsFactory,
-			shootClient,
-			cfg.OperatorRoleBinding,
-			k8sClientProvider,
-			kubeconfigProvider)
-
-		shootUpgradeQueue = queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, nil, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
-	}
-
-	var deprovisioningQueue queue.OperationQueue
-
-	if cfg.RuntimeDeregistrationEnabled {
-		deprovisioningQueue = queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
-	} else {
-		deprovisioningQueue = queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, nil, shootClient)
-	}
+	provisioningQueue := queue.CreateProvisioningQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, shootClient)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
@@ -232,7 +194,6 @@ func main() {
 		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
-		cfg.RuntimeRegistrationEnabled,
 		kubeconfigProvider,
 	)
 

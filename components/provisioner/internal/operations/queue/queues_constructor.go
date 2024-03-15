@@ -4,7 +4,6 @@ import (
 	"time"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
@@ -12,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 )
 
@@ -47,39 +45,6 @@ type KubeconfigProvider interface {
 func CreateProvisioningQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface,
-	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
-	k8sClientProvider k8s.K8sClientProvider,
-	configurator runtime.Configurator,
-	kubeconfigProvider KubeconfigProvider) OperationQueue {
-
-	configureAgentStep := provisioning.NewConnectAgentStep(configurator, kubeconfigProvider, model.FinishedStage, timeouts.AgentConfiguration)
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, configureAgentStep.Name(), timeouts.BindingsCreation)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
-	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
-
-	provisionSteps := map[model.OperationStage]operations.Step{
-		model.ConnectRuntimeAgent:          configureAgentStep,
-		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
-		model.WaitingForClusterDomain:      waitForClusterDomainStep,
-		model.WaitingForClusterCreation:    waitForClusterCreationStep,
-	}
-
-	provisioningExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Provision,
-		provisionSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(provisioningExecutor)
-}
-
-func CreateProvisioningQueueWithoutRegistration(
-	timeouts ProvisioningTimeouts,
-	factory dbsession.Factory,
 	shootClient gardener_apis.ShootInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
@@ -87,7 +52,7 @@ func CreateProvisioningQueueWithoutRegistration(
 
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, model.FinishedStage, timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
-	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, nil, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
 		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
@@ -109,11 +74,10 @@ func CreateProvisioningQueueWithoutRegistration(
 func CreateDeprovisioningQueue(
 	timeouts DeprovisioningTimeouts,
 	factory dbsession.Factory,
-	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 ) OperationQueue {
 
-	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, model.FinishedStage, timeouts.WaitingForClusterDeletion)
 	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
@@ -126,7 +90,7 @@ func CreateDeprovisioningQueue(
 		model.DeprovisionNoInstall,
 		deprovisioningSteps,
 		failure.NewNoopFailureHandler(),
-		directorClient,
+		nil,
 	)
 
 	return NewQueue(deprovisioningExecutor)
@@ -135,7 +99,6 @@ func CreateDeprovisioningQueue(
 func CreateShootUpgradeQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
-	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
@@ -157,7 +120,7 @@ func CreateShootUpgradeQueue(
 		model.UpgradeShoot,
 		upgradeSteps,
 		failure.NewNoopFailureHandler(),
-		directorClient,
+		nil,
 	)
 
 	return NewQueue(upgradeClusterExecutor)

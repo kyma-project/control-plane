@@ -45,7 +45,6 @@ func newProvisioningService(
 	shootUpgradeQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
 	defaultEnableMachineImageVersionAutoUpdate bool,
-	runtimeRegistrationEnabled bool,
 	dynamicKubeconfigProvider DynamicKubeconfigProvider) provisioning.Service {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
@@ -63,8 +62,7 @@ func newProvisioningService(
 		provisioningQueue,
 		deprovisioningQueue,
 		shootUpgradeQueue,
-		dynamicKubeconfigProvider,
-		runtimeRegistrationEnabled)
+		dynamicKubeconfigProvider)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {
