@@ -6,7 +6,6 @@ import (
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-version"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -46,7 +45,6 @@ type ShootProvider interface {
 type service struct {
 	inputConverter            InputConverter
 	graphQLConverter          GraphQLConverter
-	directorService           director.DirectorClient
 	shootProvider             ShootProvider
 	dynamicKubeconfigProvider DynamicKubeconfigProvider
 
@@ -64,7 +62,6 @@ type service struct {
 func NewProvisioningService(
 	inputConverter InputConverter,
 	graphQLConverter GraphQLConverter,
-	directorService director.DirectorClient,
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
@@ -78,7 +75,6 @@ func NewProvisioningService(
 	return &service{
 		inputConverter:            inputConverter,
 		graphQLConverter:          graphQLConverter,
-		directorService:           directorService,
 		dbSessionFactory:          factory,
 		provisioner:               provisioner,
 		uuidGenerator:             generator,

@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/sirupsen/logrus"
@@ -26,8 +23,7 @@ func NewExecutor(
 	session dbsession.ReadWriteSession,
 	operation model.OperationType,
 	stages map[model.OperationStage]Step,
-	failureHandler FailureHandler,
-	directorClient director.DirectorClient) *Executor {
+	failureHandler FailureHandler) *Executor {
 
 	return &Executor{
 		dbSession:      session,
@@ -35,7 +31,6 @@ func NewExecutor(
 		operation:      operation,
 		failureHandler: failureHandler,
 		log:            logrus.WithFields(logrus.Fields{"Component": "Executor", "OperationType": operation}),
-		directorClient: directorClient,
 	}
 }
 
@@ -44,7 +39,6 @@ type Executor struct {
 	stages         map[model.OperationStage]Step
 	operation      model.OperationType
 	failureHandler FailureHandler
-	directorClient director.DirectorClient
 
 	log logrus.FieldLogger
 }
@@ -84,7 +78,6 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 				log.Errorf("unrecoverable error occurred while processing operation: %s", err.Error())
 				e.handleOperationFailure(operation, cluster, log)
 				e.updateOperationStatus(log, operation.ID, nonRecoverable.Error(), model.Failed, time.Now())
-				e.setRuntimeStatusCondition(log, cluster.ID, cluster.Tenant)
 
 				return ProcessingResult{Requeue: false}
 			}
@@ -202,17 +195,6 @@ func (e *Executor) updateOperationLastError(log logrus.FieldLogger, id string, r
 
 	if err != nil {
 		log.Infof("Cannot set operation last error to %v: %s", lastErr, err.Error())
-	}
-}
-
-func (e *Executor) setRuntimeStatusCondition(log logrus.FieldLogger, id, tenant string) {
-	if e.directorClient != nil {
-		err := retry.Do(func() error {
-			return e.directorClient.SetRuntimeStatusCondition(id, graphql.RuntimeStatusConditionFailed, tenant)
-		}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
-		if err != nil {
-			log.Infof("Cannot set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
-		}
 	}
 }
 

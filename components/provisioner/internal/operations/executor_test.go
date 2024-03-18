@@ -7,9 +7,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
-	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -60,36 +57,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		directorClient := &directorMocks.DirectorClient{}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
-
-		// when
-		result := executor.Execute(operationId)
-
-		// then
-		assert.Equal(t, false, result.Requeue)
-		assert.True(t, mockStage.called)
-	})
-
-	t.Run("should not requeue operation when stage is Finished and Director integration is disabled", func(t *testing.T) {
-		// given
-		dbSession := &mocks.ReadWriteSession{}
-		dbSession.On("GetOperation", operationId).Return(operation, nil)
-		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("TransitionOperation", operationId, "Provisioning steps finished", model.FinishedStage, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationState", operationId, "Operation succeeded", model.Succeeded, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationLastError", operationId, "", "", "").Return(nil)
-
-		mockStage := NewMockStep(model.WaitingForInstallation, model.FinishedStage, 10*time.Second, 10*time.Second)
-
-		installationStages := map[model.OperationStage]Step{
-			model.WaitingForInstallation: mockStage,
-		}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), nil)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
 
 		// when
 		result := executor.Execute(operationId)
@@ -113,33 +81,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		directorClient := &directorMocks.DirectorClient{}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), directorClient)
-
-		// when
-		result := executor.Execute(operationId)
-
-		// then
-		assert.Equal(t, true, result.Requeue)
-		assert.True(t, mockStage.called)
-	})
-
-	t.Run("should requeue operation if error occurred and Director integration is disabled", func(t *testing.T) {
-		// given
-		runErr := fmt.Errorf("error")
-		dbSession := &mocks.ReadWriteSession{}
-		dbSession.On("GetOperation", operationId).Return(operation, nil)
-		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("UpdateOperationLastError", operationId, runErr.Error(), string(apperrors.ErrProvisionerInternal), string(apperrors.ErrProvisioner)).Return(nil)
-
-		mockStage := NewErrorStep(model.WaitingForClusterCreation, runErr, time.Second*10)
-
-		installationStages := map[model.OperationStage]Step{
-			model.WaitingForInstallation: mockStage,
-		}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler(), nil)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, failure.NewNoopFailureHandler())
 
 		// when
 		result := executor.Execute(operationId)
@@ -165,79 +107,15 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
-
 		failureHandler := MockFailureHandler{}
 
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
 
 		// when
 		result := executor.Execute(operationId)
 
 		// then
 		assert.Equal(t, false, result.Requeue)
-		assert.True(t, mockStage.called)
-		assert.True(t, failureHandler.called)
-	})
-
-	t.Run("should not requeue operation and run failure handler if NonRecoverable error occurred and Director integration is disabled", func(t *testing.T) {
-		// given
-		runErr := NewNonRecoverableError(apperrors.External("gardener error").SetComponent(apperrors.ErrGardener).SetReason("ERR_INFRA_QUOTA_EXCEEDED").Append("something"))
-		dbSession := &mocks.ReadWriteSession{}
-		dbSession.On("GetOperation", operationId).Return(operation, nil)
-		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("UpdateOperationState", operationId, "something, gardener error", model.Failed, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationLastError", operationId, "something, gardener error", "ERR_INFRA_QUOTA_EXCEEDED", string(apperrors.ErrGardener)).Return(nil)
-
-		mockStage := NewErrorStep(model.WaitingForClusterCreation, runErr, 10*time.Second)
-
-		installationStages := map[model.OperationStage]Step{
-			model.WaitingForInstallation: mockStage,
-		}
-
-		failureHandler := MockFailureHandler{}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, nil)
-
-		// when
-		result := executor.Execute(operationId)
-
-		// then
-		assert.Equal(t, false, result.Requeue)
-		assert.True(t, mockStage.called)
-		assert.True(t, failureHandler.called)
-	})
-
-	t.Run("should not requeue operation and run failure handler if NonRecoverable error occurred but failed to update Director", func(t *testing.T) {
-		// given
-		runErr := NewNonRecoverableError(apperrors.External(errors.Wrap(fmt.Errorf("error"), "kyma installation").Error()).SetComponent(apperrors.ErrKymaInstaller).SetReason("istio"))
-		dbSession := &mocks.ReadWriteSession{}
-		dbSession.On("GetOperation", operationId).Return(operation, nil)
-		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("UpdateOperationState", operationId, "kyma installation: error", model.Failed, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationLastError", operationId, "kyma installation: error", "istio", string(apperrors.ErrKymaInstaller)).Return(nil)
-
-		mockStage := NewErrorStep(model.StartingInstallation, runErr, 10*time.Second)
-
-		installationStages := map[model.OperationStage]Step{
-			model.WaitingForInstallation: mockStage,
-		}
-
-		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(apperrors.Internal("error"))
-
-		failureHandler := MockFailureHandler{}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
-
-		// when
-		result := executor.Execute(operationId)
-
-		// then
-		assert.False(t, result.Requeue)
 		assert.True(t, mockStage.called)
 		assert.True(t, failureHandler.called)
 	})
@@ -259,12 +137,9 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			model.WaitingForInstallation: mockStage,
 		}
 
-		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(nil)
-
 		failureHandler := MockFailureHandler{}
 
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, directorClient)
+		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler)
 
 		// when
 		result := executor.Execute(operationId)
@@ -274,38 +149,6 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		assert.False(t, mockStage.called)
 		assert.True(t, failureHandler.called)
 	})
-
-	t.Run("should not requeue operation and run failure handler if timeout reached and Director integration is disabled", func(t *testing.T) {
-		// given
-		dbSession := &mocks.ReadWriteSession{}
-		dbSession.On("GetOperation", operationId).Return(operation, nil)
-		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("TransitionOperation", operationId, "Operation in progress", model.ConnectRuntimeAgent, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationState", operationId, "error: timeout while processing operation", model.Failed, mock.AnythingOfType("time.Time")).
-			Return(nil)
-		dbSession.On("UpdateOperationLastError", operationId, "error: timeout while processing operation", string(apperrors.ErrProvisionerTimeout), string(apperrors.ErrProvisioner)).Return(nil)
-
-		mockStage := NewMockStep(model.WaitingForInstallation, model.ConnectRuntimeAgent, 0, 0*time.Second)
-
-		installationStages := map[model.OperationStage]Step{
-			model.WaitingForInstallation: mockStage,
-		}
-
-		failureHandler := MockFailureHandler{}
-
-		executor := NewExecutor(dbSession, model.Provision, installationStages, &failureHandler, nil)
-
-		// when
-		result := executor.Execute(operationId)
-
-		// then
-		assert.Equal(t, false, result.Requeue)
-		assert.False(t, mockStage.called)
-		assert.True(t, failureHandler.called)
-	})
-
-	// tests for disabled Director integration
 
 }
 

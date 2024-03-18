@@ -39,12 +39,9 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 
 type config struct {
-	Address                      string `envconfig:"default=127.0.0.1:3000"`
-	APIEndpoint                  string `envconfig:"default=/graphql"`
-	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
-	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
-	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	DirectorOAuthPath            string `envconfig:"APP_DIRECTOR_OAUTH_PATH,default=./dev/director.yaml"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
+	APIEndpoint           string `envconfig:"default=/graphql"`
+	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
 	Database struct {
 		User        string `envconfig:"default=postgres"`
@@ -85,8 +82,7 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
-		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
@@ -99,8 +95,7 @@ func (c *config) String() string {
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
-		c.Address, c.APIEndpoint, c.DirectorURL,
-		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
+		c.Address, c.APIEndpoint,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
@@ -163,9 +158,6 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	directorClient, err := newDirectorClient(cfg)
-	exitOnError(err, "Failed to initialize Director client")
-
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
 	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
@@ -187,7 +179,6 @@ func main() {
 		cfg.Gardener.Project,
 		provisioner,
 		dbsFactory,
-		directorClient,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
 		deprovisioningQueue,
