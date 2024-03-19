@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	defaultDelay         = 2 * time.Second
-	backOffDirectorDelay = 1 * time.Second
+	defaultDelay = 2 * time.Second
 )
 
 var ErrKubeconfigNil = errors.New("cluster kubeconfig is nil")
