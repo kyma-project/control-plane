@@ -65,7 +65,6 @@ func CreateProvisioningQueue(
 		model.Provision,
 		provisionSteps,
 		failure.NewNoopFailureHandler(),
-		nil,
 	)
 
 	return NewQueue(provisioningExecutor)
@@ -90,7 +89,6 @@ func CreateDeprovisioningQueue(
 		model.DeprovisionNoInstall,
 		deprovisioningSteps,
 		failure.NewNoopFailureHandler(),
-		nil,
 	)
 
 	return NewQueue(deprovisioningExecutor)
@@ -120,7 +118,6 @@ func CreateShootUpgradeQueue(
 		model.UpgradeShoot,
 		upgradeSteps,
 		failure.NewNoopFailureHandler(),
-		nil,
 	)
 
 	return NewQueue(upgradeClusterExecutor)
