@@ -47,15 +47,21 @@ type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-func (c *Client) kubeconfigForRuntimeID(runtimeId string) ([]byte, error) {
-	kubeConfigSecret := &v1.Secret{}
-	err := c.kcpK8sClient.Get(context.Background(), c.objectKey(runtimeId), kubeConfigSecret)
+func (c *Client) kubeconfigForInstanceID() ([]byte, error) {
+	secrets := &v1.SecretList{}
+	listOpts := secretListOptions(c.instanceID)
+
+	err := c.kcpK8sClient.List(context.Background(), secrets, listOpts...)
+
 	if err != nil {
-		return nil, fmt.Errorf("while getting secret from kcp for runtimeId=%s : %w", runtimeId, err)
+		return nil, fmt.Errorf("while getting secret from kcp for instanceID=%s : %w", c.instanceID, err)
 	}
-	config, ok := kubeConfigSecret.Data["config"]
+	if len(secrets.Items) != 1 {
+		return nil, fmt.Errorf("found %d secrets for instanceID %s but expected 1", len(secrets.Items), c.instanceID)
+	}
+	config, ok := secrets.Items[0].Data["config"]
 	if !ok {
-		return nil, fmt.Errorf("while getting 'config' from secret from %s", c.objectKey(runtimeId))
+		return nil, fmt.Errorf("while getting 'config' from secret from %s", c.instanceID)
 	}
 	if len(config) == 0 {
 		return nil, fmt.Errorf("empty kubeconfig")
@@ -64,12 +70,7 @@ func (c *Client) kubeconfigForRuntimeID(runtimeId string) ([]byte, error) {
 }
 
 func (c *Client) FetchRuntimeConfig() (*string, error) {
-	runtimeID, err := c.directorClient.GetRuntimeID(c.tenantID, c.instanceID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtime id from director for instance ID %s", c.instanceID)
-	}
-
-	kubeconfig, err := c.kubeconfigForRuntimeID(runtimeID)
+	kubeconfig, err := c.kubeconfigForInstanceID()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting kubeconfig %s", c.instanceID)
 	}
@@ -118,5 +119,16 @@ func (c *Client) objectKey(runtimeId string) client.ObjectKey {
 	return client.ObjectKey{
 		Namespace: "kcp-system",
 		Name:      fmt.Sprintf("kubeconfig-%s", runtimeId),
+	}
+}
+
+func secretListOptions(instanceID string) []client.ListOption {
+	label := map[string]string{
+		"kyma-project.io/instance-id": instanceID,
+	}
+
+	return []client.ListOption{
+		client.InNamespace("kcp-system"),
+		client.MatchingLabels(label),
 	}
 }
