@@ -47,7 +47,7 @@ type runtimeStatusResponse struct {
 	Result schema.RuntimeStatus `json:"result"`
 }
 
-func (c *Client) kubeconfigForRuntimeID() ([]byte, error) {
+func (c *Client) kubeconfigForInstanceID() ([]byte, error) {
 	secrets := &v1.SecretList{}
 	listOpts := secretListOptions(c.instanceID)
 
@@ -70,7 +70,7 @@ func (c *Client) kubeconfigForRuntimeID() ([]byte, error) {
 }
 
 func (c *Client) FetchRuntimeConfig() (*string, error) {
-	kubeconfig, err := c.kubeconfigForRuntimeID()
+	kubeconfig, err := c.kubeconfigForInstanceID()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting kubeconfig %s", c.instanceID)
 	}
