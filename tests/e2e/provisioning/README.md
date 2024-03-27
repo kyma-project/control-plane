@@ -2,7 +2,7 @@
 
 ## Overview
 
-Kyma Runtime end-to-end provisioning test checks if [Runtime provisioning](https://github.com/kyma-project/kyma-environment-broker/blob/main/docs/user/01-10-architecture.md) works as expected. The test is based on the Kyma Environment Broker (KEB), Runtime Provisioner and Director implementation. External dependencies relevant for this scenario are mocked.
+Kyma Runtime end-to-end provisioning test checks if [Runtime provisioning](https://github.com/kyma-project/kyma-environment-broker/blob/main/docs/user/01-10-architecture.md) works as expected. The test is based on the Kyma Environment Broker (KEB) and Runtime Provisioner implementation. External dependencies relevant for this scenario are mocked.
 
 The test is executed on a dev cluster. It is executed after every merge to the `kyma` repository that changes the `compass` chart.
 
@@ -82,11 +82,6 @@ You can configure the test execution by using the following environment variable
 | **APP_RUNTIME_UUA_INSTANCE_NAME** | Specifies the name of the UUA instance which is provisioned in the Runtime. | `uua-issuer` |
 | **APP_RUNTIME_UUA_INSTANCE_NAMESPACE** | Specifies the Namespace of the UUA instance which is provisioned in the Runtime. | `kyma-system` |
 | **APP_TENANT_ID** | Specifies TenantID which is used in the test. | None |
-| **APP_DIRECTOR_URL** | Specifies the Director URL. | `http://compass-director.compass-system.svc.cluster.local:3000/graphql` |
-| **APP_DIRECTOR_OAUTH_TOKEN_URL** | Specifies the URL for OAuth authentication. | None |
-| **APP_DIRECTOR_OAUTH_CLIENT_ID** | Specifies the client ID for OAuth authentication. | None |
-| **APP_DIRECTOR_OAUTH_SECRET** | Specifies the client secret for OAuth authentication. | None |
-| **APP_DIRECTOR_OAUTH_SCOPE** | Specifies the scopes for OAuth authentication. | `runtime:read runtime:write` |
 | **APP_DUMMY_TEST** | Specifies if test should success without any action. | `false` |
 | **APP_CLEANUP_PHASE** | Specifies if the test executes the cleanup phase. | `false` |
 | **APP_CONFIG_NAME** | Specifies the name of the ConfigMap and Secret created in the test. | `e2e-runtime-config` |
