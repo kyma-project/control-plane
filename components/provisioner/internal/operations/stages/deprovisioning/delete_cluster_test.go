@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
@@ -105,7 +104,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			// given
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSessionFactory := &dbMocks.Factory{}
-			directorClient := &directorMocks.DirectorClient{}
 
 			testCase.mockFunc(gardenerClient)
 
@@ -124,7 +122,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 			assert.Error(t, err, testCase.errMsg)
 			gardenerClient.AssertExpectations(t)
 			dbSessionFactory.AssertExpectations(t)
-			directorClient.AssertExpectations(t)
 		})
 	}
 }

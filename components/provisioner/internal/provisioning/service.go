@@ -6,7 +6,6 @@ import (
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-version"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -46,11 +45,8 @@ type ShootProvider interface {
 type service struct {
 	inputConverter            InputConverter
 	graphQLConverter          GraphQLConverter
-	directorService           director.DirectorClient
 	shootProvider             ShootProvider
 	dynamicKubeconfigProvider DynamicKubeconfigProvider
-
-	runtimeRegistrationEnabled bool
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -66,7 +62,6 @@ type service struct {
 func NewProvisioningService(
 	inputConverter InputConverter,
 	graphQLConverter GraphQLConverter,
-	directorService director.DirectorClient,
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
@@ -75,47 +70,31 @@ func NewProvisioningService(
 	deprovisioningQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	dynamicKubeconfigProvider DynamicKubeconfigProvider,
-	runtimeRegistrationEnabled bool,
 
 ) Service {
 	return &service{
-		inputConverter:             inputConverter,
-		graphQLConverter:           graphQLConverter,
-		directorService:            directorService,
-		dbSessionFactory:           factory,
-		provisioner:                provisioner,
-		uuidGenerator:              generator,
-		provisioningQueue:          provisioningQueue,
-		deprovisioningQueue:        deprovisioningQueue,
-		shootUpgradeQueue:          shootUpgradeQueue,
-		shootProvider:              shootProvider,
-		dynamicKubeconfigProvider:  dynamicKubeconfigProvider,
-		runtimeRegistrationEnabled: runtimeRegistrationEnabled,
+		inputConverter:            inputConverter,
+		graphQLConverter:          graphQLConverter,
+		dbSessionFactory:          factory,
+		provisioner:               provisioner,
+		uuidGenerator:             generator,
+		provisioningQueue:         provisioningQueue,
+		deprovisioningQueue:       deprovisioningQueue,
+		shootUpgradeQueue:         shootUpgradeQueue,
+		shootProvider:             shootProvider,
+		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
 	}
 }
 
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError) {
-	runtimeInput := config.RuntimeInput
 
 	var runtimeID string
 
-	if r.runtimeRegistrationEnabled {
-
-		err := util.RetryOnError(5*time.Second, 3, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
-			runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
-			return
-		})
-
-		if err != nil {
-			return nil, err.Append("Failed to register Runtime")
-		}
-	} else {
-		runtimeID = r.uuidGenerator.New()
-	}
+	runtimeID = r.uuidGenerator.New()
+	log.Infof("Assigned new ID for provisioned Runtime: %s ", runtimeID)
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, err
 	}
 
@@ -128,42 +107,23 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
 	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
 	if dberr != nil {
-		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, dberr
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
 	if err != nil {
-		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, err.Append("Failed to start provisioning")
 	}
 
 	dberr = dbSession.Commit()
 	if dberr != nil {
-		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, dberr
 	}
 
 	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
 	r.provisioningQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
-}
-
-func (r *service) unregisterFailedRuntime(id, tenant string) {
-
-	if !r.runtimeRegistrationEnabled {
-		return
-	}
-
-	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
-	err := util.RetryOnError(10*time.Second, 3, "Error while unregistering runtime in Director: %s", func() (err apperrors.AppError) {
-		err = r.directorService.DeleteRuntime(id, tenant)
-		return
-	})
-	if err != nil {
-		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
-	}
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
@@ -269,7 +229,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	r.shootUpgradeQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
@@ -295,7 +255,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, app
 		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
-	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus, r.runtimeRegistrationEnabled), nil
+	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, apperrors.AppError) {
@@ -306,7 +266,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation, r.runtimeRegistrationEnabled), nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {

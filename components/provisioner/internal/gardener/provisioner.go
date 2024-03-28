@@ -20,7 +20,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
@@ -50,7 +49,6 @@ type GardenerProvisioner struct {
 	namespace                   string
 	shootClient                 Client
 	dbSessionFactory            dbsession.Factory
-	directorService             director.DirectorClient
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
 }
