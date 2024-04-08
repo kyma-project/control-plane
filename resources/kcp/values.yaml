@@ -10,9 +10,6 @@ global:
     subscription_cleanup_job:
       dir:
       version: "v20240129-70857389"
-    kyma_metrics_collector:
-      dir: control-plane/
-      version: "v20240304-150c94b2"
     tests:
       provisioner:
         dir: control-plane/
@@ -108,8 +105,6 @@ global:
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-  kyma_metrics_collector:
-    enabled: false
   mothership_reconciler:
     enabled: false
     expose: true
