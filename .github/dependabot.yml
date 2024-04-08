@@ -3,27 +3,6 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/components/kyma-metrics-collector"
-    labels:
-      - "go"
-      - "skip-review"
-      - "area/dependency"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: "gomod"
-      include: "scope"
-  - package-ecosystem: "docker"
-    directory: "/components/kyma-metrics-collector"
-    labels:
-      - "docker"
-      - "area/dependency"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: "docker"
-      include: "scope"
-  - package-ecosystem: "gomod"
     directory: "/components/kubeconfig-service"
     labels:
       - "go"
