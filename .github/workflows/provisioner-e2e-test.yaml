@@ -20,4 +20,6 @@ jobs:
           go-version-file: 'components/provisioner/go.mod'
           cache-dependency-path: 'components/provisioner/go.mod'
       - name: Run unit tests
-        run: make -C components/provisioner verify
+        run: |
+          mkdir -p /home/runner/go/pkg/mod
+          make -C components/provisioner verify

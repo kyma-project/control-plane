@@ -99,16 +99,14 @@ users:
 `
 )
 
+const schemaFilePath = "../../assets/database/provisioner.sql"
+
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	ctx = context.WithValue(ctx, middlewares.SubAccountID, subAccountId)
 
-	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
-
-	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
+	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx)
 	require.NoError(t, err)
 	defer containerCleanupFunc()
 
@@ -117,7 +115,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	require.NotNil(t, connection)
 	defer testutils.CloseDatabase(t, connection)
 
-	err = database.SetupSchema(connection, testutils.SchemaFilePath)
+	err = database.SetupSchema(connection, schemaFilePath)
 	require.NoError(t, err)
 
 	directorServiceMock := &directormock.DirectorClient{}

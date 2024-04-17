@@ -12,7 +12,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
 
-verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check
+verify:: gqlgen check-gqlgen test-really-local mod-verify go-mod-check
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -39,32 +39,23 @@ go-mod-check-local:
 	fi;
 
 
-# We have to override test-local and errcheck, because we need to run provisioner with database
-#as docker container connected with custom network and the buildpack container itsefl has to be connected to the network
-
-test-local: ;
-
 errcheck-local: ;
 # errcheck-local:
 # 	@docker run $(DOCKER_INTERACTIVE) \
 # 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 # 		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
+LOCALBIN ?= $(shell pwd)/bin
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
 
-testing-with-database-network:
-	@echo testing-with-database-network
-	@docker network inspect $(TESTING_DB_NETWORK) >/dev/null 2>&1 || \
-	docker network create --driver bridge $(TESTING_DB_NETWORK)
-	@docker run $(DOCKER_INTERACTIVE) \
-		-v $(DOCKER_SOCKET):$(DOCKER_SOCKET) \
-		-v $(COMPONENT_DIR)/../../:$(WORKSPACE_COMPONENT_DIR)/../../ \
-		--network=$(TESTING_DB_NETWORK) \
-		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
-		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
-		--env TC_HOST=host.docker.internal \
-		--add-host host.docker.internal:host-gateway \
-		$(DOCKER_CREATE_OPTS) go test ./... -timeout 15m
-	@docker network rm $(TESTING_DB_NETWORK)
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
-clean-up:
-	@docker network rm $(TESTING_DB_NETWORK)
+test-local: ;
+
+test-really-local: envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -timeout 15m
