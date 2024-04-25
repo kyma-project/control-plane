@@ -13,15 +13,17 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	AwsZones []*AWSZone `json:"awsZones"`
-	VpcCidr  *string    `json:"vpcCidr,omitempty"`
+	AwsZones     []*AWSZone `json:"awsZones"`
+	VpcCidr      *string    `json:"vpcCidr,omitempty"`
+	EnableIMDSv2 *bool      `json:"enableIMDSv2,omitempty"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	VpcCidr  string          `json:"vpcCidr"`
-	AwsZones []*AWSZoneInput `json:"awsZones"`
+	VpcCidr      string          `json:"vpcCidr"`
+	AwsZones     []*AWSZoneInput `json:"awsZones"`
+	EnableIMDSv2 *bool           `json:"enableIMDSv2,omitempty"`
 }
 
 type AWSZone struct {

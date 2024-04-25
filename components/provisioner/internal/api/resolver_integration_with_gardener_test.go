@@ -77,6 +77,7 @@ const (
 
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
+	defaultEnableIMDSv2                        = true
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -203,7 +204,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			uuidGenerator := uuid.NewUUIDGenerator()
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			runtimeRegistrationEnabled := true

@@ -67,6 +67,7 @@ type AzureProviderConfig {
 type AWSProviderConfig {
     awsZones: [AWSZone]!
     vpcCidr: String
+    enableIMDSv2: Boolean
 }
 
 type OpenStackProviderConfig {
@@ -286,6 +287,7 @@ input AzureProviderConfigInput {
 input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     awsZones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
+    enableIMDSv2: Boolean # Enable IMDSv2 access method only
 }
 
 input OpenStackProviderConfigInput {

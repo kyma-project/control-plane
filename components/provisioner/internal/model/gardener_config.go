@@ -553,8 +553,9 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 
 	return gqlschema.AWSProviderConfig{
-		AwsZones: zones,
-		VpcCidr:  &c.input.VpcCidr,
+		AwsZones:     zones,
+		VpcCidr:      &c.input.VpcCidr,
+		EnableIMDSv2: c.input.EnableIMDSv2,
 	}
 }
 
@@ -590,7 +591,42 @@ func (c AWSGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot)
+	err := updateShootConfig(gardenerConfig, shoot)
+	if err != nil {
+		return err
+	}
+
+	if c.input.EnableIMDSv2 != nil && *c.input.EnableIMDSv2 {
+		var (
+			workerConfig            *aws.WorkerConfig
+			httpPutResponseHopLimit int64 = 2
+		)
+		if shoot.Spec.Provider.Workers[0].ProviderConfig == nil {
+			workerConfig = NewAWSWorkerConfig(2)
+		} else {
+			workerConfig = &aws.WorkerConfig{}
+			err := json.Unmarshal(shoot.Spec.Provider.Workers[0].ProviderConfig.Raw, &workerConfig)
+			if err != nil {
+				return apperrors.Internal("error decoding aws worker config: %s", err.Error())
+			}
+			if workerConfig.InstanceMetadataOptions == nil {
+				workerConfig.InstanceMetadataOptions = &aws.InstanceMetadataOptions{}
+			}
+			if workerConfig.InstanceMetadataOptions.HTTPTokens == nil || *workerConfig.InstanceMetadataOptions.HTTPTokens != aws.HTTPTokensRequired {
+				workerConfig.InstanceMetadataOptions.HTTPTokens = &aws.HTTPTokensRequired
+			}
+			if workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit == nil || *workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit != httpPutResponseHopLimit {
+				workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit = &httpPutResponseHopLimit
+			}
+		}
+		jsonWCData, err := json.Marshal(workerConfig)
+		if err != nil {
+			return apperrors.Internal("error encoding aws worker config: %s", err.Error())
+		}
+		shoot.Spec.Provider.Workers[0].ProviderConfig = &apimachineryRuntime.RawExtension{Raw: jsonWCData}
+	}
+
+	return nil
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -610,6 +646,15 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	jsonCPData, err := json.Marshal(awsControlPlane)
 	if err != nil {
 		return apperrors.Internal("error encoding control plane config: %s", err.Error())
+	}
+
+	if c.input.EnableIMDSv2 != nil && *c.input.EnableIMDSv2 {
+		awsWorkerConfig := NewAWSWorkerConfig(2)
+		jsonWCData, err := json.Marshal(awsWorkerConfig)
+		if err != nil {
+			return apperrors.Internal("error encoding aws worker config: %s", err.Error())
+		}
+		workers[0].ProviderConfig = &apimachineryRuntime.RawExtension{Raw: jsonWCData}
 	}
 
 	shoot.Spec.Provider = gardener_types.Provider{
