@@ -62,7 +62,6 @@ func kubeconfigProviderMock() *queue_mock.KubeconfigProvider {
 func TestService_ProvisionRuntime(t *testing.T) {
 	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
-	uuidGenerator := uuid.NewUUIDGenerator()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -148,6 +147,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		provisioner := &mocks2.Provisioner{}
 
+		uuidGeneratorMock := &uuidMocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return(runtimeID)
+
 		expectErr := dberrors.Internal("Failed to commit transaction: error")
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
@@ -157,7 +159,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, kubeconfigProviderMock)
+		service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, provisioner, uuidGeneratorMock, nil, nil, nil, nil, kubeconfigProviderMock)
 
 		// when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -177,6 +179,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		provisioner := &mocks2.Provisioner{}
 
+		uuidGeneratorMock := &uuidMocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return(runtimeID)
+
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
@@ -184,7 +189,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(apperrors.Internal("error"))
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, kubeconfigProviderMock)
+		service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, provisioner, uuidGeneratorMock, nil, nil, nil, nil, kubeconfigProviderMock)
 
 		// when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -508,7 +513,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		readSession.On("GetLastOperation", operationID).Return(operation, nil)
 		readSession.On("GetCluster", operationID).Return(model.Cluster{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, true)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -527,7 +532,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetLastOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, true)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -638,7 +643,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider, upgradeShootQueue)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue, nil, true)
+			service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue, nil)
 
 			// when
 			operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
@@ -758,7 +763,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue, nil, true)
+			service := NewProvisioningService(inputConverter, graphQLConverter, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue, nil)
 
 			// when
 			_, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
