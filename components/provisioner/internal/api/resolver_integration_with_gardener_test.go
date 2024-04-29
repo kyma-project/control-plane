@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,8 +12,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
@@ -170,10 +169,12 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			clusterConfig := config.provisioningInput.config
 			runtimeInput := config.provisioningInput.runtimeInput
 
-			uuidGenerator := uuid.NewUUIDGenerator()
+			uuidGeneratorMock := &uuidMocks.UUIDGenerator{}
+			uuidGeneratorMock.On("New").Return(config.runtimeID)
+
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
+			inputConverter := provisioning.NewInputConverter(uuidGeneratorMock, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(
@@ -181,7 +182,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 				graphQLConverter,
 				dbsFactory,
 				provisioner,
-				uuidGenerator,
+				uuidGeneratorMock,
 				gardener.NewShootProvider(shootInterface),
 				provisioningQueue,
 				deprovisioningQueue,
@@ -363,13 +364,12 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		ID:               operationId,
-		Operation:        gqlschema.OperationTypeProvision,
-		State:            gqlschema.OperationStateSucceeded,
-		RuntimeID:        runtimeId,
-		CompassRuntimeID: runtimeId,
-		Message:          util.PtrTo("Operation succeeded"),
-		LastError:        &gqlschema.LastError{},
+		ID:        operationId,
+		Operation: gqlschema.OperationTypeProvision,
+		State:     gqlschema.OperationStateSucceeded,
+		RuntimeID: runtimeId,
+		Message:   util.PtrTo("Operation succeeded"),
+		LastError: &gqlschema.LastError{},
 	}
 }
 
