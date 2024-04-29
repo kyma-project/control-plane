@@ -19,46 +19,6 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 
 	graphQLConverter := NewGraphQLConverter()
 
-	t.Run("Should create proper operation status struct", func(t *testing.T) {
-		//given
-		operation := model.Operation{
-			ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-			Type:      model.Upgrade,
-			State:     model.InProgress,
-			Message:   "Some message",
-			ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
-			LastError: model.LastError{
-				ErrMessage: "error msg",
-				Reason:     "ERR_INFRA_QUOTA_EXCEEDED",
-				Component:  "gardener",
-			},
-		}
-
-		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
-		message := "Some message"
-		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		expectedOperationStatus := &gqlschema.OperationStatus{
-			ID:               &operationID,
-			Operation:        gqlschema.OperationTypeUpgrade,
-			State:            gqlschema.OperationStateInProgress,
-			Message:          &message,
-			RuntimeID:        &runtimeID,
-			CompassRuntimeID: &runtimeID,
-			LastError: &gqlschema.LastError{
-				ErrMessage: "error msg",
-				Reason:     "ERR_INFRA_QUOTA_EXCEEDED",
-				Component:  "gardener",
-			},
-		}
-
-		//when
-		status := graphQLConverter.OperationStatusToGQLOperationStatus(operation)
-
-		//then
-		assert.Equal(t, expectedOperationStatus, status)
-	})
-
 	t.Run("Should create proper operation status struct without compassID", func(t *testing.T) {
 		//given
 		operation := model.Operation{
@@ -193,13 +153,12 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:               &operationID,
-				Operation:        gqlschema.OperationTypeDeprovision,
-				State:            gqlschema.OperationStateFailed,
-				Message:          &message,
-				RuntimeID:        &runtimeID,
-				CompassRuntimeID: &runtimeID,
-				LastError:        &gqlschema.LastError{},
+				ID:        &operationID,
+				Operation: gqlschema.OperationTypeDeprovision,
+				State:     gqlschema.OperationStateFailed,
+				Message:   &message,
+				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -354,13 +313,12 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:               &operationID,
-				Operation:        gqlschema.OperationTypeDeprovisionNoInstall,
-				State:            gqlschema.OperationStateFailed,
-				Message:          &message,
-				RuntimeID:        &runtimeID,
-				CompassRuntimeID: &runtimeID,
-				LastError:        &gqlschema.LastError{},
+				ID:        &operationID,
+				Operation: gqlschema.OperationTypeDeprovisionNoInstall,
+				State:     gqlschema.OperationStateFailed,
+				Message:   &message,
+				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -503,13 +461,12 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:               &operationID,
-				Operation:        gqlschema.OperationTypeDeprovision,
-				State:            gqlschema.OperationStateFailed,
-				Message:          &message,
-				RuntimeID:        &runtimeID,
-				CompassRuntimeID: &runtimeID,
-				LastError:        &gqlschema.LastError{},
+				ID:        &operationID,
+				Operation: gqlschema.OperationTypeDeprovision,
+				State:     gqlschema.OperationStateFailed,
+				Message:   &message,
+				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
