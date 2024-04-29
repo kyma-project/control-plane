@@ -13,6 +13,7 @@ import (
 const (
 	infrastructureConfigKind = "InfrastructureConfig"
 	controlPlaneConfigKind   = "ControlPlaneConfig"
+	workerConfigKind         = "WorkerConfig"
 
 	gcpAPIVersion       = "gcp.provider.extensions.gardener.cloud/v1alpha1"
 	azureAPIVersion     = "azure.provider.extensions.gardener.cloud/v1alpha1"
@@ -164,5 +165,19 @@ func NewOpenStackControlPlane(loadBalancerProvider string) *openstack.ControlPla
 			APIVersion: openStackApiVersion,
 		},
 		LoadBalancerProvider: loadBalancerProvider,
+	}
+}
+
+func NewAWSWorkerConfig(httpPutResponseHopLimit int64) *aws.WorkerConfig {
+
+	return &aws.WorkerConfig{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: awsAPIVersion,
+			Kind:       workerConfigKind,
+		},
+		InstanceMetadataOptions: &aws.InstanceMetadataOptions{
+			HTTPTokens:              &aws.HTTPTokensRequired,
+			HTTPPutResponseHopLimit: util.PtrTo(httpPutResponseHopLimit),
+		},
 	}
 }

@@ -23,7 +23,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
 	azureZoneSubnetsConfigJSON := `{"vnetCidr":"10.10.11.11/255", "azureZones":[{"name":1,"cidr":"10.10.11.12/255"}, {"name":2,"cidr":"10.10.11.13/255"}], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
-	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.10.11.11/255"}]}
+	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.10.11.11/255"}], "enableIMDSv2": true}
 `
 
 	for _, testCase := range []struct {
@@ -109,7 +109,8 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 							WorkerCidr:   "10.10.11.11/255",
 						},
 					},
-					VpcCidr: "10.10.11.11/255",
+					VpcCidr:      "10.10.11.11/255",
+					EnableIMDSv2: util.PtrTo(true),
 				},
 			},
 			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
@@ -121,7 +122,8 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 						WorkerCidr:   util.PtrTo("10.10.11.11/255"),
 					},
 				},
-				VpcCidr: util.PtrTo("10.10.11.11/255"),
+				VpcCidr:      util.PtrTo("10.10.11.11/255"),
+				EnableIMDSv2: util.PtrTo(true),
 			},
 		},
 	} {
@@ -158,7 +160,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(true))
 	require.NoError(t, err)
 
-	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
+	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput(true))
 	require.NoError(t, err)
 
 	for _, testCase := range []struct {
@@ -202,7 +204,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":"10.10.10.10/255"}}`),
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
+							fixWorker([]string{"fix-zone-1", "fix-zone-2"}, nil),
 						},
 					},
 					Purpose:           &purpose,
@@ -284,7 +286,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},"zoned":true}`),
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
+							fixWorker([]string{"fix-zone-1", "fix-zone-2"}, nil),
 						},
 					},
 					Purpose:           &purpose,
@@ -366,7 +368,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":false}`),
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker(nil),
+							fixWorker(nil, nil),
 						},
 					},
 					Purpose:           &purpose,
@@ -448,7 +450,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"zones":[{"name":1,"cidr":"10.10.11.12/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},{"name":2,"cidr":"10.10.11.13/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}}]},"zoned":true}`),
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"1", "2"}),
+							fixWorker([]string{"1", "2"}, nil),
 						},
 					},
 					Purpose:           &purpose,
@@ -530,7 +532,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.11.12/255"}]}}`),
 						},
 						Workers: []gardener_types.Worker{
-							fixWorker([]string{"zone"}),
+							fixWorker([]string{"zone"}, &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"kind":"WorkerConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","instanceMetadataOptions":{"httpTokens":"required","httpPutResponseHopLimit":2}}`),
+							}),
 						},
 					},
 					Purpose:           &purpose,
@@ -645,7 +649,10 @@ func TestEditShootConfig(t *testing.T) {
 				ToWorker()).
 		ToShoot()
 
-	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
+	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput(false))
+	require.NoError(t, err)
+
+	awsProviderConfigWithEnableIMDSv2, err := NewAWSGardenerConfig(fixAWSGardenerInput(true))
 	require.NoError(t, err)
 
 	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones, nil))
@@ -663,6 +670,11 @@ func TestEditShootConfig(t *testing.T) {
 	initialShootWithInfrastructureConfig := initialShoot.DeepCopy()
 	initialShootWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
 		Raw: []byte(azureProviderConfig.RawJSON()),
+	}
+
+	expectedShootConfigWithIMDSv2Enabled := expectedShoot.DeepCopy()
+	expectedShootConfigWithIMDSv2Enabled.Spec.Provider.Workers[0].ProviderConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(`{"kind":"WorkerConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","instanceMetadataOptions":{"httpTokens":"required","httpPutResponseHopLimit":2}}`),
 	}
 
 	expectedShootWithNATEnabled := expectedShoot.DeepCopy()
@@ -692,6 +704,12 @@ func TestEditShootConfig(t *testing.T) {
 			upgradeConfig: fixGardenerConfig("aws", awsProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
 			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should edit AWS shoot template with IMDSv2 enabled",
+			provider:      "aws",
+			upgradeConfig: fixGardenerConfig("aws", awsProviderConfigWithEnableIMDSv2),
+			initialShoot:  initialShoot.DeepCopy(),
+			expectedShoot: expectedShootConfigWithIMDSv2Enabled.DeepCopy(),
 		},
 		{description: "should edit Azure shoot template",
 			provider:      "az",
@@ -806,7 +824,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 	}
 }
 
-func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
+func fixAWSGardenerInput(enableIMDSv2 bool) *gqlschema.AWSProviderConfigInput {
 	return &gqlschema.AWSProviderConfigInput{
 		AwsZones: []*gqlschema.AWSZoneInput{
 			{
@@ -816,7 +834,8 @@ func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
 				WorkerCidr:   "10.10.11.12/255",
 			},
 		},
-		VpcCidr: "10.10.11.11/255",
+		VpcCidr:      "10.10.11.11/255",
+		EnableIMDSv2: &enableIMDSv2,
 	}
 }
 
@@ -846,7 +865,7 @@ func fixAzureZoneSubnetsInput(enableNAT bool) *gqlschema.AzureProviderConfigInpu
 	}
 }
 
-func fixWorker(zones []string) gardener_types.Worker {
+func fixWorker(zones []string, providerConfig *apimachineryRuntime.RawExtension) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           "cpu-worker-0",
 		MaxSurge:       util.PtrTo(intstr.FromInt(30)),
@@ -862,9 +881,10 @@ func fixWorker(zones []string) gardener_types.Worker {
 			Type:       util.PtrTo("SSD"),
 			VolumeSize: "30Gi",
 		},
-		Maximum: 3,
-		Minimum: 1,
-		Zones:   zones,
+		Maximum:        3,
+		Minimum:        1,
+		Zones:          zones,
+		ProviderConfig: providerConfig,
 	}
 }
 

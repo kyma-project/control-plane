@@ -22,6 +22,7 @@ const (
 	gardenerProject                            = "gardener-project"
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
+	defaultEnableIMDSv2                        = true
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -269,7 +270,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
 
-	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
+	expectedAWSGardenerProviderInput := *awsGardenerProvider
+	expectedAWSGardenerProviderInput.EnableIMDSv2 = util.PtrTo(true)
+	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(&expectedAWSGardenerProviderInput)
 	require.NoError(t, err)
 
 	expectedGardenerAWSRuntimeConfig := model.Cluster{
@@ -448,7 +451,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				uuidGeneratorMock,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
-				defaultEnableMachineImageVersionAutoUpdate)
+				defaultEnableMachineImageVersionAutoUpdate,
+				defaultEnableIMDSv2)
 
 			// when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
@@ -550,7 +554,8 @@ func TestConverter_ParseInput(t *testing.T) {
 			uuidGeneratorMock,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			defaultEnableIMDSv2)
 
 		// when
 		output, err := inputConverter.KymaConfigFromInput("runtimeID", input)
@@ -573,7 +578,9 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			defaultEnableIMDSv2,
+		)
 
 		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -596,7 +603,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			defaultEnableIMDSv2)
 
 		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -622,7 +630,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			uuidGeneratorMock,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			defaultEnableIMDSv2)
 
 		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -865,6 +874,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
+				defaultEnableIMDSv2,
 			)
 
 			// when
@@ -886,6 +896,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
+				defaultEnableIMDSv2,
 			)
 
 			// when
