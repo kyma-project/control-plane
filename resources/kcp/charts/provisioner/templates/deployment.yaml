@@ -152,6 +152,8 @@ spec:
               value: {{ .Values.gardener.defaultEnableKubernetesVersionAutoUpdate | quote }}
             - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
               value: {{ .Values.gardener.defaultEnableMachineImageVersionAutoUpdate | quote }}
+            - name: APP_GARDENER_DEFAULT_ENABLE_IMDSV2
+              value: {{ .Values.gardener.defaultEnableIMDSv2 | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "10"
             - name: APP_DOWNLOAD_PRE_RELEASES
