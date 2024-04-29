@@ -29,6 +29,7 @@ const (
 )
 
 var networkingType = "calico"
+var awsIMDSv2HTTPPutResponseHopLimit int64 = 2
 
 type OIDCConfig struct {
 	ClientID       string   `json:"clientID"`
@@ -598,11 +599,10 @@ func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 
 	if c.input.EnableIMDSv2 != nil && *c.input.EnableIMDSv2 {
 		var (
-			workerConfig            *aws.WorkerConfig
-			httpPutResponseHopLimit int64 = 2
+			workerConfig *aws.WorkerConfig
 		)
 		if shoot.Spec.Provider.Workers[0].ProviderConfig == nil {
-			workerConfig = NewAWSWorkerConfig(2)
+			workerConfig = NewAWSWorkerConfig(awsIMDSv2HTTPPutResponseHopLimit)
 		} else {
 			workerConfig = &aws.WorkerConfig{}
 			err := json.Unmarshal(shoot.Spec.Provider.Workers[0].ProviderConfig.Raw, &workerConfig)
@@ -615,8 +615,8 @@ func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 			if workerConfig.InstanceMetadataOptions.HTTPTokens == nil || *workerConfig.InstanceMetadataOptions.HTTPTokens != aws.HTTPTokensRequired {
 				workerConfig.InstanceMetadataOptions.HTTPTokens = &aws.HTTPTokensRequired
 			}
-			if workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit == nil || *workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit != httpPutResponseHopLimit {
-				workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit = &httpPutResponseHopLimit
+			if workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit == nil || *workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit != awsIMDSv2HTTPPutResponseHopLimit {
+				workerConfig.InstanceMetadataOptions.HTTPPutResponseHopLimit = &awsIMDSv2HTTPPutResponseHopLimit
 			}
 		}
 		jsonWCData, err := json.Marshal(workerConfig)
@@ -649,7 +649,7 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	}
 
 	if c.input.EnableIMDSv2 != nil && *c.input.EnableIMDSv2 {
-		awsWorkerConfig := NewAWSWorkerConfig(2)
+		awsWorkerConfig := NewAWSWorkerConfig(awsIMDSv2HTTPPutResponseHopLimit)
 		jsonWCData, err := json.Marshal(awsWorkerConfig)
 		if err != nil {
 			return apperrors.Internal("error encoding aws worker config: %s", err.Error())
