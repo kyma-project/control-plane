@@ -9,17 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const schemaFilePath = "../../../assets/database/provisioner.sql"
+
 func TestSchemaInitializer(t *testing.T) {
 
 	ctx := context.Background()
 
-	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
-
 	t.Run("Should initialize database when schema not applied", func(t *testing.T) {
 		// given
-		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx)
 		require.NoError(t, err)
 
 		defer containerCleanupFunc()
@@ -31,7 +29,7 @@ func TestSchemaInitializer(t *testing.T) {
 
 		defer testutils.CloseDatabase(t, connection)
 
-		err = SetupSchema(connection, testutils.SchemaFilePath)
+		err = SetupSchema(connection, schemaFilePath)
 		require.NoError(t, err)
 
 		// then
@@ -42,7 +40,7 @@ func TestSchemaInitializer(t *testing.T) {
 
 	t.Run("Should skip database initialization when schema already applied", func(t *testing.T) {
 		//given
-		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "test_DB_2")
+		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx)
 		require.NoError(t, err)
 
 		defer containerCleanupFunc()
@@ -54,10 +52,10 @@ func TestSchemaInitializer(t *testing.T) {
 
 		defer testutils.CloseDatabase(t, connection)
 
-		err = SetupSchema(connection, testutils.SchemaFilePath)
+		err = SetupSchema(connection, schemaFilePath)
 		require.NoError(t, err)
 
-		err = SetupSchema(connection, testutils.SchemaFilePath)
+		err = SetupSchema(connection, schemaFilePath)
 		require.NoError(t, err)
 
 		// then
@@ -68,7 +66,7 @@ func TestSchemaInitializer(t *testing.T) {
 
 	t.Run("Should return error when failed to connect to the database", func(t *testing.T) {
 
-		containerCleanupFunc, _, err := testutils.InitTestDBContainer(t, ctx, "test_DB_3")
+		containerCleanupFunc, _, err := testutils.InitTestDBContainer(t, ctx)
 		require.NoError(t, err)
 
 		defer containerCleanupFunc()
@@ -86,7 +84,7 @@ func TestSchemaInitializer(t *testing.T) {
 
 	t.Run("Should return error when failed to read database schema", func(t *testing.T) {
 		//given
-		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "test_DB_4")
+		containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx)
 		require.NoError(t, err)
 
 		defer containerCleanupFunc()

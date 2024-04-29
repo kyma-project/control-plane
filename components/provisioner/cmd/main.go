@@ -69,6 +69,7 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
+		DefaultEnableIMDSv2                        bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -91,7 +92,7 @@ func (c *config) String() string {
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
@@ -104,7 +105,7 @@ func (c *config) String() string {
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
-		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
+		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
@@ -185,6 +186,7 @@ func main() {
 		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
+		cfg.Gardener.DefaultEnableIMDSv2,
 		kubeconfigProvider,
 	)
 

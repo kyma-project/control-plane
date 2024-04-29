@@ -32,10 +32,6 @@
 # e2e-provisioning
 /tests/e2e/provisioning @kyma-project/gopher @ebensom
 
-# Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @kyma-project/eventing
-/components/kyma-metrics-collector @kyma-project/eventing
-
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt @talszabi
 /resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt @talszabi

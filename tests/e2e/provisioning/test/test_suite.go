@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
-	"github.com/kyma-project/kyma-environment-broker/common/director"
 	"github.com/kyma-project/kyma-environment-broker/common/gardener"
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
@@ -28,7 +27,6 @@ import (
 
 type Config struct {
 	Broker   broker.Config
-	Director director.Config
 	Gardener gardener.Config
 
 	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
@@ -61,8 +59,6 @@ type Suite struct {
 	configMapClient v1_client.ConfigMaps
 
 	PreUpgradeKymaVersion string
-
-	directorClient *director.Client
 
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
@@ -126,9 +122,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, userID, oAuth2Config, log.WithField("service", "broker_client"))
 
-	directorClient := director.NewDirectorClient(ctx, cfg.Director, log.WithField("service", "director_client"))
-
-	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, cli, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, cli, log.WithField("service", "runtime_client"))
 
 	suite := &Suite{
 		t:   t,
@@ -138,8 +132,6 @@ func newTestSuite(t *testing.T) *Suite {
 		runtimeClient:   runtimeClient,
 		secretClient:    secretClient,
 		configMapClient: configMapClient,
-
-		directorClient: directorClient,
 
 		InstanceID:            instanceID,
 		ProvisionTimeout:      cfg.ProvisionTimeout,

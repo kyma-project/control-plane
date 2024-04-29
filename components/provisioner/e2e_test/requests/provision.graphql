@@ -1,42 +1,42 @@
 mutation ($name: String!
-  , $provider: String!
-  , $providerSecret: String!
-  , $kubernetesVersion: String!
-  , $machineType: String!
-  , $diskType: String!
-  , $region: String!) {
-    provisionRuntime(
-      config: {
+	, $provider: String!
+	, $providerSecret: String!
+	, $kubernetesVersion: String!
+	, $machineType: String!
+	, $diskType: String!
+	, $region: String!) {
+		provisionRuntime(
+			config: {
 	runtimeInput: { name: $name, description: "" }
 	clusterConfig: {
-	  gardenerConfig: {
-	    name: $name
-	    kubernetesVersion: $kubernetesVersion
-	    diskType: $diskType
-	    volumeSizeGB: 32
-	    machineType: $machineType
-	    region: $region
-	    provider: $provider
-	    targetSecret: $providerSecret
-	    workerCidr: "10.250.0.0/19"
-        podsCidr: "10.64.0.0/11"
-        servicesCidr: "10.243.0.0/16"
-	    autoScalerMin: 2
-	    autoScalerMax: 4
-	    maxSurge: 4
-	    maxUnavailable: 1
-	    providerSpecificConfig: {
-	      azureConfig: { vnetCidr: "10.250.0.0/19" }
-	      gcpConfig: {zones: ["europe-west3-b"]}
-	    }
-	  }
+		gardenerConfig: {
+			name: $name
+			kubernetesVersion: $kubernetesVersion
+			diskType: $diskType
+			volumeSizeGB: 32
+			machineType: $machineType
+			region: $region
+			provider: $provider
+			targetSecret: $providerSecret
+			podsCidr: "10.60.0.0/16"
+			workerCidr: "10.250.0.0/16"
+			servicesCidr: "10.240.0.0/16"
+			autoScalerMin: 2
+			autoScalerMax: 4
+			maxSurge: 4
+			maxUnavailable: 1
+			providerSpecificConfig: {
+				azureConfig: { vnetCidr: "10.250.0.0/19" }
+				gcpConfig: {zones: ["europe-west3-b"]}
+			}
+		}
 	}
-      }
-    ) {
-      id
-      operation
-      state
-      message
-      runtimeID
-    }
-  }
+			}
+		) {
+			id
+			operation
+			state
+			message
+			runtimeID
+		}
+	}

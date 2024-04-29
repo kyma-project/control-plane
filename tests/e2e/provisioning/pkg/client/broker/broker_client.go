@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -160,7 +159,7 @@ func (c *Client) DeprovisionRuntime() (string, error) {
 
 func (c *Client) SuspendRuntime() error {
 	c.log.Infof("Suspending Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
-	requestByte, err := c.prepareUpdateDetails(ptr.Bool(false))
+	requestByte, err := c.prepareUpdateDetails(BoolPtr(false))
 	if err != nil {
 		return errors.Wrap(err, "while preparing update details")
 	}
@@ -187,7 +186,7 @@ func (c *Client) SuspendRuntime() error {
 
 func (c *Client) UnsuspendRuntime() error {
 	c.log.Infof("Unsuspending Runtime [instanceID: %s, NAME: %s]", c.InstanceID(), c.ClusterName())
-	requestByte, err := c.prepareUpdateDetails(ptr.Bool(true))
+	requestByte, err := c.prepareUpdateDetails(BoolPtr(true))
 	if err != nil {
 		return errors.Wrap(err, "while preparing update details")
 	}
@@ -412,4 +411,8 @@ func (c *Client) baseURL() string {
 		return fmt.Sprintf("%s/v2", base)
 	}
 	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.PlatformRegion)
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
 }

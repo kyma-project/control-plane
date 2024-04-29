@@ -28,7 +28,8 @@ func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
+	defaultEnableMachineImageVersionAutoUpdate bool,
+	defaultEnableIMDSv2 bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                                    uuidGenerator,
@@ -37,6 +38,7 @@ func NewInputConverter(
 		defaultEnableMachineImageVersionAutoUpdate:       defaultEnableMachineImageVersionAutoUpdate,
 		defaultProvisioningShootNetworkingFilterDisabled: true,
 		defaultEuAccess:                                  false,
+		defaultEnableIMDSv2:                              defaultEnableIMDSv2,
 	}
 }
 
@@ -47,6 +49,7 @@ type converter struct {
 	defaultEnableMachineImageVersionAutoUpdate       bool
 	defaultProvisioningShootNetworkingFilterDisabled bool
 	defaultEuAccess                                  bool
+	defaultEnableIMDSv2                              bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
@@ -229,6 +232,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 		return model.NewAzureGardenerConfig(input.AzureConfig)
 	}
 	if input.AwsConfig != nil {
+		if input.AwsConfig.EnableIMDSv2 == nil {
+			input.AwsConfig.EnableIMDSv2 = util.PtrTo(c.defaultEnableIMDSv2)
+		}
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 	if input.OpenStackConfig != nil {

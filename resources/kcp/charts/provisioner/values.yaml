@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20240314-5a3b7691"
+      version: "v20240429-ea75326a"
       dir: "prod"
 serviceMonitor:
   enabled: true
@@ -55,6 +55,7 @@ gardener:
   clusterUpgradeTimeout: 90m
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
+  defaultEnableIMDSv2: false
 
 support:
   l2OperatorRoleBindingSubject: "runtimeOperator"

@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -88,6 +89,32 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		k8sClient := fake.NewSimpleClientset()
 		clusterRoleBinding := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, operatorBindingConfig.L2SubjectName, l2OperatorClusterRoleName, groupKindSubject, map[string]string{"app": "kyma"})
 		_, err := k8sClient.RbacV1().ClusterRoleBindings().Create(context.Background(), &clusterRoleBinding, metav1.CreateOptions{})
+		require.NoError(t, err)
+
+		k8sClientProvider := &mocks.K8sClientProvider{}
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(k8sClient, nil)
+
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
+
+		// when
+		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, nextStageName, result.Stage)
+		assert.Equal(t, time.Duration(0), result.Delay)
+	})
+
+	t.Run("should not fail if namespace istio-system already exists", func(t *testing.T) {
+		// given
+		k8sClient := fake.NewSimpleClientset()
+
+		ns := &core.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: "istio-system"},
+		}
+
+		_, err := k8sClient.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
+
 		require.NoError(t, err)
 
 		k8sClientProvider := &mocks.K8sClientProvider{}

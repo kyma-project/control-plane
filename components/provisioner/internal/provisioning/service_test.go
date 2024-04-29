@@ -60,7 +60,7 @@ func kubeconfigProviderMock() *queue_mock.KubeconfigProvider {
 }
 
 func TestService_ProvisionRuntime(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -201,7 +201,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
 	lastOperation := model.Operation{State: model.Succeeded}
 	mockedKubeconfig := kubeconfig
@@ -403,7 +403,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -459,7 +459,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 
 func TestService_RuntimeStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -540,7 +540,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 }
 
 func TestService_UpgradeGardenerShoot(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 

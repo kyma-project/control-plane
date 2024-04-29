@@ -43,14 +43,7 @@ var (
 
 func makeConnectionString(hostname string, port string) string {
 
-	host := "localhost"
-
-	if os.Getenv(EnvPipelineBuild) != "" {
-		host = hostname
-		port = DbPort
-	}
-
-	return fmt.Sprintf(connStringFormat, host, port, DbUser,
+	return fmt.Sprintf(connStringFormat, hostname, port, DbUser,
 		DbPass, DbName, "disable")
 }
 
@@ -62,8 +55,7 @@ func CloseDatabase(t *testing.T, connection *dbr.Connection) {
 	}
 }
 
-func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (func(), string, error) {
-
+func InitTestDBContainer(t *testing.T, ctx context.Context) (func(), string, error) {
 	_, err := isDockerTestNetworkPresent(ctx)
 
 	if err != nil {
@@ -71,13 +63,8 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image:        "postgres:11",
-		SkipReaper:   true,
-		ExposedPorts: []string{fmt.Sprintf("%s", DbPort)},
-		Networks:     []string{DockerUserNetwork},
-		NetworkAliases: map[string][]string{
-			DockerUserNetwork: {hostname},
-		},
+		Image:      "postgres:11",
+		SkipReaper: true,
 		Env: map[string]string{
 			"POSTGRES_USER":     DbUser,
 			"POSTGRES_PASSWORD": DbPass,
@@ -106,13 +93,23 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 		return nil, "", err
 	}
 
+	ip, err := postgresContainer.Host(ctx)
+	if err != nil {
+		t.Logf("Failed to get ip for container %s : %s", postgresContainer.GetContainerID(), err.Error())
+		errTerminate := postgresContainer.Terminate(ctx)
+		if errTerminate != nil {
+			t.Logf("Failed to terminate container %s after failing to get ip: %s", postgresContainer.GetContainerID(), err.Error())
+		}
+		return nil, "", err
+	}
+
 	cleanupFunc := func() {
 		err := postgresContainer.Terminate(ctx)
 		assert.NoError(t, err)
 		time.Sleep(2 * time.Second)
 	}
 
-	connString := makeConnectionString(hostname, port.Port())
+	connString := makeConnectionString(ip, port.Port())
 
 	return cleanupFunc, connString, nil
 }

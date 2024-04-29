@@ -13,22 +13,24 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	AwsZones []*AWSZone `json:"awsZones"`
-	VpcCidr  *string    `json:"vpcCidr"`
+	AwsZones     []*AWSZone `json:"awsZones"`
+	VpcCidr      *string    `json:"vpcCidr,omitempty"`
+	EnableIMDSv2 *bool      `json:"enableIMDSv2,omitempty"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	VpcCidr  string          `json:"vpcCidr"`
-	AwsZones []*AWSZoneInput `json:"awsZones"`
+	VpcCidr      string          `json:"vpcCidr"`
+	AwsZones     []*AWSZoneInput `json:"awsZones"`
+	EnableIMDSv2 *bool           `json:"enableIMDSv2,omitempty"`
 }
 
 type AWSZone struct {
-	Name         *string `json:"name"`
-	PublicCidr   *string `json:"publicCidr"`
-	InternalCidr *string `json:"internalCidr"`
-	WorkerCidr   *string `json:"workerCidr"`
+	Name         *string `json:"name,omitempty"`
+	PublicCidr   *string `json:"publicCidr,omitempty"`
+	InternalCidr *string `json:"internalCidr,omitempty"`
+	WorkerCidr   *string `json:"workerCidr,omitempty"`
 }
 
 type AWSZoneInput struct {
@@ -39,21 +41,21 @@ type AWSZoneInput struct {
 }
 
 type AzureProviderConfig struct {
-	VnetCidr                     *string      `json:"vnetCidr"`
-	Zones                        []string     `json:"zones"`
-	AzureZones                   []*AzureZone `json:"azureZones"`
-	EnableNatGateway             *bool        `json:"enableNatGateway"`
-	IdleConnectionTimeoutMinutes *int         `json:"idleConnectionTimeoutMinutes"`
+	VnetCidr                     *string      `json:"vnetCidr,omitempty"`
+	Zones                        []string     `json:"zones,omitempty"`
+	AzureZones                   []*AzureZone `json:"azureZones,omitempty"`
+	EnableNatGateway             *bool        `json:"enableNatGateway,omitempty"`
+	IdleConnectionTimeoutMinutes *int         `json:"idleConnectionTimeoutMinutes,omitempty"`
 }
 
 func (AzureProviderConfig) IsProviderSpecificConfig() {}
 
 type AzureProviderConfigInput struct {
 	VnetCidr                     string            `json:"vnetCidr"`
-	Zones                        []string          `json:"zones"`
-	AzureZones                   []*AzureZoneInput `json:"azureZones"`
-	EnableNatGateway             *bool             `json:"enableNatGateway"`
-	IdleConnectionTimeoutMinutes *int              `json:"idleConnectionTimeoutMinutes"`
+	Zones                        []string          `json:"zones,omitempty"`
+	AzureZones                   []*AzureZoneInput `json:"azureZones,omitempty"`
+	EnableNatGateway             *bool             `json:"enableNatGateway,omitempty"`
+	IdleConnectionTimeoutMinutes *int              `json:"idleConnectionTimeoutMinutes,omitempty"`
 }
 
 type AzureZone struct {
@@ -68,44 +70,44 @@ type AzureZoneInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []string             `json:"administrators"`
+	Administrators []string             `json:"administrators,omitempty"`
 }
 
 type ComponentConfiguration struct {
 	Component     string         `json:"component"`
 	Namespace     string         `json:"namespace"`
-	Configuration []*ConfigEntry `json:"configuration"`
-	SourceURL     *string        `json:"sourceURL"`
+	Configuration []*ConfigEntry `json:"configuration,omitempty"`
+	SourceURL     *string        `json:"sourceURL,omitempty"`
 }
 
 type ComponentConfigurationInput struct {
 	Component        string              `json:"component"`
 	Namespace        string              `json:"namespace"`
-	Configuration    []*ConfigEntryInput `json:"configuration"`
-	SourceURL        *string             `json:"sourceURL"`
-	ConflictStrategy *ConflictStrategy   `json:"conflictStrategy"`
+	Configuration    []*ConfigEntryInput `json:"configuration,omitempty"`
+	SourceURL        *string             `json:"sourceURL,omitempty"`
+	ConflictStrategy *ConflictStrategy   `json:"conflictStrategy,omitempty"`
 }
 
 type ConfigEntry struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
-	Secret *bool  `json:"secret"`
+	Secret *bool  `json:"secret,omitempty"`
 }
 
 type ConfigEntryInput struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
-	Secret *bool  `json:"secret"`
+	Secret *bool  `json:"secret,omitempty"`
 }
 
 type DNSConfig struct {
 	Domain    string         `json:"domain"`
-	Providers []*DNSProvider `json:"providers"`
+	Providers []*DNSProvider `json:"providers,omitempty"`
 }
 
 type DNSConfigInput struct {
 	Domain    string              `json:"domain"`
-	Providers []*DNSProviderInput `json:"providers"`
+	Providers []*DNSProviderInput `json:"providers,omitempty"`
 }
 
 type DNSProvider struct {
@@ -123,7 +125,7 @@ type DNSProviderInput struct {
 }
 
 type Error struct {
-	Message *string `json:"message"`
+	Message *string `json:"message,omitempty"`
 }
 
 type GCPProviderConfig struct {
@@ -137,35 +139,35 @@ type GCPProviderConfigInput struct {
 }
 
 type GardenerConfig struct {
-	Name                                *string                `json:"name"`
-	KubernetesVersion                   *string                `json:"kubernetesVersion"`
-	TargetSecret                        *string                `json:"targetSecret"`
-	Provider                            *string                `json:"provider"`
-	Region                              *string                `json:"region"`
-	Seed                                *string                `json:"seed"`
-	MachineType                         *string                `json:"machineType"`
-	MachineImage                        *string                `json:"machineImage"`
-	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	DiskType                            *string                `json:"diskType"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
-	WorkerCidr                          *string                `json:"workerCidr"`
-	PodsCidr                            *string                `json:"podsCidr"`
-	ServicesCidr                        *string                `json:"servicesCidr"`
-	AutoScalerMin                       *int                   `json:"autoScalerMin"`
-	AutoScalerMax                       *int                   `json:"autoScalerMax"`
-	MaxSurge                            *int                   `json:"maxSurge"`
-	MaxUnavailable                      *int                   `json:"maxUnavailable"`
-	Purpose                             *string                `json:"purpose"`
-	LicenceType                         *string                `json:"licenceType"`
-	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
-	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
-	DNSConfig                           *DNSConfig             `json:"dnsConfig"`
-	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
-	ExposureClassName                   *string                `json:"exposureClassName"`
-	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
-	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
-	EuAccess                            *bool                  `json:"euAccess"`
+	Name                                *string                `json:"name,omitempty"`
+	KubernetesVersion                   *string                `json:"kubernetesVersion,omitempty"`
+	TargetSecret                        *string                `json:"targetSecret,omitempty"`
+	Provider                            *string                `json:"provider,omitempty"`
+	Region                              *string                `json:"region,omitempty"`
+	Seed                                *string                `json:"seed,omitempty"`
+	MachineType                         *string                `json:"machineType,omitempty"`
+	MachineImage                        *string                `json:"machineImage,omitempty"`
+	MachineImageVersion                 *string                `json:"machineImageVersion,omitempty"`
+	DiskType                            *string                `json:"diskType,omitempty"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB,omitempty"`
+	WorkerCidr                          *string                `json:"workerCidr,omitempty"`
+	PodsCidr                            *string                `json:"podsCidr,omitempty"`
+	ServicesCidr                        *string                `json:"servicesCidr,omitempty"`
+	AutoScalerMin                       *int                   `json:"autoScalerMin,omitempty"`
+	AutoScalerMax                       *int                   `json:"autoScalerMax,omitempty"`
+	MaxSurge                            *int                   `json:"maxSurge,omitempty"`
+	MaxUnavailable                      *int                   `json:"maxUnavailable,omitempty"`
+	Purpose                             *string                `json:"purpose,omitempty"`
+	LicenceType                         *string                `json:"licenceType,omitempty"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate,omitempty"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate,omitempty"`
+	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig,omitempty"`
+	DNSConfig                           *DNSConfig             `json:"dnsConfig,omitempty"`
+	OidcConfig                          *OIDCConfig            `json:"oidcConfig,omitempty"`
+	ExposureClassName                   *string                `json:"exposureClassName,omitempty"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled,omitempty"`
+	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance,omitempty"`
+	EuAccess                            *bool                  `json:"euAccess,omitempty"`
 }
 
 type GardenerConfigInput struct {
@@ -175,75 +177,78 @@ type GardenerConfigInput struct {
 	TargetSecret                        string                 `json:"targetSecret"`
 	Region                              string                 `json:"region"`
 	MachineType                         string                 `json:"machineType"`
-	MachineImage                        *string                `json:"machineImage"`
-	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	DiskType                            *string                `json:"diskType"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
+	MachineImage                        *string                `json:"machineImage,omitempty"`
+	MachineImageVersion                 *string                `json:"machineImageVersion,omitempty"`
+	DiskType                            *string                `json:"diskType,omitempty"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB,omitempty"`
 	WorkerCidr                          string                 `json:"workerCidr"`
-	PodsCidr                            *string                `json:"podsCidr"`
-	ServicesCidr                        *string                `json:"servicesCidr"`
+	PodsCidr                            *string                `json:"podsCidr,omitempty"`
+	ServicesCidr                        *string                `json:"servicesCidr,omitempty"`
 	AutoScalerMin                       int                    `json:"autoScalerMin"`
 	AutoScalerMax                       int                    `json:"autoScalerMax"`
 	MaxSurge                            int                    `json:"maxSurge"`
 	MaxUnavailable                      int                    `json:"maxUnavailable"`
-	Purpose                             *string                `json:"purpose"`
-	LicenceType                         *string                `json:"licenceType"`
-	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	Purpose                             *string                `json:"purpose,omitempty"`
+	LicenceType                         *string                `json:"licenceType,omitempty"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate,omitempty"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate,omitempty"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
-	DNSConfig                           *DNSConfigInput        `json:"dnsConfig"`
-	Seed                                *string                `json:"seed"`
-	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
-	ExposureClassName                   *string                `json:"exposureClassName"`
-	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
-	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
-	EuAccess                            *bool                  `json:"euAccess"`
+	DNSConfig                           *DNSConfigInput        `json:"dnsConfig,omitempty"`
+	Seed                                *string                `json:"seed,omitempty"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig,omitempty"`
+	ExposureClassName                   *string                `json:"exposureClassName,omitempty"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled,omitempty"`
+	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance,omitempty"`
+	EuAccess                            *bool                  `json:"euAccess,omitempty"`
 }
 
 type GardenerUpgradeInput struct {
-	KubernetesVersion                   *string                `json:"kubernetesVersion"`
-	MachineType                         *string                `json:"machineType"`
-	DiskType                            *string                `json:"diskType"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
-	AutoScalerMin                       *int                   `json:"autoScalerMin"`
-	AutoScalerMax                       *int                   `json:"autoScalerMax"`
-	MachineImage                        *string                `json:"machineImage"`
-	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	MaxSurge                            *int                   `json:"maxSurge"`
-	MaxUnavailable                      *int                   `json:"maxUnavailable"`
-	Purpose                             *string                `json:"purpose"`
-	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
-	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
-	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
-	ExposureClassName                   *string                `json:"exposureClassName"`
-	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
+	KubernetesVersion                   *string                `json:"kubernetesVersion,omitempty"`
+	MachineType                         *string                `json:"machineType,omitempty"`
+	DiskType                            *string                `json:"diskType,omitempty"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB,omitempty"`
+	AutoScalerMin                       *int                   `json:"autoScalerMin,omitempty"`
+	AutoScalerMax                       *int                   `json:"autoScalerMax,omitempty"`
+	MachineImage                        *string                `json:"machineImage,omitempty"`
+	MachineImageVersion                 *string                `json:"machineImageVersion,omitempty"`
+	MaxSurge                            *int                   `json:"maxSurge,omitempty"`
+	MaxUnavailable                      *int                   `json:"maxUnavailable,omitempty"`
+	Purpose                             *string                `json:"purpose,omitempty"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate,omitempty"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate,omitempty"`
+	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig,omitempty"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig,omitempty"`
+	ExposureClassName                   *string                `json:"exposureClassName,omitempty"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled,omitempty"`
 }
 
 type HibernationStatus struct {
-	Hibernated          *bool `json:"hibernated"`
-	HibernationPossible *bool `json:"hibernationPossible"`
+	Hibernated          *bool `json:"hibernated,omitempty"`
+	HibernationPossible *bool `json:"hibernationPossible,omitempty"`
 }
 
 type KymaConfig struct {
-	Version       *string                   `json:"version"`
-	Profile       *KymaProfile              `json:"profile"`
-	Components    []*ComponentConfiguration `json:"components"`
-	Configuration []*ConfigEntry            `json:"configuration"`
+	Version       *string                   `json:"version,omitempty"`
+	Profile       *KymaProfile              `json:"profile,omitempty"`
+	Components    []*ComponentConfiguration `json:"components,omitempty"`
+	Configuration []*ConfigEntry            `json:"configuration,omitempty"`
 }
 
 type KymaConfigInput struct {
 	Version          string                         `json:"version"`
-	Profile          *KymaProfile                   `json:"profile"`
+	Profile          *KymaProfile                   `json:"profile,omitempty"`
 	Components       []*ComponentConfigurationInput `json:"components"`
-	Configuration    []*ConfigEntryInput            `json:"configuration"`
-	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+	Configuration    []*ConfigEntryInput            `json:"configuration,omitempty"`
+	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy,omitempty"`
 }
 
 type LastError struct {
 	ErrMessage string `json:"errMessage"`
 	Reason     string `json:"reason"`
 	Component  string `json:"component"`
+}
+
+type Mutation struct {
 }
 
 type OIDCConfig struct {
@@ -275,56 +280,59 @@ func (OpenStackProviderConfig) IsProviderSpecificConfig() {}
 
 type OpenStackProviderConfigInput struct {
 	Zones                []string `json:"zones"`
-	FloatingPoolName     *string  `json:"floatingPoolName"`
-	CloudProfileName     *string  `json:"cloudProfileName"`
+	FloatingPoolName     *string  `json:"floatingPoolName,omitempty"`
+	CloudProfileName     *string  `json:"cloudProfileName,omitempty"`
 	LoadBalancerProvider string   `json:"loadBalancerProvider"`
 }
 
 type OperationStatus struct {
-	ID               *string        `json:"id"`
+	ID               *string        `json:"id,omitempty"`
 	Operation        OperationType  `json:"operation"`
 	State            OperationState `json:"state"`
-	Message          *string        `json:"message"`
-	RuntimeID        *string        `json:"runtimeID"`
-	CompassRuntimeID *string        `json:"compassRuntimeID"`
-	LastError        *LastError     `json:"lastError"`
+	Message          *string        `json:"message,omitempty"`
+	RuntimeID        *string        `json:"runtimeID,omitempty"`
+	CompassRuntimeID *string        `json:"compassRuntimeID,omitempty"`
+	LastError        *LastError     `json:"lastError,omitempty"`
 }
 
 type ProviderSpecificInput struct {
-	GcpConfig       *GCPProviderConfigInput       `json:"gcpConfig"`
-	AzureConfig     *AzureProviderConfigInput     `json:"azureConfig"`
-	AwsConfig       *AWSProviderConfigInput       `json:"awsConfig"`
-	OpenStackConfig *OpenStackProviderConfigInput `json:"openStackConfig"`
+	GcpConfig       *GCPProviderConfigInput       `json:"gcpConfig,omitempty"`
+	AzureConfig     *AzureProviderConfigInput     `json:"azureConfig,omitempty"`
+	AwsConfig       *AWSProviderConfigInput       `json:"awsConfig,omitempty"`
+	OpenStackConfig *OpenStackProviderConfigInput `json:"openStackConfig,omitempty"`
 }
 
 type ProvisionRuntimeInput struct {
 	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
-	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
+	KymaConfig    *KymaConfigInput    `json:"kymaConfig,omitempty"`
+}
+
+type Query struct {
 }
 
 type RuntimeConfig struct {
-	ClusterConfig *GardenerConfig `json:"clusterConfig"`
-	KymaConfig    *KymaConfig     `json:"kymaConfig"`
-	Kubeconfig    *string         `json:"kubeconfig"`
+	ClusterConfig *GardenerConfig `json:"clusterConfig,omitempty"`
+	KymaConfig    *KymaConfig     `json:"kymaConfig,omitempty"`
+	Kubeconfig    *string         `json:"kubeconfig,omitempty"`
 }
 
 type RuntimeConnectionStatus struct {
 	Status RuntimeAgentConnectionStatus `json:"status"`
-	Errors []*Error                     `json:"errors"`
+	Errors []*Error                     `json:"errors,omitempty"`
 }
 
 type RuntimeInput struct {
 	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	Labels      Labels  `json:"labels"`
+	Description *string `json:"description,omitempty"`
+	Labels      Labels  `json:"labels,omitempty"`
 }
 
 type RuntimeStatus struct {
-	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus"`
-	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
-	HibernationStatus       *HibernationStatus       `json:"hibernationStatus"`
+	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus,omitempty"`
+	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus,omitempty"`
+	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration,omitempty"`
+	HibernationStatus       *HibernationStatus       `json:"hibernationStatus,omitempty"`
 }
 
 type UpgradeRuntimeInput struct {
@@ -333,7 +341,7 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
-	Administrators []string              `json:"administrators"`
+	Administrators []string              `json:"administrators,omitempty"`
 }
 
 type ConflictStrategy string
