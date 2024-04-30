@@ -170,7 +170,14 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			runtimeInput := config.provisioningInput.runtimeInput
 
 			uuidGeneratorMock := &uuidMocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return(config.runtimeID)
+			uuidGeneratorMock.On("New").Return(config.runtimeID).Once()
+			uuidGeneratorMock.On("New").Return(config.provisioningID).Once()
+			uuidGeneratorMock.On("New").Return(config.gardenerConfigID).Once()
+			uuidGeneratorMock.On("New").Return(config.upgradeID).Once()
+			uuidGeneratorMock.On("New").Return(config.deprovisioningID).Once()
+
+			//uuidGeneratorMock.On("New").Return(config.upgradeID).Once()
+			//uuidGeneratorMock.On("New").Return(config.deprovisioningID).Once()
 
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
