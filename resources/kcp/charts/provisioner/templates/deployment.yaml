@@ -98,24 +98,10 @@ spec:
                   name: {{ .Values.deployment.databaseEncryptionSecret | quote }}
                   key: secretKey
                   optional: false
-            - name: APP_DIRECTOR_OAUTH_PATH
-              value: /director-secret/director.yaml
-            - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
-              value: {{ or .Values.global.isLocalEnv .Values.security.skipTLSCertificateVeryfication | quote }}
-            - name: APP_RUNTIME_REGISTRATION_ENABLED
-              value: {{ or .Values.compassIntegration.registratonEnabled | quote }}
-            - name: APP_RUNTIME_DEREGISTRATION_ENABLED
-              value: {{ or .Values.compassIntegration.deregistrationEnabled | quote }}
             - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
               value: {{ .Values.installation.timeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE
               value: {{ .Values.installation.timeout | quote }}
-            - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
-              value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
-            - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
-              value: {{ .Values.runtimeAgent.connectionTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
@@ -163,9 +149,6 @@ spec:
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
           volumeMounts:
-            - name: director-oauth
-              mountPath: /director-secret/
-              readOnly: true
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
               name: gardener-audit-log-tenant-config
@@ -252,7 +235,4 @@ spec:
           name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
           optional: true
       {{end}}
-      - name: director-oauth
-        secret:
-          secretName: {{ .Values.directorFileSecret }}
-          optional: false
+

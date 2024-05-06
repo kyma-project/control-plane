@@ -24,8 +24,6 @@ type ProvisioningTimeouts struct {
 	UpgradeTriggering      time.Duration `envconfig:"default=20m"`
 	ShootUpgrade           time.Duration `envconfig:"default=30m"`
 	ShootRefresh           time.Duration `envconfig:"default=5m"`
-	AgentConfiguration     time.Duration `envconfig:"default=15m"`
-	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
 type DeprovisioningTimeouts struct {

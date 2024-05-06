@@ -72,9 +72,6 @@ type config struct {
 		DefaultEnableIMDSv2                        bool   `envconfig:"default=false"`
 	}
 
-	LatestDownloadedReleases int  `envconfig:"default=5"`
-	DownloadPreReleases      bool `envconfig:"default=true"`
-
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
@@ -88,12 +85,10 @@ func (c *config) String() string {
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
-		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
-		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint,
@@ -101,12 +96,10 @@ func (c *config) String() string {
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
-		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
-		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
