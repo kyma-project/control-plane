@@ -26,7 +26,6 @@ import (
 	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -40,14 +39,9 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 
 type config struct {
-	Address                      string `envconfig:"default=127.0.0.1:3000"`
-	APIEndpoint                  string `envconfig:"default=/graphql"`
-	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
-	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
-	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	DirectorOAuthPath            string `envconfig:"APP_DIRECTOR_OAUTH_PATH,default=./dev/director.yaml"`
-	RuntimeRegistrationEnabled   bool   `envconfig:"default=true"`
-	RuntimeDeregistrationEnabled bool   `envconfig:"default=true"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
+	APIEndpoint           string `envconfig:"default=/graphql"`
+	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
 	Database struct {
 		User        string `envconfig:"default=postgres"`
@@ -78,9 +72,6 @@ type config struct {
 		DefaultEnableIMDSv2                        bool   `envconfig:"default=false"`
 	}
 
-	LatestDownloadedReleases int  `envconfig:"default=5"`
-	DownloadPreReleases      bool `envconfig:"default=true"`
-
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
@@ -89,34 +80,26 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
-		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
-		"RuntimeRegistrationEnabled %v, RuntimeDeregistrationEnabled %v, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
-		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
-		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
-		c.Address, c.APIEndpoint, c.DirectorURL,
-		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
-		c.RuntimeDeregistrationEnabled, c.RuntimeDeregistrationEnabled,
+		c.Address, c.APIEndpoint,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
-		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
-		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
@@ -169,50 +152,14 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	directorClient, err := newDirectorClient(cfg)
-	exitOnError(err, "Failed to initialize Director client")
-
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
-	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
 	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsInterface)
 
-	var provisioningQueue queue.OperationQueue
-	var shootUpgradeQueue queue.OperationQueue
-
-	if cfg.RuntimeRegistrationEnabled {
-		provisioningQueue = queue.CreateProvisioningQueue(
-			cfg.ProvisioningTimeout,
-			dbsFactory,
-			directorClient,
-			shootClient,
-			cfg.OperatorRoleBinding,
-			k8sClientProvider,
-			runtimeConfigurator,
-			kubeconfigProvider)
-
-		shootUpgradeQueue = queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
-
-	} else {
-		provisioningQueue = queue.CreateProvisioningQueueWithoutRegistration(
-			cfg.ProvisioningTimeout,
-			dbsFactory,
-			shootClient,
-			cfg.OperatorRoleBinding,
-			k8sClientProvider,
-			kubeconfigProvider)
-
-		shootUpgradeQueue = queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, nil, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
-	}
-
-	var deprovisioningQueue queue.OperationQueue
-
-	if cfg.RuntimeDeregistrationEnabled {
-		deprovisioningQueue = queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
-	} else {
-		deprovisioningQueue = queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, nil, shootClient)
-	}
+	provisioningQueue := queue.CreateProvisioningQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, shootClient)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
@@ -226,7 +173,6 @@ func main() {
 		cfg.Gardener.Project,
 		provisioner,
 		dbsFactory,
-		directorClient,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
 		deprovisioningQueue,
@@ -234,7 +180,6 @@ func main() {
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableIMDSv2,
-		cfg.RuntimeRegistrationEnabled,
 		kubeconfigProvider,
 	)
 

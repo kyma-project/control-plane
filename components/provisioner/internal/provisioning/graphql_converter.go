@@ -6,8 +6,8 @@ import (
 )
 
 type GraphQLConverter interface {
-	RuntimeStatusToGraphQLStatus(status model.RuntimeStatus, includeCompassID bool) *gqlschema.RuntimeStatus
-	OperationStatusToGQLOperationStatus(operation model.Operation, includeCompassID bool) *gqlschema.OperationStatus
+	RuntimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus
+	OperationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus
 }
 
 func NewGraphQLConverter() GraphQLConverter {
@@ -16,43 +16,27 @@ func NewGraphQLConverter() GraphQLConverter {
 
 type graphQLConverter struct{}
 
-func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatus, includeCompassID bool) *gqlschema.RuntimeStatus {
+func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
 	return &gqlschema.RuntimeStatus{
-		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus, includeCompassID),
+		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
 		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
 	}
 }
 
-func (c graphQLConverter) OperationStatusToGQLOperationStatus(operation model.Operation, includeCompassID bool) *gqlschema.OperationStatus {
+func (c graphQLConverter) OperationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
 
-	if includeCompassID {
-		return &gqlschema.OperationStatus{
-			ID:               &operation.ID,
-			Operation:        c.operationTypeToGraphQLType(operation.Type),
-			State:            c.operationStateToGraphQLState(operation.State),
-			Message:          &operation.Message,
-			RuntimeID:        &operation.ClusterID,
-			CompassRuntimeID: &operation.ClusterID,
-			LastError: &gqlschema.LastError{
-				ErrMessage: operation.ErrMessage,
-				Reason:     operation.Reason,
-				Component:  operation.Component,
-			},
-		}
-	} else {
-		return &gqlschema.OperationStatus{
-			ID:        &operation.ID,
-			Operation: c.operationTypeToGraphQLType(operation.Type),
-			State:     c.operationStateToGraphQLState(operation.State),
-			Message:   &operation.Message,
-			RuntimeID: &operation.ClusterID,
-			LastError: &gqlschema.LastError{
-				ErrMessage: operation.ErrMessage,
-				Reason:     operation.Reason,
-				Component:  operation.Component,
-			},
-		}
+	return &gqlschema.OperationStatus{
+		ID:        &operation.ID,
+		Operation: c.operationTypeToGraphQLType(operation.Type),
+		State:     c.operationStateToGraphQLState(operation.State),
+		Message:   &operation.Message,
+		RuntimeID: &operation.ClusterID,
+		LastError: &gqlschema.LastError{
+			ErrMessage: operation.ErrMessage,
+			Reason:     operation.Reason,
+			Component:  operation.Component,
+		},
 	}
 }
 

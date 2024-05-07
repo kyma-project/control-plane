@@ -63,6 +63,10 @@ type testCase struct {
 	name              string
 	description       string
 	runtimeID         string
+	provisioningID    string
+	gardenerConfigID  string
+	deprovisioningID  string
+	upgradeID         string
 	auditLogConfig    *gardener.AuditLogConfig
 	provisioningInput provisioningInput
 	upgradeShootInput gqlschema.UpgradeShootInput
@@ -82,8 +86,12 @@ Everything else should be tested in appropriate package
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
 		{name: "Azure on Gardener",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			description:      "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
+			runtimeID:        "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			provisioningID:   "2100bb59-9c40-4ebb-b846-7477c4dc5bb5",
+			gardenerConfigID: "3100bb59-9c40-4ebb-b846-7477c4dc5bb6",
+			deprovisioningID: "4100bb59-9c40-4ebb-b846-7477c4dc5bb7",
+			upgradeID:        "5100bb59-9c40-4ebb-b846-7477c4dc5bb8",
 			auditLogConfig: &gardener.AuditLogConfig{
 				TenantID:   "12d68c35-556b-4966-a061-235d4a060929",
 				ServiceURL: "https://auditlog.example.com:3001",
@@ -99,9 +107,13 @@ func newTestProvisioningConfigs() []testCase {
 			seed:              seedConfig("az-eu2", "eu-west-1", "azure"),
 		},
 		{name: "Azure on Gardener seed is empty",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
-			auditLogConfig: nil,
+			description:      "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
+			runtimeID:        "5100bb59-9c40-4ebb-b846-7477c4dc5b11",
+			provisioningID:   "6100bb59-9c40-4ebb-b846-7477c4dc5b22",
+			gardenerConfigID: "7100bb59-9c40-4ebb-b846-7477c4dc5b33",
+			deprovisioningID: "8100bb59-9c40-4ebb-b846-7477c4dc5b44",
+			upgradeID:        "9100bb59-9c40-4ebb-b846-7477c4dc5b55",
+			auditLogConfig:   nil,
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInputNoSeed(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -111,8 +123,12 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "OpenStack on Gardener",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
+			description:      "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
+			runtimeID:        "9100bb59-9c40-4ebb-b846-7477c4dc5bb8",
+			provisioningID:   "a100bb59-9c40-4ebb-b846-7477c4dc5bb9",
+			gardenerConfigID: "b100bb59-9c40-4ebb-b846-7477c4dc5bba",
+			deprovisioningID: "c100bb59-9c40-4ebb-b846-7477c4dc5bbb",
+			upgradeID:        "d100bb59-9c40-4ebb-b846-7477c4dc5bbc",
 			auditLogConfig: &gardener.AuditLogConfig{
 				TenantID:   "e7382275-e835-4549-94e1-3b1101e3a1fa",
 				ServiceURL: "https://auditlog.example.com:3000",
