@@ -1,9 +1,7 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
@@ -82,13 +80,4 @@ func newGardenerClusterConfig(cfg config) (*restclient.Config, error) {
 	}
 
 	return gardenerClusterConfig, nil
-}
-
-func newHTTPClient(skipCertVerification bool) *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVerification},
-		},
-		Timeout: 30 * time.Second,
-	}
 }
