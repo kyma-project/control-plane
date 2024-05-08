@@ -4,24 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"time"
-
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	log "github.com/sirupsen/logrus"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"gopkg.in/yaml.v3"
 )
 
 //go:generate mockery --name=Client
@@ -35,13 +36,16 @@ func NewProvisioner(
 	namespace string,
 	shootClient Client,
 	factory dbsession.Factory,
-	policyConfigMapName string, maintenanceWindowConfigPath string) *GardenerProvisioner {
+	policyConfigMapName string,
+	maintenanceWindowConfigPath string,
+	enableDumpShootSpec bool) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                   namespace,
 		shootClient:                 shootClient,
 		dbSessionFactory:            factory,
 		policyConfigMapName:         policyConfigMapName,
 		maintenanceWindowConfigPath: maintenanceWindowConfigPath,
+		enableDumpShootSpec:         enableDumpShootSpec,
 	}
 }
 
@@ -51,6 +55,7 @@ type GardenerProvisioner struct {
 	dbSessionFactory            dbsession.Factory
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
+	enableDumpShootSpec         bool
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
@@ -80,6 +85,20 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	if g.policyConfigMapName != "" {
 		g.applyAuditConfig(shootTemplate)
+	}
+
+	if g.enableDumpShootSpec {
+		log.Infof("Shoot Spec Dump Start ===============================")
+
+		shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
+
+		if e != nil {
+			log.Errorf("Error marshaling Shoot spec: %s", e.Error())
+		} else {
+			log.Info(string(shootTemplateBytes))
+		}
+
+		log.Infof("Shoot Spec Dump End =================================")
 	}
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})

@@ -180,7 +180,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//uuidGeneratorMock.On("New").Return(config.upgradeID).Once()
 			//uuidGeneratorMock.On("New").Return(config.deprovisioningID).Once()
 
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath, false)
 
 			inputConverter := provisioning.NewInputConverter(uuidGeneratorMock, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 			graphQLConverter := provisioning.NewGraphQLConverter()

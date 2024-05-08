@@ -23,6 +23,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.14.0
 	github.com/vektah/gqlparser/v2 v2.5.11
 	github.com/vrischmann/envconfig v1.3.0
+	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.26.9
 	k8s.io/apimachinery v0.26.9
@@ -108,7 +109,6 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.9 // indirect
 	k8s.io/component-base v0.26.9 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
@@ -121,7 +121,7 @@ require (
 
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.14
-	github.com/containerd/containerd => github.com/containerd/containerd v1.6.18
+	github.com/containerd/containerd => github.com/containerd/containerd v1.6.8
 	golang.org/x/crypto => golang.org/x/crypto v0.22.0
 	golang.org/x/net => golang.org/x/net v0.24.0
 	golang.org/x/sys => golang.org/x/sys v0.19.0
