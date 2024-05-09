@@ -101,7 +101,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		if e != nil {
 			log.Errorf("Error marshaling Shoot spec: %s", e.Error())
 		} else {
-			log.Info(string(shootTemplateBytes))
+			logger.Info(string(shootTemplateBytes))
 		}
 
 		log.Infof("Shoot Spec Dump End =================================")
