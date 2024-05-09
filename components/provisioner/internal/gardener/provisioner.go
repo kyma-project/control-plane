@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"time"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -88,36 +89,21 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	if g.enableDumpShootSpec == true {
-
 		logger := logrus.New()
-		logger.Infof("Shoot Spec Dump Start ===============================")
+		logger.Infof("================================= Shoot Spec Dump Start ===============================")
 
 		formatter := &logrus.TextFormatter{}
 		formatter.DisableQuote = true
 		logger.SetFormatter(formatter)
 
-		//y := printers.YAMLPrinter{}
-
-		//var b bytes.Buffer
-		//y.PrintObj(shootTemplate, &b)
-
 		output, err := yaml.Marshal(shootTemplate)
-		if err != nil {
-			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
-		} else {
+
+		if err == nil {
 			logger.Info(string(output))
+		} else {
+			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
 		}
-
-		//shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
-		//if e != nil {
-		//	log.Errorf("Error marshaling Shoot spec: %s", e.Error())
-		//} else {
-		//	logger.Info(string(shootTemplateBytes))
-		//}
-
-		//logger.Info(b.String())
-
-		log.Infof("Shoot Spec Dump End =================================")
+		logger.Infof("================================= Shoot Spec Dump End =================================")
 	} else {
 		log.Infof("Shoot Spec Dump feature is disabeled")
 	}
