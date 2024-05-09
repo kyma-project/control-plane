@@ -1,12 +1,10 @@
 package gardener
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/printers"
 	"os"
 	"time"
 
@@ -23,7 +21,8 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	//"gopkg.in/yaml.v3"
+
+	"sigs.k8s.io/yaml"
 )
 
 //go:generate mockery --name=Client
@@ -97,10 +96,17 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		formatter.DisableQuote = true
 		logger.SetFormatter(formatter)
 
-		y := printers.YAMLPrinter{}
+		//y := printers.YAMLPrinter{}
 
-		var b bytes.Buffer
-		y.PrintObj(shootTemplate, &b)
+		//var b bytes.Buffer
+		//y.PrintObj(shootTemplate, &b)
+
+		output, err := yaml.Marshal(shootTemplate)
+		if err != nil {
+			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
+		} else {
+			logger.Info(string(output))
+		}
 
 		//shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
 		//if e != nil {
@@ -109,7 +115,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		//	logger.Info(string(shootTemplateBytes))
 		//}
 
-		logger.Info(b.String())
+		//logger.Info(b.String())
 
 		log.Infof("Shoot Spec Dump End =================================")
 	} else {
