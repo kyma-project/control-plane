@@ -87,7 +87,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
-	if g.enableDumpShootSpec {
+	if g.enableDumpShootSpec == true {
 		log.Infof("Shoot Spec Dump Start ===============================")
 
 		shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
@@ -99,6 +99,8 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		}
 
 		log.Infof("Shoot Spec Dump End =================================")
+	} else {
+		log.Infof("Shoot Spec Dump feature is disabeled")
 	}
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
