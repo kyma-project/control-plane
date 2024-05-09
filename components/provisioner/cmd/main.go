@@ -90,8 +90,8 @@ func (c *config) String() string {
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingCreatingForAdmin: %t "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
-		"EnableDumpShootSpec: %v"+
-		"EnqueueInProgressOperations: %v"+
+		"EnableDumpShootSpec: %v "+
+		"EnqueueInProgressOperations: %v "+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint,
 		c.Database.User, c.Database.Host, c.Database.Port,
