@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/printers"
 	"os"
@@ -101,8 +100,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		y := printers.YAMLPrinter{}
 
 		var b bytes.Buffer
-
-		y.PrintObj(shootTemplate, io.Writer(&b))
+		y.PrintObj(shootTemplate, &b)
 
 		//shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
 		//if e != nil {
