@@ -88,7 +88,13 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	if g.enableDumpShootSpec == true {
-		log.Infof("Shoot Spec Dump Start ===============================")
+
+		logger := logrus.New()
+		logger.Infof("Shoot Spec Dump Start ===============================")
+
+		formatter := &logrus.TextFormatter{}
+		formatter.DisableQuote = true
+		logger.SetFormatter(formatter)
 
 		shootTemplateBytes, e := yaml.Marshal(&shootTemplate)
 

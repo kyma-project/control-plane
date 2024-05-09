@@ -100,8 +100,10 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
+
 		c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
+
 		c.EnqueueInProgressOperations,
 		c.Gardener.EnableDumpShootSpec,
 		c.LogLevel)
