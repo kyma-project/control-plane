@@ -175,6 +175,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 			},
 			OidcConfig: oidcInput(),
 		},
+		Administrators: []string{"testadmin"},
 	}
 }
 
@@ -205,6 +206,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 			},
 			OidcConfig: oidcInput(),
 		},
+		Administrators: []string{"testadmin"},
 	}
 }
 
@@ -236,6 +238,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			},
 			OidcConfig: oidcInput(),
 		},
+		Administrators: []string{"testadmin"},
 	}
 }
 

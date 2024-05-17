@@ -87,7 +87,7 @@ func (c *config) String() string {
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
-		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
+		"OperatorRoleBindingCreatingForAdmin: %t "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
@@ -98,7 +98,7 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
-		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
+		c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
