@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
@@ -403,8 +404,7 @@ func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 
 func testOperatorRoleBinding() provisioning2.OperatorRoleBinding {
 	return provisioning2.OperatorRoleBinding{
-		L2SubjectName: "runtimeOperator",
-		L3SubjectName: "runtimeAdmin",
+		CreatingForAdmin: true,
 	}
 }
 

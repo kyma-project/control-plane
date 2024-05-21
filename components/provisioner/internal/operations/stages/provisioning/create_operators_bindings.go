@@ -23,20 +23,11 @@ import (
 )
 
 const (
-	l2OperatorClusterRoleBindingName            = "l2-operator"
-	l3OperatorClusterRoleBindingName            = "l3-operator-admin"
 	administratorOperatorClusterRoleBindingName = "administrator"
 
-	l3OperatorClusterRoleBindingRoleRefName = "cluster-admin"
-	ownerClusterRoleBindingRoleRefName      = "cluster-admin"
+	ownerClusterRoleBindingRoleRefName = "cluster-admin"
 
-	l2OperatorClusterRoleName       = "l2-operator"
-	l2OperatorRulesClusterRoleName  = "l2-operator-rules"
-	l2OperatorBaseRolesLabelKey     = "rbac.authorization.k8s.io/aggregate-to-edit"
-	l2OperatorExtendedRolesLabelKey = "rbac.authorization.k8s.io/aggregate-to-l2-operator"
-
-	groupKindSubject = "Group"
-	userKindSubject  = "User"
+	userKindSubject = "User"
 )
 
 //go:generate mockery --name=DynamicKubeconfigProvider
@@ -45,9 +36,7 @@ type DynamicKubeconfigProvider interface {
 }
 
 type OperatorRoleBinding struct {
-	L2SubjectName    string `envconfig:"default=runtimeOperator"`
-	L3SubjectName    string `envconfig:"default=runtimeAdmin"`
-	CreatingForAdmin bool   `envconfig:"default=false"`
+	CreatingForAdmin bool `envconfig:"default=false"`
 }
 
 type CreateBindingsForOperatorsStep struct {
@@ -103,57 +92,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, err
 	}
 
-	clusterRoles := make([]v12.ClusterRole, 0)
-	clusterRoles = append(clusterRoles,
-		buildClusterRole(
-			l2OperatorClusterRoleName,
-			map[string]string{
-				"app": "kyma",
-			},
-			[]metav1.LabelSelector{
-				{MatchLabels: map[string]string{l2OperatorBaseRolesLabelKey: "true"}},
-				{MatchLabels: map[string]string{l2OperatorExtendedRolesLabelKey: "true"}},
-			},
-			nil,
-		),
-	)
-	clusterRoles = append(clusterRoles,
-		buildClusterRole(
-			l2OperatorRulesClusterRoleName,
-			map[string]string{
-				"app":                           "kyma",
-				l2OperatorExtendedRolesLabelKey: "true",
-			},
-			nil,
-			[]v12.PolicyRule{
-				{APIGroups: []string{"*"}, Resources: []string{"*"}, Verbs: []string{"get", "list", "watch"}},
-			},
-		),
-	)
-
 	clusterRoleBindings := make([]v12.ClusterRoleBinding, 0)
-
-	clusterRoleBindings = append(clusterRoleBindings,
-		buildClusterRoleBinding(
-			l2OperatorClusterRoleBindingName,
-			s.operatorRoleBindingConfig.L2SubjectName,
-			l2OperatorClusterRoleBindingName,
-			groupKindSubject,
-			map[string]string{
-				"app":                                   "kyma",
-				"reconciler.kyma-project.io/managed-by": "reconciler",
-			}))
-
-	clusterRoleBindings = append(clusterRoleBindings,
-		buildClusterRoleBinding(
-			l3OperatorClusterRoleBindingName,
-			s.operatorRoleBindingConfig.L3SubjectName,
-			l3OperatorClusterRoleBindingRoleRefName,
-			groupKindSubject,
-			map[string]string{
-				"app":                                   "kyma",
-				"reconciler.kyma-project.io/managed-by": "reconciler",
-			}))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
@@ -168,10 +107,6 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 						"reconciler.kyma-project.io/managed-by": "reconciler",
 					}))
 		}
-	}
-
-	if err := createClusterRoles(k8sClient.RbacV1().ClusterRoles(), clusterRoles); err != nil {
-		return operations.StageResult{}, err
 	}
 
 	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "reconciler.kyma-project.io/managed-by=reconciler,app=kyma"}); err != nil {
@@ -202,39 +137,6 @@ func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind str
 			Name:     roleRefName,
 		},
 	}
-}
-
-func buildClusterRole(name string, labels map[string]string, aggregationSelectors []metav1.LabelSelector, rules []v12.PolicyRule) v12.ClusterRole {
-
-	cr := v12.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
-		},
-	}
-	if len(aggregationSelectors) > 0 {
-		cr.AggregationRule = &v12.AggregationRule{
-			ClusterRoleSelectors: aggregationSelectors,
-		}
-	}
-
-	if len(rules) > 0 {
-		cr.Rules = rules
-	}
-
-	return cr
-}
-
-func createClusterRoles(crClient v1.ClusterRoleInterface, clusterRoles []v12.ClusterRole) error {
-	for _, cr := range clusterRoles {
-		if _, err := crClient.Create(context.Background(), &cr, metav1.CreateOptions{}); err != nil {
-			if !k8serrors.IsAlreadyExists(err) {
-				return util.K8SErrorToAppError(errors.Wrapf(err, "failed to create %s ClusterRole", cr.Name)).SetComponent(apperrors.ErrClusterK8SClient)
-			}
-		}
-	}
-
-	return nil
 }
 
 func createClusterRoleBindings(crbClient v1.ClusterRoleBindingInterface, clusterRoleBindings ...v12.ClusterRoleBinding) error {
