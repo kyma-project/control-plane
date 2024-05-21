@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20240507-ff9c0545"
+      version: "v20240521-bc0d8345"
       dir: "prod"
 serviceMonitor:
   enabled: true
@@ -58,8 +58,6 @@ gardener:
   defaultEnableIMDSv2: false
 
 support:
-  l2OperatorRoleBindingSubject: "runtimeOperator"
-  l3OperatorRoleBindingSubject: "runtimeAdmin"
   enabledCreatingRoleBindingForAdmin: false
   bindingsCreationTimeout: 5m
 
