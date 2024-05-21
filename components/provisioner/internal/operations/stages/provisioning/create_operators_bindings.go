@@ -27,8 +27,7 @@ const (
 
 	ownerClusterRoleBindingRoleRefName = "cluster-admin"
 
-	groupKindSubject = "Group"
-	userKindSubject  = "User"
+	userKindSubject = "User"
 )
 
 //go:generate mockery --name=DynamicKubeconfigProvider

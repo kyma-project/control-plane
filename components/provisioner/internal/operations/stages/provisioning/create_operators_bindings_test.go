@@ -25,7 +25,8 @@ import (
 )
 
 const dynamicKubeconfig = "dynamic_kubeconfig"
-const testAdministrator = "testadmin"
+const testAdministrator1 = "testadmin1"
+const testAdministrator2 = "testadmin2"
 
 func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 
@@ -34,7 +35,7 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			Name: "shoot",
 		},
-		Administrators: []string{testAdministrator},
+		Administrators: []string{testAdministrator1, testAdministrator2},
 	}
 
 	operatorBindingConfig := OperatorRoleBinding{
