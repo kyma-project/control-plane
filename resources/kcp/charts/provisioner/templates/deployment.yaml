@@ -116,10 +116,6 @@ spec:
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
               value: {{ .Values.support.bindingsCreationTimeout | quote }}
-            - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
-              value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
-            - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
-              value: {{ .Values.support.l3OperatorRoleBindingSubject | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_CREATING_FOR_ADMIN
               value: {{ .Values.support.enabledCreatingRoleBindingForAdmin | quote }}
             - name: APP_GARDENER_PROJECT
@@ -138,7 +134,7 @@ spec:
               value: {{ .Values.gardener.defaultEnableKubernetesVersionAutoUpdate | quote }}
             - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
               value: {{ .Values.gardener.defaultEnableMachineImageVersionAutoUpdate | quote }}
-            - name: APP_GARDENER_DEFAULT_ENABLE_IMDSV2
+            - name: APP_GARDENER_DEFAULTENABLEIMDSV2
               value: {{ .Values.gardener.defaultEnableIMDSv2 | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "10"
@@ -235,4 +231,3 @@ spec:
           name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
           optional: true
       {{end}}
-
