@@ -36,6 +36,7 @@ type GardenerConfig {
     shootNetworkingFilterDisabled: Boolean
     controlPlaneFailureTolerance: String
     euAccess: Boolean
+    shootAndSeedSameRegion: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
