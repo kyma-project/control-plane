@@ -36,7 +36,6 @@ type GardenerConfig {
     shootNetworkingFilterDisabled: Boolean
     controlPlaneFailureTolerance: String
     euAccess: Boolean
-    shootAndSeedSameRegion: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -243,6 +242,7 @@ input GardenerConfigInput {
     shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
     controlPlaneFailureTolerance: String            # Shoot control plane HA failure tolerance level to configure. Valid values: 'nil' (left empty, no HA), "node", "zone"
     euAccess: Boolean                               # EU Access indicated whether to annotate the Shoot with the 'support.gardener.cloud/eu-access-for-cluster-nodes' annotation
+    shootAndSeedSameRegion: Boolean                 # If set to true, Provisioner will add seedSelector with region matching the one that shoot is created in
 }
 
 input OIDCConfigInput {
