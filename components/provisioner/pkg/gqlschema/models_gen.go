@@ -168,7 +168,6 @@ type GardenerConfig struct {
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled,omitempty"`
 	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance,omitempty"`
 	EuAccess                            *bool                  `json:"euAccess,omitempty"`
-	ShootAndSeedSameRegion              *bool                  `json:"shootAndSeedSameRegion,omitempty"`
 }
 
 type GardenerConfigInput struct {
@@ -201,6 +200,7 @@ type GardenerConfigInput struct {
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled,omitempty"`
 	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance,omitempty"`
 	EuAccess                            *bool                  `json:"euAccess,omitempty"`
+	ShootAndSeedSameRegion              *bool                  `json:"shootAndSeedSameRegion,omitempty"`
 }
 
 type GardenerUpgradeInput struct {
