@@ -131,7 +131,6 @@ type ComplexityRoot struct {
 		Region                              func(childComplexity int) int
 		Seed                                func(childComplexity int) int
 		ServicesCidr                        func(childComplexity int) int
-		ShootAndSeedSameRegion              func(childComplexity int) int
 		ShootNetworkingFilterDisabled       func(childComplexity int) int
 		TargetSecret                        func(childComplexity int) int
 		VolumeSizeGb                        func(childComplexity int) int
@@ -626,13 +625,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.ServicesCidr(childComplexity), true
-
-	case "GardenerConfig.shootAndSeedSameRegion":
-		if e.complexity.GardenerConfig.ShootAndSeedSameRegion == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.ShootAndSeedSameRegion(childComplexity), true
 
 	case "GardenerConfig.shootNetworkingFilterDisabled":
 		if e.complexity.GardenerConfig.ShootNetworkingFilterDisabled == nil {
@@ -3836,47 +3828,6 @@ func (ec *executionContext) fieldContext_GardenerConfig_euAccess(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _GardenerConfig_shootAndSeedSameRegion(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GardenerConfig_shootAndSeedSameRegion(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ShootAndSeedSameRegion, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GardenerConfig_shootAndSeedSameRegion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GardenerConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_HibernationStatus_hibernated(ctx, field)
 	if err != nil {
@@ -5811,8 +5762,6 @@ func (ec *executionContext) fieldContext_RuntimeConfig_clusterConfig(ctx context
 				return ec.fieldContext_GardenerConfig_controlPlaneFailureTolerance(ctx, field)
 			case "euAccess":
 				return ec.fieldContext_GardenerConfig_euAccess(ctx, field)
-			case "shootAndSeedSameRegion":
-				return ec.fieldContext_GardenerConfig_shootAndSeedSameRegion(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GardenerConfig", field.Name)
 		},
@@ -8398,7 +8347,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "kubernetesVersion", "provider", "targetSecret", "region", "machineType", "machineImage", "machineImageVersion", "diskType", "volumeSizeGB", "workerCidr", "podsCidr", "servicesCidr", "autoScalerMin", "autoScalerMax", "maxSurge", "maxUnavailable", "purpose", "licenceType", "enableKubernetesVersionAutoUpdate", "enableMachineImageVersionAutoUpdate", "providerSpecificConfig", "dnsConfig", "seed", "oidcConfig", "exposureClassName", "shootNetworkingFilterDisabled", "controlPlaneFailureTolerance", "euAccess"}
+	fieldsInOrder := [...]string{"name", "kubernetesVersion", "provider", "targetSecret", "region", "machineType", "machineImage", "machineImageVersion", "diskType", "volumeSizeGB", "workerCidr", "podsCidr", "servicesCidr", "autoScalerMin", "autoScalerMax", "maxSurge", "maxUnavailable", "purpose", "licenceType", "enableKubernetesVersionAutoUpdate", "enableMachineImageVersionAutoUpdate", "providerSpecificConfig", "dnsConfig", "seed", "oidcConfig", "exposureClassName", "shootNetworkingFilterDisabled", "controlPlaneFailureTolerance", "euAccess", "shootAndSeedSameRegion"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8608,6 +8557,13 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 				return it, err
 			}
 			it.EuAccess = data
+		case "shootAndSeedSameRegion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shootAndSeedSameRegion"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShootAndSeedSameRegion = data
 		}
 	}
 
@@ -9660,8 +9616,6 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_controlPlaneFailureTolerance(ctx, field, obj)
 		case "euAccess":
 			out.Values[i] = ec._GardenerConfig_euAccess(ctx, field, obj)
-		case "shootAndSeedSameRegion":
-			out.Values[i] = ec._GardenerConfig_shootAndSeedSameRegion(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
