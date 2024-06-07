@@ -54,10 +54,10 @@ spec:
       - name: cloudsql-proxy
         image: {{ .Values.global.images.cloudsql_proxy_image }}
         {{- if .Values.global.database.cloudsqlproxy.workloadIdentity.enabled }}
-        command: ["/cloud-sql-proxy",
+        command: ["/cloud_sql_proxy",
                   "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"]
         {{- else }}
-        command: ["/cloud-sql-proxy",
+        command: ["/cloud_sql_proxy",
                   "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                   "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
         volumeMounts:
