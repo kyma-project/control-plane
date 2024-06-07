@@ -1,8 +1,6 @@
 global:
   images:
-    cloudsql_proxy:
-      repository: eu.gcr.io/sap-ti-dx-kyma-mps-dev/images/cloudsql-proxy
-      tag: 2.11.3-sap
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     component_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/component:v20240214-54d08540"
 
 # Default values for component-reconcilers.
