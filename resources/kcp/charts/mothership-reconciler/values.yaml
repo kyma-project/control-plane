@@ -1,5 +1,8 @@
 global:
   images:
+    cloudsql_proxy:
+      repository: eu.gcr.io/sap-ti-dx-kyma-mps-dev/images/cloudsql-proxy
+      tag: 2.11.3-sap
     mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20240214-54d08540"
 
 # Default values for mothership-reconciler.
