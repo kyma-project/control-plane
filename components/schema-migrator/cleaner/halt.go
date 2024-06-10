@@ -37,7 +37,7 @@ func HaltCloudSqlProxy() error {
 
 		target, _ := os.ReadFile(file)
 
-		if len(target) > 0 && strings.Contains(string(target), "cloud_sql_proxy") {
+		if len(target) > 0 && strings.Contains(string(target), "cloud-sql-proxy") {
 			splitted := strings.Split(file, "/")
 
 			pid, err := strconv.Atoi(splitted[2])
@@ -52,7 +52,7 @@ func HaltCloudSqlProxy() error {
 
 			err = proc.Signal(os.Interrupt)
 			if err != nil {
-				return fmt.Errorf("while killing cloud_sql_proxy: %s", err)
+				return fmt.Errorf("while killing cloud-sql-proxy: %s", err)
 			}
 
 			break
