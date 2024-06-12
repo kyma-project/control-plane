@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 func Halt() error {
@@ -34,7 +33,6 @@ func HaltCloudSqlProxy() error {
 		fmt.Println("No matching processes found")
 	}
 
-	signalSent := false
 	for _, file := range matches {
 
 		target, _ := os.ReadFile(file)
@@ -52,16 +50,12 @@ func HaltCloudSqlProxy() error {
 				return fmt.Errorf("while reading process by pid: %s", err)
 			}
 
-			err = proc.Signal(syscall.SIGTERM)
+			err = proc.Signal(os.Interrupt)
 			if err != nil {
 				return fmt.Errorf("while killing cloud-sql-proxy: %s", err)
 			}
-			signalSent = true
 			break
 		}
-	}
-	if !signalSent {
-		fmt.Println("No cloud-sql-proxy process found")
 	}
 	return nil
 }
