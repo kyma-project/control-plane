@@ -34,7 +34,6 @@ func HaltCloudSqlProxy() error {
 		fmt.Println("No matching processes found")
 	}
 
-	signalSent := false
 	for _, file := range matches {
 
 		target, _ := os.ReadFile(file)
@@ -56,11 +55,10 @@ func HaltCloudSqlProxy() error {
 			if err != nil {
 				return fmt.Errorf("while killing cloud-sql-proxy: %s", err)
 			}
-			signalSent = true
 			break
 		}
 	}
-	if !signalSent {
+	if len(matches) == 0 {
 		fmt.Println("No cloud-sql-proxy process found")
 	}
 	return nil
