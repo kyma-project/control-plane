@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 func Halt() error {
@@ -50,13 +51,15 @@ func HaltCloudSqlProxy() error {
 				return fmt.Errorf("while reading process by pid: %s", err)
 			}
 
-			err = proc.Signal(os.Interrupt)
+			err = proc.Signal(syscall.SIGTERM)
 			if err != nil {
 				return fmt.Errorf("while killing cloud-sql-proxy: %s", err)
 			}
-
 			break
 		}
+	}
+	if len(matches) == 0 {
+		fmt.Println("No cloud-sql-proxy process found")
 	}
 	return nil
 }
