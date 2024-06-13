@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Schema Migrator is responsible for provisioner's database schema migrations.
+The Schema Migrator is responsible for Runtime Provisioner's database schema migrations.
 
 ## Development
 
