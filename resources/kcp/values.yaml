@@ -8,7 +8,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod
     schema_migrator:
       dir: control-plane/
-      version: "v20240612-83a7c0eb"
+      version: "v20240613-0d0eb85f"
     subscription_cleanup_job:
       dir:
       version: "v20240129-70857389"
