@@ -13,10 +13,8 @@ function ensure_exists {
 }
 
 function cleanup {
-    if docker ps | grep $POSTGRES_CONTAINER; then
-        docker kill $POSTGRES_CONTAINER
-        docker network rm $POSTGRES_NETWORK
-    fi
+    docker kill $POSTGRES_CONTAINER || true
+    docker network rm $POSTGRES_NETWORK || true
     if ! [[ -z $PROVISIONER_PID ]]; then
         kill $PROVISIONER_PID
         unset PROVISIONER_PID

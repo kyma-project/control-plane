@@ -172,6 +172,10 @@ type testConfig struct {
 }
 
 func TestName(t *testing.T) {
+
+	t.FailNow()
+	return
+
 	if os.Getenv("APP_GARDENER_KUBECONFIG_PATH") == "" {
 		t.SkipNow()
 	}
