@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
@@ -88,22 +90,12 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
-	if g.enableDumpShootSpec == true {
-		logger := logrus.New()
-		logger.Infof("================================= Shoot Spec Dump Start ===============================")
-
-		formatter := &logrus.TextFormatter{}
-		formatter.DisableQuote = true
-		logger.SetFormatter(formatter)
-
-		output, err := yaml.Marshal(shootTemplate)
-
-		if err == nil {
-			logger.Info(string(output))
-		} else {
+	if g.enableDumpShootSpec {
+		path := fmt.Sprintf("%s/%s-%s.yaml", "/testdata/provisioner", shootTemplate.Namespace, shootTemplate.Name)
+		if err := persist(path, shootTemplate); err != nil {
 			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
 		}
-		logger.Infof("================================= Shoot Spec Dump End =================================")
+		log.Infof("Shoot spec dumped to %s", path)
 	} else {
 		log.Infof("Shoot Spec Dump feature is disabeled")
 	}
@@ -114,6 +106,31 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
 	}
 
+	return nil
+}
+
+var getWriter = func(filePath string) (io.Writer, error) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file: %w", err)
+	}
+	return file, nil
+}
+
+func persist(path string, s *gardener.Shoot) error {
+	writer, err := getWriter(path)
+	if err != nil {
+		return fmt.Errorf("unable to create file: %w", err)
+	}
+
+	b, err := yaml.Marshal(s)
+	if err != nil {
+		return fmt.Errorf("unable to marshal shoot: %w", err)
+	}
+
+	if _, err = writer.Write(b); err != nil {
+		return fmt.Errorf("unable to write to file: %w", err)
+	}
 	return nil
 }
 

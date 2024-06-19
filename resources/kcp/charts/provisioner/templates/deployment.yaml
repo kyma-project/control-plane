@@ -167,6 +167,9 @@ spec:
           securityContext:
 {{ toYaml . | indent 12 }}
         {{- end }}
+          volumeMounts:
+            - name: testdata-storage
+              mountPath: /testdata/provisioner
           livenessProbe:
             httpGet:
               port: {{ .Values.global.provisioner.graphql.port }}
@@ -207,6 +210,9 @@ spec:
           {{- end }}
         {{- end}}
       volumes:
+      - name: testdata-storage
+        emptyDir:
+          sizeLimit: 500Mi
       {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
         secret:
