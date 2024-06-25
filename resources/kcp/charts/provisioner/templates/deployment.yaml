@@ -144,6 +144,8 @@ spec:
               value: {{ .Values.logs.level | quote }}
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
+            - name: APP_GARDENER_ENABLE_DUMP_SHOOT_SPEC
+              value: {{ .Values.gardener.enableDumpShootSpec | quote }}
           volumeMounts:
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
@@ -163,13 +165,14 @@ spec:
               mountPath: /secrets/cloudsql-sslrootcert
               readOnly: true
         {{- end }}
+        {{- if .Values.gardener.enableDumpShootSpec }}
+            - name: testdata-storage
+              mountPath: /testdata/provisioner
+        {{- end }}
         {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
         {{- end }}
-          volumeMounts:
-            - name: testdata-storage
-              mountPath: /testdata/provisioner
           livenessProbe:
             httpGet:
               port: {{ .Values.global.provisioner.graphql.port }}

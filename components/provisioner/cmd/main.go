@@ -89,9 +89,9 @@ func (c *config) String() string {
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingCreatingForAdmin: %t "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
-		"EnableDumpShootSpec: %v "+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v "+
 		"EnqueueInProgressOperations: %v "+
+		"EnableDumpShootSpec: %v "+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint,
 		c.Database.User, c.Database.Host, c.Database.Port,
