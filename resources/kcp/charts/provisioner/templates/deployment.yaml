@@ -213,9 +213,11 @@ spec:
           {{- end }}
         {{- end}}
       volumes:
+      {{- if .Values.gardener.enableDumpShootSpec }}
       - name: testdata-storage
         emptyDir:
           sizeLimit: 500Mi
+     {{- end}}
       {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
         secret:
