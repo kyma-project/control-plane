@@ -97,7 +97,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		}
 		log.Infof("Shoot spec dumped to %s", path)
 	} else {
-		log.Infof("Shoot Spec Dump feature is disabeled")
+		log.Infof("Shoot Spec Dump feature is disabled")
 	}
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
