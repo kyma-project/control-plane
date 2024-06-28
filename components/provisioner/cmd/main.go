@@ -70,6 +70,7 @@ type config struct {
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
 		DefaultEnableIMDSv2                        bool   `envconfig:"default=false"`
+		EnableDumpShootSpec                        bool   `envconfig:"default=false"`
 	}
 
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
@@ -88,8 +89,9 @@ func (c *config) String() string {
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingCreatingForAdmin: %t "+
-		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v"+
-		"EnqueueInProgressOperations: %v"+
+		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, DefaultEnableIMDSv2: %v "+
+		"EnqueueInProgressOperations: %v "+
+		"EnableDumpShootSpec: %v "+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint,
 		c.Database.User, c.Database.Host, c.Database.Port,
@@ -101,6 +103,7 @@ func (c *config) String() string {
 		c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath, c.Gardener.DefaultEnableIMDSv2,
 		c.EnqueueInProgressOperations,
+		c.Gardener.EnableDumpShootSpec,
 		c.LogLevel)
 }
 
@@ -161,7 +164,7 @@ func main() {
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, shootClient)
 
-	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
+	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath, cfg.Gardener.EnableDumpShootSpec)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
 	go func() {

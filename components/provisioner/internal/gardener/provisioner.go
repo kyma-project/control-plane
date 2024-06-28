@@ -4,24 +4,28 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	log "github.com/sirupsen/logrus"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"sigs.k8s.io/yaml"
 )
 
 //go:generate mockery --name=Client
@@ -35,13 +39,16 @@ func NewProvisioner(
 	namespace string,
 	shootClient Client,
 	factory dbsession.Factory,
-	policyConfigMapName string, maintenanceWindowConfigPath string) *GardenerProvisioner {
+	policyConfigMapName string,
+	maintenanceWindowConfigPath string,
+	enableDumpShootSpec bool) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                   namespace,
 		shootClient:                 shootClient,
 		dbSessionFactory:            factory,
 		policyConfigMapName:         policyConfigMapName,
 		maintenanceWindowConfigPath: maintenanceWindowConfigPath,
+		enableDumpShootSpec:         enableDumpShootSpec,
 	}
 }
 
@@ -51,6 +58,7 @@ type GardenerProvisioner struct {
 	dbSessionFactory            dbsession.Factory
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
+	enableDumpShootSpec         bool
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
@@ -82,12 +90,47 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
+	if g.enableDumpShootSpec {
+		path := fmt.Sprintf("%s/%s-%s.yaml", "/testdata/provisioner", shootTemplate.Namespace, shootTemplate.Name)
+		if err := persist(path, shootTemplate); err != nil {
+			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
+		}
+		log.Infof("Shoot spec dumped to %s", path)
+	} else {
+		log.Infof("Shoot Spec Dump feature is disabled")
+	}
+
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
 	if k8serr != nil {
 		appError := util.K8SErrorToAppError(k8serr).SetComponent(apperrors.ErrGardenerClient)
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
 	}
 
+	return nil
+}
+
+var getWriter = func(filePath string) (io.Writer, error) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file: %w", err)
+	}
+	return file, nil
+}
+
+func persist(path string, s *gardener.Shoot) error {
+	writer, err := getWriter(path)
+	if err != nil {
+		return fmt.Errorf("unable to create file: %w", err)
+	}
+
+	b, err := yaml.Marshal(s)
+	if err != nil {
+		return fmt.Errorf("unable to marshal shoot: %w", err)
+	}
+
+	if _, err = writer.Write(b); err != nil {
+		return fmt.Errorf("unable to write to file: %w", err)
+	}
 	return nil
 }
 

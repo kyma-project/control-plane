@@ -28,6 +28,7 @@ require (
 	k8s.io/apimachinery v0.26.9
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.14.6
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -116,12 +117,11 @@ require (
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.14
-	github.com/containerd/containerd => github.com/containerd/containerd v1.6.18
+	github.com/containerd/containerd => github.com/containerd/containerd v1.6.8
 	golang.org/x/crypto => golang.org/x/crypto v0.22.0
 	golang.org/x/net => golang.org/x/net v0.24.0
 	golang.org/x/sys => golang.org/x/sys v0.19.0

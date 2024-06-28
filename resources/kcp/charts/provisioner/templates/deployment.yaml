@@ -144,6 +144,8 @@ spec:
               value: {{ .Values.logs.level | quote }}
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
+            - name: APP_GARDENER_ENABLE_DUMP_SHOOT_SPEC
+              value: {{ .Values.gardener.enableDumpShootSpec | quote }}
           volumeMounts:
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
@@ -162,6 +164,10 @@ spec:
             - name: cloudsql-sslrootcert
               mountPath: /secrets/cloudsql-sslrootcert
               readOnly: true
+        {{- end }}
+        {{- if .Values.gardener.enableDumpShootSpec }}
+            - name: testdata-storage
+              mountPath: /testdata/provisioner
         {{- end }}
         {{- with .Values.deployment.securityContext }}
           securityContext:
@@ -207,6 +213,11 @@ spec:
           {{- end }}
         {{- end}}
       volumes:
+      {{- if .Values.gardener.enableDumpShootSpec }}
+      - name: testdata-storage
+        emptyDir:
+          sizeLimit: 500Mi
+     {{- end}}
       {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
         secret:
