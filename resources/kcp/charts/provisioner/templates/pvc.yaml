@@ -1,0 +1,13 @@
+{{- if not .Values.gardener.shootSpecDump.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-prov-shoot-spec-storage
+  namespace: kcp-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+{{- end }}
