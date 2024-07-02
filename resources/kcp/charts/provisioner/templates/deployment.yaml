@@ -216,7 +216,7 @@ spec:
       {{- if .Values.gardener.shootSpecDump.enabled }}
       - name: testdata-storage
         persistentVolumeClaim:
-          claimName: test-shoot-spec-storage
+          claimName: test-prov-shoot-spec-storage
      {{- end}}
       {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
