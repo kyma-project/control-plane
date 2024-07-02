@@ -56,7 +56,8 @@ gardener:
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
   defaultEnableIMDSv2: false
-  enableDumpShootSpec: false
+  shootSpecDump:
+    enabled: false
 
 support:
   enabledCreatingRoleBindingForAdmin: false

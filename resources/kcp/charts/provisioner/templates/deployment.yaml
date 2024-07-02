@@ -145,7 +145,7 @@ spec:
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
             - name: APP_GARDENER_ENABLE_DUMP_SHOOT_SPEC
-              value: {{ .Values.gardener.enableDumpShootSpec | quote }}
+              value: {{ .Values.gardener.shootSpecDump.enabled | quote }}
           volumeMounts:
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
@@ -165,7 +165,7 @@ spec:
               mountPath: /secrets/cloudsql-sslrootcert
               readOnly: true
         {{- end }}
-        {{- if .Values.gardener.enableDumpShootSpec }}
+        {{- if .Values.gardener.shootSpecDump.enabled }}
             - name: testdata-storage
               mountPath: /testdata/provisioner
         {{- end }}
@@ -213,10 +213,10 @@ spec:
           {{- end }}
         {{- end}}
       volumes:
-      {{- if .Values.gardener.enableDumpShootSpec }}
+      {{- if .Values.gardener.shootSpecDump.enabled }}
       - name: testdata-storage
-        emptyDir:
-          sizeLimit: 500Mi
+        persistentVolumeClaim:
+          claimName: test-shoot-spec-storage
      {{- end}}
       {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
