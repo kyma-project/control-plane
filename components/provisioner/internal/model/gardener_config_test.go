@@ -206,6 +206,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}, nil),
 						},
+						WorkersSettings: &gardener_types.WorkersSettings{
+							SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+						},
 					},
 					Purpose:           &purpose,
 					ExposureClassName: util.PtrTo("internet"),
@@ -287,6 +290,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}, nil),
+						},
+						WorkersSettings: &gardener_types.WorkersSettings{
+							SSHAccess: &gardener_types.SSHAccess{Enabled: false},
 						},
 					},
 					Purpose:           &purpose,
@@ -370,6 +376,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Workers: []gardener_types.Worker{
 							fixWorker(nil, nil),
 						},
+						WorkersSettings: &gardener_types.WorkersSettings{
+							SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+						},
 					},
 					Purpose:           &purpose,
 					ExposureClassName: util.PtrTo("internet"),
@@ -451,6 +460,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"1", "2"}, nil),
+						},
+						WorkersSettings: &gardener_types.WorkersSettings{
+							SSHAccess: &gardener_types.SSHAccess{Enabled: false},
 						},
 					},
 					Purpose:           &purpose,
@@ -535,6 +547,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"zone"}, &apimachineryRuntime.RawExtension{
 								Raw: []byte(`{"kind":"WorkerConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","instanceMetadataOptions":{"httpTokens":"required","httpPutResponseHopLimit":2}}`),
 							}),
+						},
+						WorkersSettings: &gardener_types.WorkersSettings{
+							SSHAccess: &gardener_types.SSHAccess{Enabled: false},
 						},
 					},
 					Purpose:           &purpose,

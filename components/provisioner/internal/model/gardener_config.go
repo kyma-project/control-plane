@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-version"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -365,6 +364,9 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
 		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
+		WorkersSettings: &gardener_types.WorkersSettings{
+			SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+		},
 	}
 
 	return nil
@@ -519,6 +521,9 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
 		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
+		WorkersSettings: &gardener_types.WorkersSettings{
+			SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+		},
 	}
 
 	return nil
@@ -662,6 +667,9 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
 		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
+		WorkersSettings: &gardener_types.WorkersSettings{
+			SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+		},
 	}
 
 	return nil
@@ -728,6 +736,9 @@ func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig
 		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
 		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
+		WorkersSettings: &gardener_types.WorkersSettings{
+			SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+		},
 	}
 
 	return nil
@@ -794,6 +805,12 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	if util.NotNilOrEmpty(upgradeConfig.MachineImageVersion) {
 		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
 	}
+
+	// block SSHAccess for all upgraded clusters
+	shoot.Spec.Provider.WorkersSettings = &gardener_types.WorkersSettings{
+		SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+	}
+
 	if upgradeConfig.OIDCConfig != nil {
 		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
 			shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
