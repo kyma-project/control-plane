@@ -96,6 +96,9 @@ func (ts *TestShoot) WithExposureClassName(exposureClassName string) *TestShoot 
 // See also testkit.TestWorker
 func (ts *TestShoot) WithWorkers(workers ...v1beta1.Worker) *TestShoot {
 	ts.shoot.Spec.Provider.Workers = append(ts.shoot.Spec.Provider.Workers, workers...)
+	ts.shoot.Spec.Provider.WorkersSettings = &gardener_types.WorkersSettings{
+		SSHAccess: &gardener_types.SSHAccess{Enabled: false},
+	}
 	return ts
 }
 
