@@ -5,6 +5,7 @@ metadata:
   name: test-prov-shoot-spec-storage
   namespace: kcp-system
 spec:
+  storageClassName: standard-rwo
   accessModes:
     - ReadWriteOnce
   resources:
