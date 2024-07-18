@@ -24,7 +24,7 @@ func ExtractRawGraphQL(handler http.Handler) http.Handler {
 				shootName := getShootName(stringBodyData)
 				err := util.WriteToPV(stringBodyData, shootName)
 				if err != nil {
-					http.Error(w, "Failed to save to PV", http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			}
 		}
