@@ -40,6 +40,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      {{- if .Values.global.shootSpecDump.enabled }}
+      securityContext:
+        fsGroup: 2000
+      {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.global.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}/control-plane/provisioner:{{ .Values.global.images.provisioner.version }}"
@@ -145,7 +149,7 @@ spec:
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
             - name: APP_GARDENER_ENABLE_DUMP_SHOOT_SPEC
-              value: {{ .Values.gardener.shootSpecDump.enabled | quote }}
+              value: {{ .Values.global.shootSpecDump.enabled | quote }}
           volumeMounts:
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
@@ -165,7 +169,7 @@ spec:
               mountPath: /secrets/cloudsql-sslrootcert
               readOnly: true
         {{- end }}
-        {{- if .Values.gardener.shootSpecDump.enabled }}
+        {{- if .Values.global.shootSpecDump.enabled }}
             - name: testdata-storage
               mountPath: /testdata/provisioner
         {{- end }}
@@ -213,7 +217,7 @@ spec:
           {{- end }}
         {{- end}}
       volumes:
-      {{- if .Values.gardener.shootSpecDump.enabled }}
+      {{- if .Values.global.shootSpecDump.enabled }}
       - name: testdata-storage
         persistentVolumeClaim:
           claimName: test-prov-shoot-spec-storage

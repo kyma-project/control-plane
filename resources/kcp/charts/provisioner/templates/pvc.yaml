@@ -1,11 +1,11 @@
-{{- if not .Values.gardener.shootSpecDump.enabled }}
+{{- if .Values.global.shootSpecDump.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: test-prov-shoot-spec-storage
   namespace: kcp-system
 spec:
-  storageClassName: standard-rwo
+  storageClassName: kim-shoot-tests
   accessModes:
     - ReadWriteOnce
   resources:
