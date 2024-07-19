@@ -68,6 +68,14 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	region := cluster.ClusterConfig.Region
+
+	if region == "me-central2" {
+		toleration := v1beta1.Toleration{
+			Key: "ksa-assured-workload",
+		}
+		shootTemplate.Spec.Tolerations = append(shootTemplate.Spec.Tolerations, toleration)
+	}
+
 	purpose := ""
 	if cluster.ClusterConfig.Purpose != nil {
 		purpose = *cluster.ClusterConfig.Purpose
