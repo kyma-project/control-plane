@@ -5,7 +5,7 @@ metadata:
   name: test-prov-shoot-spec-storage
   namespace: kcp-system
 spec:
-  storageClassName: kim-shoot-tests
+  storageClassName: standard-rwo
   accessModes:
     - ReadWriteOnce
   resources:
