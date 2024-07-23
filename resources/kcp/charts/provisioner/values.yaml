@@ -1,4 +1,6 @@
 global:
+  shootSpecDump:
+    enabled: false
   containerRegistry:
     path: europe-docker.pkg.dev/kyma-project
   images:
@@ -56,7 +58,6 @@ gardener:
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
   defaultEnableIMDSv2: false
-  enableDumpShootSpec: false
 
 support:
   enabledCreatingRoleBindingForAdmin: false
