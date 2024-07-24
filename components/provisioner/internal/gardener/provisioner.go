@@ -67,6 +67,13 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		return err.Append("failed to convert cluster config to Shoot template")
 	}
 
+	if g.enableDumpShootSpec {
+		errs := util.WriteToPV(shootTemplate.DeepCopy())
+		if errs != nil {
+			log.Errorf("Error writing Shoot to PV: %s", errs.Error())
+		}
+	}
+
 	region := cluster.ClusterConfig.Region
 
 	if region == "me-central2" {
