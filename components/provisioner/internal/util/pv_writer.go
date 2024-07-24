@@ -11,7 +11,7 @@ const pvMountPath = "/testdata/provisioner"
 
 func WriteToPV(shoot *v1beta1.Shoot) error {
 
-	file, err := os.OpenFile(pvMountPath+"/"+shoot.Name+"-shootCR.yaml", os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(pvMountPath+"/"+shoot.Name+"-gardenerShoot.yaml", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
