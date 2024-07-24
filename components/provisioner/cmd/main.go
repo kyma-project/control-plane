@@ -210,10 +210,6 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(middlewares.ExtractTenant)
 
-	if cfg.Gardener.EnableDumpShootSpec {
-		router.Use(middlewares.ExtractRawGraphQL)
-	}
-
 	router.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlHandler := handler.New(executableSchema)
