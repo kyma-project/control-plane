@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/pkg/errors"
@@ -14,9 +15,10 @@ import (
 )
 
 type Resolver struct {
-	provisioning  provisioning.Service
-	validator     Validator
-	tenantUpdater TenantUpdater
+	provisioning        provisioning.Service
+	validator           Validator
+	tenantUpdater       TenantUpdater
+	enableDumpShootSpec bool
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
@@ -34,11 +36,12 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, enableDumpShootSpec bool) *Resolver {
 	return &Resolver{
-		provisioning:  provisioningService,
-		validator:     validator,
-		tenantUpdater: tenantUpdater,
+		provisioning:        provisioningService,
+		validator:           validator,
+		tenantUpdater:       tenantUpdater,
+		enableDumpShootSpec: enableDumpShootSpec,
 	}
 }
 
@@ -58,6 +61,14 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+
+	if r.enableDumpShootSpec {
+		err := util.PersistGraphQL(fmt.Sprintf("/tmp/%s-mutation.graphql.json", config.ClusterConfig.GardenerConfig.Name), config)
+		if err != nil {
+			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
+			return nil, err
+		}
+	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
 	if err != nil {
