@@ -188,7 +188,7 @@ func main() {
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()
-	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater)
+	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater, cfg.Gardener.EnableDumpShootSpec)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
