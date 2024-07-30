@@ -27,14 +27,6 @@ func PersistShoot(path string, shoot *v1beta1.Shoot) error {
 	return nil
 }
 
-func getWriter(filePath string) (io.Writer, error) {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create file: %w", err)
-	}
-	return file, nil
-}
-
 func PersistGraphQL(path string, mutation gqlschema.ProvisionRuntimeInput) error {
 	writer, err := getWriter(path)
 	if err != nil {
@@ -50,4 +42,12 @@ func PersistGraphQL(path string, mutation gqlschema.ProvisionRuntimeInput) error
 		return fmt.Errorf("unable to write to file: %w", err)
 	}
 	return nil
+}
+
+func getWriter(filePath string) (io.Writer, error) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file: %w", err)
+	}
+	return file, nil
 }
