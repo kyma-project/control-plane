@@ -201,7 +201,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
-			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+			resolver := api.NewResolver(provisioningService, validator, tenantUpdater, false)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
