@@ -63,10 +63,13 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 
 	if r.enableDumpShootSpec {
-		err := testkit.PersistGraphQL(fmt.Sprintf("/testdata/provisioner/%s-mutation.graphql.json", config.ClusterConfig.GardenerConfig.Name), config)
+		path := fmt.Sprintf("/testdata/provisioner/%s-shoot.yaml", config.RuntimeInput.Name)
+		err := testkit.PersistGraphQL(path, config)
+
 		if err != nil {
 			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
-			return nil, err
+		} else {
+			log.Infof("GraphQL query dumped to %s", path)
 		}
 	}
 
