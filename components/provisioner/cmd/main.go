@@ -164,6 +164,9 @@ func main() {
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, shootClient)
 
+	// <AG>
+	log.Infof("Before invoking NewProvisioner: %v", cfg.Gardener.EnableDumpShootSpec)
+	// <AG>
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath, cfg.Gardener.EnableDumpShootSpec)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -188,6 +191,9 @@ func main() {
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()
+	// <AG>
+	log.Infof("Before invoking NevResolver: %v", cfg.Gardener.EnableDumpShootSpec)
+	// <AG>
 	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater, cfg.Gardener.EnableDumpShootSpec)
 
 	ctx, cancel := context.WithCancel(context.Background())
