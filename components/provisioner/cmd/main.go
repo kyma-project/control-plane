@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"net/http"
 	"sync"
 	"time"
@@ -157,6 +158,8 @@ func main() {
 
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
+	testDataWriter := testkit.NewTestDataWriter(gardenerNamespace, "/testdata/provisioner", cfg.Gardener.EnableDumpShootSpec)
+
 	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
 	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsInterface)
 
@@ -164,7 +167,7 @@ func main() {
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, kubeconfigProvider)
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, shootClient)
 
-	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath, cfg.Gardener.EnableDumpShootSpec)
+	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath, testDataWriter)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
 	go func() {
@@ -188,7 +191,7 @@ func main() {
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()
-	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater, cfg.Gardener.EnableDumpShootSpec)
+	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater, testDataWriter)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

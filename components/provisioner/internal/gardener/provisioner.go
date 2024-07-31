@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"os"
 	"time"
 
@@ -32,20 +31,25 @@ type Client interface {
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.Shoot, err error)
 }
 
+type TestDataWriter interface {
+	PersistShoot(shoot *v1beta1.Shoot) (string, error)
+	Enabled() bool
+}
+
 func NewProvisioner(
 	namespace string,
 	shootClient Client,
 	factory dbsession.Factory,
 	policyConfigMapName string,
 	maintenanceWindowConfigPath string,
-	enableDumpShootSpec bool) *GardenerProvisioner {
+	testDataWriter TestDataWriter) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                   namespace,
 		shootClient:                 shootClient,
 		dbSessionFactory:            factory,
 		policyConfigMapName:         policyConfigMapName,
 		maintenanceWindowConfigPath: maintenanceWindowConfigPath,
-		enableDumpShootSpec:         enableDumpShootSpec,
+		testDataWriter:              testDataWriter,
 	}
 }
 
@@ -55,7 +59,7 @@ type GardenerProvisioner struct {
 	dbSessionFactory            dbsession.Factory
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
-	enableDumpShootSpec         bool
+	testDataWriter              TestDataWriter
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
@@ -95,15 +99,15 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
-	if g.enableDumpShootSpec {
-		path := fmt.Sprintf("%s/%s-%s.yaml", "/testdata/provisioner", shootTemplate.Namespace, shootTemplate.Name)
+	if g.testDataWriter.Enabled() {
 		log.Infof("Saving Shoot spec for %s Runtime", cluster.ID)
-		if err := testkit.PersistShoot(path, shootTemplate); err != nil {
+		path, err := g.testDataWriter.PersistShoot(shootTemplate)
+
+		if err == nil {
+			log.Infof("Shoot spec dumped to %s", path)
+		} else {
 			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
 		}
-		log.Infof("Shoot spec dumped to %s", path)
-	} else {
-		log.Infof("Shoot Spec Dump feature is disabled")
 	}
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})

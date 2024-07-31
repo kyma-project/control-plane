@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -61,7 +62,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 
@@ -112,7 +113,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -136,7 +137,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -168,7 +169,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -208,7 +209,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
@@ -228,7 +229,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
@@ -246,7 +247,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
 		ctx := context.Background()
@@ -273,7 +274,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -307,7 +308,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, apperrors.Internal("Runtime status fails"))
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
@@ -332,7 +333,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -363,7 +364,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, apperrors.Internal("Some error"))
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
@@ -401,7 +402,7 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
 		provisioningService.On("UpgradeGardenerShoot", runtimeID, upgradeShootInput).Return(operation, nil)
 
-		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		//when
 		status, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
@@ -423,7 +424,7 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, false)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("", "", false))
 
 		//when
 		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)

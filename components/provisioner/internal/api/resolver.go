@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/pkg/errors"
 
@@ -15,35 +13,40 @@ import (
 )
 
 type Resolver struct {
-	provisioning        provisioning.Service
-	validator           Validator
-	tenantUpdater       TenantUpdater
-	enableDumpShootSpec bool
+	provisioning   provisioning.Service
+	validator      Validator
+	tenantUpdater  TenantUpdater
+	testDataWriter TestDataWriter
+}
+
+type TestDataWriter interface {
+	PersistGraphQL(mutation gqlschema.ProvisionRuntimeInput) (string, error)
+	Enabled() bool
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
-		provisioning:        r.provisioning,
-		validator:           r.validator,
-		tenantUpdater:       r.tenantUpdater,
-		enableDumpShootSpec: r.enableDumpShootSpec,
+		provisioning:   r.provisioning,
+		validator:      r.validator,
+		tenantUpdater:  r.tenantUpdater,
+		testDataWriter: r.testDataWriter,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
-		provisioning:        r.provisioning,
-		validator:           r.validator,
-		tenantUpdater:       r.tenantUpdater,
-		enableDumpShootSpec: r.enableDumpShootSpec,
+		provisioning:   r.provisioning,
+		validator:      r.validator,
+		tenantUpdater:  r.tenantUpdater,
+		testDataWriter: r.testDataWriter,
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, enableDumpShootSpec bool) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, testDataWriter TestDataWriter) *Resolver {
 	return &Resolver{
-		provisioning:        provisioningService,
-		validator:           validator,
-		tenantUpdater:       tenantUpdater,
-		enableDumpShootSpec: enableDumpShootSpec,
+		provisioning:   provisioningService,
+		validator:      validator,
+		tenantUpdater:  tenantUpdater,
+		testDataWriter: testDataWriter,
 	}
 }
 
@@ -64,18 +67,15 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 
-	if r.enableDumpShootSpec {
-		log.Infof("Saving GraphQL query for Runtime %s.", config.RuntimeInput.Name)
-		path := fmt.Sprintf("/testdata/provisioner/%s-shoot.yaml", config.RuntimeInput.Name)
-		err := testkit.PersistGraphQL(path, config)
+	if r.testDataWriter.Enabled() {
+		log.Infof("Saving GraphQL query for Runtime %s", config.RuntimeInput.Name)
+		path, err := r.testDataWriter.PersistGraphQL(config)
 
-		if err != nil {
-			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
-		} else {
+		if err == nil {
 			log.Infof("GraphQL query dumped to %s", path)
+		} else {
+			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
 		}
-	} else {
-		log.Infof("GraphQL query not saved. Shoot Spec Dump feature is disabled.")
 	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
