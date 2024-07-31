@@ -61,6 +61,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+	log.Infof("GraphQL dump enabled: %v.", r.enableDumpShootSpec)
 
 	if r.enableDumpShootSpec {
 		log.Infof("Saving GraphQL query for Runtime %s.", config.RuntimeInput.Name)
