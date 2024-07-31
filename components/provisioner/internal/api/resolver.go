@@ -23,16 +23,18 @@ type Resolver struct {
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
-		provisioning:  r.provisioning,
-		validator:     r.validator,
-		tenantUpdater: r.tenantUpdater,
+		provisioning:        r.provisioning,
+		validator:           r.validator,
+		tenantUpdater:       r.tenantUpdater,
+		enableDumpShootSpec: r.enableDumpShootSpec,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
-		provisioning:  r.provisioning,
-		validator:     r.validator,
-		tenantUpdater: r.tenantUpdater,
+		provisioning:        r.provisioning,
+		validator:           r.validator,
+		tenantUpdater:       r.tenantUpdater,
+		enableDumpShootSpec: r.enableDumpShootSpec,
 	}
 }
 
