@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"os"
 	"time"
 
@@ -96,7 +97,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	if g.enableDumpShootSpec {
 		path := fmt.Sprintf("%s/%s-%s.yaml", "/testdata/provisioner", shootTemplate.Namespace, shootTemplate.Name)
-		if err := util.PersistShoot(path, shootTemplate); err != nil {
+		if err := testkit.PersistShoot(path, shootTemplate); err != nil {
 			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
 		}
 		log.Infof("Shoot spec dumped to %s", path)

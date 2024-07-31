@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/pkg/errors"
@@ -63,7 +63,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 
 	if r.enableDumpShootSpec {
-		err := util.PersistGraphQL(fmt.Sprintf("/testdata/provisioner/%s-mutation.graphql.json", config.ClusterConfig.GardenerConfig.Name), config)
+		err := testkit.PersistGraphQL(fmt.Sprintf("/testdata/provisioner/%s-mutation.graphql.json", config.ClusterConfig.GardenerConfig.Name), config)
 		if err != nil {
 			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
 			return nil, err
