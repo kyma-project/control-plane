@@ -421,7 +421,7 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
-		tenantUpdater.On("GietAndUpdateTenant", runtimeID, ctx).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		resolver := api.NewResolver(provisioningService, validator, tenantUpdater, false)
 
