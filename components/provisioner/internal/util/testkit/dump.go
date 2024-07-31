@@ -28,7 +28,7 @@ func NewTestDataWriter(shootNamespace, directory string, enabled bool) *TestData
 }
 
 func (tdw *TestDataWriter) PersistShoot(shoot *v1beta1.Shoot) (string, error) {
-	fileName := fmt.Sprintf("%s-%s-shootCR.yaml", shoot.Name, tdw.shootNamespace)
+	fileName := fmt.Sprintf("%s-%s-shootCR.yaml", tdw.shootNamespace, shoot.Name)
 	filePath := path.Join(tdw.directory, fileName)
 
 	writer, err := getWriter(filePath)
@@ -48,7 +48,7 @@ func (tdw *TestDataWriter) PersistShoot(shoot *v1beta1.Shoot) (string, error) {
 }
 
 func (tdw *TestDataWriter) PersistGraphQL(mutation gqlschema.ProvisionRuntimeInput) (string, error) {
-	fileName := fmt.Sprintf("%s-%s-mutation.json", mutation.ClusterConfig.GardenerConfig.Name, tdw.shootNamespace)
+	fileName := fmt.Sprintf("%s-%s-mutation.json", tdw.shootNamespace, mutation.ClusterConfig.GardenerConfig.Name)
 	filePath := path.Join(tdw.directory, fileName)
 
 	writer, err := getWriter(filePath)
