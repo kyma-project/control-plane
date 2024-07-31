@@ -31,7 +31,7 @@ type Client interface {
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.Shoot, err error)
 }
 
-type TestDataWriter interface {
+type OutputDataWriter interface {
 	PersistShoot(shoot *v1beta1.Shoot) (string, error)
 	Enabled() bool
 }
@@ -42,7 +42,7 @@ func NewProvisioner(
 	factory dbsession.Factory,
 	policyConfigMapName string,
 	maintenanceWindowConfigPath string,
-	testDataWriter TestDataWriter) *GardenerProvisioner {
+	testDataWriter OutputDataWriter) *GardenerProvisioner {
 	return &GardenerProvisioner{
 		namespace:                   namespace,
 		shootClient:                 shootClient,
@@ -59,7 +59,7 @@ type GardenerProvisioner struct {
 	dbSessionFactory            dbsession.Factory
 	policyConfigMapName         string
 	maintenanceWindowConfigPath string
-	testDataWriter              TestDataWriter
+	testDataWriter              OutputDataWriter
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {

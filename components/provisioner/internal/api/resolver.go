@@ -16,10 +16,10 @@ type Resolver struct {
 	provisioning   provisioning.Service
 	validator      Validator
 	tenantUpdater  TenantUpdater
-	testDataWriter TestDataWriter
+	testDataWriter InputDataWriter
 }
 
-type TestDataWriter interface {
+type InputDataWriter interface {
 	PersistGraphQL(mutation gqlschema.ProvisionRuntimeInput) (string, error)
 	Enabled() bool
 }
@@ -41,7 +41,7 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, testDataWriter TestDataWriter) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, testDataWriter InputDataWriter) *Resolver {
 	return &Resolver{
 		provisioning:   provisioningService,
 		validator:      validator,
