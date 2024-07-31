@@ -97,6 +97,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	if g.enableDumpShootSpec {
 		path := fmt.Sprintf("%s/%s-%s.yaml", "/testdata/provisioner", shootTemplate.Namespace, shootTemplate.Name)
+		log.Infof("Saving Shoot spec for %s Runtime", cluster.ID)
 		if err := testkit.PersistShoot(path, shootTemplate); err != nil {
 			log.Errorf("Error marshaling Shoot spec: %s", err.Error())
 		}

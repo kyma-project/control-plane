@@ -63,6 +63,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 
 	if r.enableDumpShootSpec {
+		log.Infof("Saving GraphQL query for Runtime %s.", config.RuntimeInput.Name)
 		path := fmt.Sprintf("/testdata/provisioner/%s-shoot.yaml", config.RuntimeInput.Name)
 		err := testkit.PersistGraphQL(path, config)
 
@@ -71,6 +72,8 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		} else {
 			log.Infof("GraphQL query dumped to %s", path)
 		}
+	} else {
+		log.Infof("GraphQL query not saved. Shoot Spec Dump feature is disabled.")
 	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
