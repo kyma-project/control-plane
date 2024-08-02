@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/pkg/errors"
 
@@ -14,31 +13,40 @@ import (
 )
 
 type Resolver struct {
-	provisioning  provisioning.Service
-	validator     Validator
-	tenantUpdater TenantUpdater
+	provisioning   provisioning.Service
+	validator      Validator
+	tenantUpdater  TenantUpdater
+	testDataWriter InputDataWriter
+}
+
+type InputDataWriter interface {
+	PersistGraphQL(mutation gqlschema.ProvisionRuntimeInput) (string, error)
+	Enabled() bool
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
-		provisioning:  r.provisioning,
-		validator:     r.validator,
-		tenantUpdater: r.tenantUpdater,
+		provisioning:   r.provisioning,
+		validator:      r.validator,
+		tenantUpdater:  r.tenantUpdater,
+		testDataWriter: r.testDataWriter,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
-		provisioning:  r.provisioning,
-		validator:     r.validator,
-		tenantUpdater: r.tenantUpdater,
+		provisioning:   r.provisioning,
+		validator:      r.validator,
+		tenantUpdater:  r.tenantUpdater,
+		testDataWriter: r.testDataWriter,
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater, testDataWriter InputDataWriter) *Resolver {
 	return &Resolver{
-		provisioning:  provisioningService,
-		validator:     validator,
-		tenantUpdater: tenantUpdater,
+		provisioning:   provisioningService,
+		validator:      validator,
+		tenantUpdater:  tenantUpdater,
+		testDataWriter: testDataWriter,
 	}
 }
 
@@ -58,6 +66,17 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+
+	if r.testDataWriter.Enabled() {
+		log.Infof("Saving GraphQL query for Runtime %s", config.RuntimeInput.Name)
+		path, err := r.testDataWriter.PersistGraphQL(config)
+
+		if err == nil {
+			log.Infof("GraphQL query dumped to %s", path)
+		} else {
+			log.Errorf("Failed to dump GraphQL mutation for Runtime %s: %s", config.RuntimeInput.Name, err)
+		}
+	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
 	if err != nil {

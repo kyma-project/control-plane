@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -180,7 +182,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//uuidGeneratorMock.On("New").Return(config.upgradeID).Once()
 			//uuidGeneratorMock.On("New").Return(config.deprovisioningID).Once()
 
-			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath, false)
+			tmpDir, err := os.MkdirTemp("", "")
+			require.NoError(t, err)
+
+			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath, testkit.NewTestDataWriter("kyma-dev", tmpDir, true))
 
 			inputConverter := provisioning.NewInputConverter(uuidGeneratorMock, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, defaultEnableIMDSv2)
 			graphQLConverter := provisioning.NewGraphQLConverter()
@@ -201,7 +206,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
-			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+			resolver := api.NewResolver(provisioningService, validator, tenantUpdater, testkit.NewTestDataWriter("kyma-dev", tmpDir, true))
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 

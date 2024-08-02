@@ -52,7 +52,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// given
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath, false)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath, &testkit.TestDataWriter{})
 
 		// when
 		apperr := provisionerClient.ProvisionCluster(cluster, operationId)
@@ -104,7 +104,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "", false)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "", &testkit.TestDataWriter{})
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -131,7 +131,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
-		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "", false)
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "", &testkit.TestDataWriter{})
 
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
@@ -185,7 +185,7 @@ func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		sessionFactory := &sessionMocks.Factory{}
-		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "", false)
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "", &testkit.TestDataWriter{})
 
 		// when
 		apperr := provisioner.UpgradeCluster(cluster.ID, cluster.ClusterConfig)
@@ -202,7 +202,7 @@ func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
 		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
 
 		sessionFactory := &sessionMocks.Factory{}
-		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "", false)
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "", &testkit.TestDataWriter{})
 
 		// when
 		apperr := provisioner.UpgradeCluster(cluster.ID, cluster.ClusterConfig)
@@ -254,10 +254,10 @@ func TestGardenerProvisioner_ClusterPurpose(t *testing.T) {
 
 	t.Run("should start provisioning with 2 clusters with different purpose", func(t *testing.T) {
 		shootClient_A := clientset_A.CoreV1beta1().Shoots(gardenerNamespace)
-		provisionerClient_A := NewProvisioner(gardenerNamespace, shootClient_A, nil, auditLogsPolicyCMName, maintWindowConfigPath, false)
+		provisionerClient_A := NewProvisioner(gardenerNamespace, shootClient_A, nil, auditLogsPolicyCMName, maintWindowConfigPath, &testkit.TestDataWriter{})
 
 		shootClient_B := clientset_B.CoreV1beta1().Shoots(gardenerNamespace)
-		provisionerClient_B := NewProvisioner(gardenerNamespace, shootClient_B, nil, auditLogsPolicyCMName, maintWindowConfigPath, false)
+		provisionerClient_B := NewProvisioner(gardenerNamespace, shootClient_B, nil, auditLogsPolicyCMName, maintWindowConfigPath, &testkit.TestDataWriter{})
 
 		//when
 		apperr_A := provisionerClient_A.ProvisionCluster(cluster_A, operationId)
