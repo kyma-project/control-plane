@@ -1,4 +1,4 @@
-FROM golang:1.22.6-alpine3.20 AS build
+FROM golang:1.21 AS build
 
 COPY cleaner /program/cleaner
 COPY go.mod /program/go.mod
