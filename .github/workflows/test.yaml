@@ -22,5 +22,6 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: components/schema-migrator/go.mod
+        cache-dependency-path: components/schema-migrator/go.sum
     - name: Run tests
       run: make -C components/schema-migrator release
