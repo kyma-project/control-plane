@@ -243,6 +243,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.PtrTo(true),
 						},
+						{
+							Type:     "shoot-oidc-service",
+							Disabled: util.PtrTo(false),
+						},
 					},
 					ControlPlane: &gardener_types.ControlPlane{
 						HighAvailability: &gardener_types.HighAvailability{
@@ -327,6 +331,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						{
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.PtrTo(true),
+						},
+						{
+							Type:     "shoot-oidc-service",
+							Disabled: util.PtrTo(false),
 						},
 					},
 					ControlPlane: &gardener_types.ControlPlane{
@@ -413,6 +421,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.PtrTo(true),
 						},
+						{
+							Type:     "shoot-oidc-service",
+							Disabled: util.PtrTo(false),
+						},
 					},
 					ControlPlane: &gardener_types.ControlPlane{
 						HighAvailability: &gardener_types.HighAvailability{
@@ -497,6 +509,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						{
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.PtrTo(true),
+						},
+						{
+							Type:     "shoot-oidc-service",
+							Disabled: util.PtrTo(false),
 						},
 					},
 					ControlPlane: &gardener_types.ControlPlane{
@@ -584,6 +600,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						{
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.PtrTo(true),
+						},
+						{
+							Type:     "shoot-oidc-service",
+							Disabled: util.PtrTo(false),
 						},
 					},
 					ControlPlane: &gardener_types.ControlPlane{

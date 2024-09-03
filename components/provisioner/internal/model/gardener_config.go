@@ -211,6 +211,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				{Type: "shoot-dns-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig}},
 				{Type: "shoot-cert-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig}},
 				{Type: ShootNetworkingFilterExtensionType, Disabled: util.OkOrDefault(c.ShootNetworkingFilterDisabled, util.PtrTo(ShootNetworkingFilterDisabledDefault))},
+				{Type: "shoot-oidc-service", Disabled: util.PtrTo(false)},
 			},
 			ControlPlane: controlPlane,
 		},
