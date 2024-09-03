@@ -27,3 +27,15 @@ If you want to deploy only the [Reconciler](https://github.com/kyma-incubator/re
 cd tools/reconciler
 make deploy-reconciler
 ```
+
+## Contributing
+
+See the [Contributing Rules](CONTRIBUTING.md).
+
+## Code of Conduct
+
+See the [Code of Conduct](CODE_OF_CONDUCT.md) document.
+
+## Licensing
+
+See the [license](./LICENSE) file.
