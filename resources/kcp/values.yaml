@@ -15,7 +15,7 @@ global:
     tests:
       provisioner:
         dir: control-plane/
-        version: "v20240903-8152ffd9"
+        version: "v20240220-6d8e99e0"
       e2e_provisioning:
         dir: control-plane/
         version: "v20240220-6d8e99e0"
