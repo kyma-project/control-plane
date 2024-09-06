@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -123,8 +124,8 @@ func main() {
 		log.Warnf("Invalid log level: '%s', defaulting to 'info'", cfg.LogLevel)
 		logLevel = log.InfoLevel
 	}
-	log.SetLevel(logLevel)
 
+	log.SetLevel(logLevel)
 	log.Infof("Starting Provisioner")
 	log.Infof("Config: %s", cfg.String())
 
