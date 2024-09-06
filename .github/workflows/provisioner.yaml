@@ -1,0 +1,45 @@
+name: Provisioner Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ./components/provisioner/**
+
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ./components/provisioner/**
+
+permissions:
+  id-token: write # This is required for requesting the JWT token
+  contents: read # This is required for actions/checkout
+
+jobs:
+  build-image:
+    needs: setup
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: control-plane/provisioner
+      dockerfile: Dockerfile
+      context: ./components/provisioner
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [build-image]
+    if: success() || failure()
+    steps:
+      - name: "Generate summary"
+        run: |
+          {
+            echo '# Kyma Infrastructure Manager'
+
+            # if build-image was successful
+            if [ "${{ needs.build-image.result }}" == "success" ]; then
+              printf '\n\n## Image\n'
+              printf '\n```json\n'
+              echo '${{ needs.build-image.outputs.images }}' | jq
+              printf '\n```\n'
+            fi
+          } >> $GITHUB_STEP_SUMMARY
