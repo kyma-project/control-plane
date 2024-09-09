@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   build-image:
-    needs: setup
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: control-plane/provisioner
