@@ -5,13 +5,16 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @kyma-project/Framefrog @kyma-project/gopher
+* @kyma-project/Framefrog
+
+# GitHub Actions
+/.github/workflows @kyma-project/Framefrog @kyma-project/gopher
 
 # All developers working on this repository are able to edit main values.yaml file.
 /resources/kcp/values.yaml @kyma-project/Framefrog @tobiscr @kyma-project/Jellyfish @kyma-project/gopher @kyma-project/eventing
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @kyma-project/Framefrog @ebensom @kyma-project/gopher
+/scripts @kyma-project/Framefrog @ebensom
 
 # Registration job is used by provisioner and kyma-environment-broker
 /resources/kcp/templates/registration-job.yaml @kyma-project/Framefrog @kyma-project/gopher
@@ -28,19 +31,15 @@
 /resources/kcp/charts/mothership-reconciler @tobiscr @kyma-project/Jellyfish
 /tools/reconciler @tobiscr @kyma-project/Jellyfish
 
-
-# e2e-provisioning
-/tests/e2e/provisioning @kyma-project/gopher @ebensom
-
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt @talszabi
 /resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt @talszabi
 
-# KCP CLI
-/tools/cli @ebensom @lumi017 @kwiatekus @cortey @kyma-project/gopher @gczuczy @i332322 @zralt @talszabi
-
 # reconciler
 /components/reconciler @tobiscr @kyma-project/Jellyfish
+
+# Schema-migrator
+/components/schema-migrator @kyma-project/Framefrog @kyma-project/gopher
 
 # All .md files
 *.md @kyma-project/technical-writers
