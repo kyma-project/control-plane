@@ -10,8 +10,8 @@ global:
       dir: control-plane/
       version: "v20240613-0d0eb85f"
     subscription_cleanup_job:
-      dir:
-      version: "v20240129-70857389"
+      dir: ""
+      version: "v20240924-506863b9"
     tests:
       provisioner:
         dir: control-plane/
