@@ -2,13 +2,6 @@
 filters:
   ".*":
     approvers:
-     - PK85
-     - piotrmiskiewicz
-     - szwedm
-     - ralikio
-     - ukff
-     - MarekMichali
-     - jaroslaw-pieszka
      - akgalwas
      - janmedrek
      - franpog859
