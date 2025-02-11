@@ -1,4 +1,12 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/control-plane)](https://api.reuse.software/info/github.com/kyma-project/control-plane)
+## :warning: **Archived**
+
+This repository has been deprecated and archived on Feb 11th, 2025. There are replacements available, see 
+
+* Kyma Environment Broker (KEB): https://github.com/kyma-project/kyma-environment-broker
+* Kyma Infrastructure Manager (KIM): https://github.com/kyma-project/infrastructure-manager
+
+
+
 
 # Kyma Control Plane
 
